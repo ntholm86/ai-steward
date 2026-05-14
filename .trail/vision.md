@@ -1,0 +1,76 @@
+# Vision — AI Steward
+
+*Operator-held destination. Append or layer new insights; never destructively overwrite.*
+
+---
+
+## 2026-05-14 — First articulation
+
+### What this is
+
+AI Steward is an autonomous software evolution engine with a reasoning layer — the system that makes earned delegation real.
+
+It is not an AI coding tool. It is not an agent that waits to be asked. It is a system that runs, improves, releases, and understands itself — continuously — with the operator's structural consent.
+
+The operator sleeps. AI Steward acts in their name. This is only possible because:
+
+1. Every action is tamper-evidently logged (the operator can reconstruct what happened)
+2. Every decision is reasoned, not just executed (the operator can see why)
+3. The reasoning is tested for fidelity — not just recorded (pattern-matching cannot impersonate genuine reasoning undetected)
+4. Operator intent is anchored and persistent across sessions (the system knows what it is for)
+5. Convergence is earned by independent agreement, not declared by the system itself
+
+This is **earned delegation**: authority granted because trust was built, not assumed.
+
+### What it is not
+
+- It is not automation. A cron job acts in your name without your knowledge. AI Steward acts in your name with structural consent — every decision is observable and challengeable.
+- It is not recursive self-improvement as a risk. It is recursive self-improvement made governable: bounded by scope, anchored to vision, tested for reasoning fidelity, and stopped when convergence is genuinely earned.
+- It is not another multi-agent framework. Model-family diversity here is a *reasoning integrity mechanism*, not a performance optimization. The model that proposes a change and the model that judges whether it is Pareto-dominant come from different families — structural independence, not just architectural variety.
+
+### The three layers
+
+**Execution layer** (evolved from Evo)
+Closed-loop pipeline: analyze → propose → implement → verify → diagnose → decide → release → evolve. Hash-chained proof ledger. Fitness gating. Multi-model phase assignment. Rollback built in.
+
+**Reasoning layer** (from the Skills suite)
+The memory model that makes the execution layer governable:
+- Vision: persistent operator intent across sessions
+- Trail: reasoning recorded as it happens, not summarized after
+- Improve: meta-cognitive loop with silence as a valid outcome
+- Retrospect: arc-level reading — is the loop looking at the right thing?
+- Probe: ARF testing — is the reasoning genuine or pattern-matched?
+
+**Structural integrity layer** (from harness-protocol)
+The proxy intercepts the raw model stream before the agent sees it. Captures thinking tokens — the actual computation as it streamed. Independent of the agent's self-report.
+
+### The moat
+
+Anyone can build an execution pipeline. AI is here; Evo-style engines will be common within months.
+
+The moat is the reasoning layer — specifically the clarity about *what it does*:
+
+- It is not "add memory to an agent"
+- It is the difference between *action integrity* (what was done is logged) and *reasoning integrity* (why it was done, and whether the reasoning was genuine)
+- It uses model-family independence as a structural guarantee of reasoning fidelity
+- It has a stopping criterion: convergence is earned when independent evaluators agree, not when the system runs out of ideas
+
+That framing is not obvious. Most people building in this space cannot see it clearly. That is the advantage.
+
+### End state
+
+AI Steward running overnight, finding a real improvement in its own codebase, implementing it, verifying it, and releasing it — in the operator's name — while the operator sleeps.
+
+When the operator wakes up, they read the trail, see the reasoning, and trust it.
+
+That is the demonstration artifact. Everything else is in service of that moment.
+
+### Principles
+
+The three principles from the manifesto hold unchanged:
+
+1. **Commander's Intent** — what + why, never how
+2. **Observable Autonomy** — autonomy without evidence is abdication
+3. **Convergence Is Silence** — the system stops when convergence is genuinely earned
+
+Full statement: [Principles of Earned Autonomy](https://github.com/ntholm86/principles-of-earned-autonomy)
