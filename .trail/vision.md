@@ -65,6 +65,20 @@ When the operator wakes up, they read the trail, see the reasoning, and trust it
 
 That is the demonstration artifact. Everything else is in service of that moment.
 
+### Target model
+
+AI Steward can target **any repository** — including its own.
+
+This is not an edge case. It is the point. A system that can improve any codebase but cannot improve itself is a tool. A system that can improve itself, with the same reasoning layer and audit trail it applies to everything else, is an agent that earns delegation.
+
+The self-targeting case is the hardest and the most important:
+- The scope enforcement that prevents the engine from modifying what it shouldn't must apply to itself
+- The proof trail for self-modifications must be indistinguishable in structure from trails for external targets
+- The Probe layer must be able to test whether self-improvement reasoning is genuine — not just whether self-improvement happened
+- The hash-chained ledger means self-modifications cannot be silently undone or rewritten
+
+Self-targeting is not a special mode. It is the same pipeline pointed at a different directory.
+
 ### Principles
 
 The three principles from the manifesto hold unchanged:
