@@ -47,8 +47,25 @@ The memory model that makes the execution layer governable:
 - Retrospect: arc-level reading — is the loop looking at the right thing?
 - Probe: ARF testing — is the reasoning genuine or pattern-matched?
 
-**Structural integrity layer** (from harness-protocol)
-The proxy intercepts the raw model stream before the agent sees it. Captures thinking tokens — the actual computation as it streamed. Independent of the agent's self-report.
+**Structural integrity layer** (harness-protocol — standalone, not built into ai-steward)
+
+The proxy intercepts ALL API calls ai-steward makes — to any model, any family, any key — and writes them AS-IS before the model's response is processed. This is structural evidence, not an agent self-report.
+
+The harness-protocol is a separate application by necessity. If it were internal to ai-steward, ai-steward could modify its own evidence capture — especially dangerous given that ai-steward targets itself. Structural independence of the capture mechanism from the thing being captured is the integrity guarantee. It cannot be negotiated away.
+
+**The harness must support all model families.** Different providers have different response protocols — Anthropic extended thinking blocks, OpenAI reasoning tokens, Gemini thinking mode, and models that expose nothing at all. The harness normalizes these into a common schema and captures whatever the model exposes.
+
+**The harness surfaces model transparency.** For every API call, it evaluates what the model actually provided:
+- Thinking tokens / reasoning trace present?
+- Tool usage recorded?
+- Decision rationale structured?
+- Response matches the reasoning exposed?
+
+Models that do not provide a proper reasoning trail are flagged. This makes the harness a **model trustworthiness classifier** — not just a recorder. The reasoning layer uses this signal to calibrate how much weight to give each model's output in each pipeline phase. A model with a low transparency score should only be used where its output is independently verified by a higher-transparency model.
+
+**The dual-use of the trail:** The proxy-captured JSONL is evidence (ground truth, independently captured, tamper-evident by the agent). The `audit-trail.md` is memory (the agent's interpretation of events). They serve different trust levels. If they diverge, the proxy wins. The reasoning layer reads both but treats them differently.
+
+**Scope enforcement:** The harness-protocol repo is outside ai-steward's autonomous improvement scope by default. Changes to it require explicit operator action — they do not go through the autonomous loop.
 
 ### The moat
 
