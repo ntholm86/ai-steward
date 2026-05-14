@@ -30,8 +30,14 @@ This is **earned delegation**: authority granted because trust was built, not as
 
 ### The three layers
 
-**Execution layer** (evolved from Evo)
-Closed-loop pipeline: analyze → propose → implement → verify → diagnose → decide → release → evolve. Hash-chained proof ledger. Fitness gating. Multi-model phase assignment. Rollback built in.
+**Execution layer** (new — informed by Evo, not derived from it)
+Closed-loop pipeline. The execution layer is deliberately dumb: it executes, verifies, and logs. It does not reason. Reasoning is the job of the reasoning layer, not the pipeline.
+
+What to take from Evo: hash-chained proof ledger, rollback mechanism, multi-language profiles, sandbox execution model, proposal queues.
+
+What to leave behind: Evo's inline reasoning — the LLM scattered through ANALYZE, PROPOSE, the lessons journal, the fitness gate as a reasoning shortcut, the Kaizen auditor embedded in the pipeline. In Evo, reasoning and execution are tangled. In ai-steward they are architecturally separate.
+
+Gates also change: Evo's Pareto gate is mechanical ("any metric regression → reject"). In ai-steward, gates are reasoning decisions made by the reasoning layer — with context, nuance, and a trail. The execution layer presents the evidence; the reasoning layer decides.
 
 **Reasoning layer** (from the Skills suite)
 The memory model that makes the execution layer governable:
@@ -59,11 +65,9 @@ That framing is not obvious. Most people building in this space cannot see it cl
 
 ### End state
 
-AI Steward running overnight, finding a real improvement in its own codebase, implementing it, verifying it, and releasing it — in the operator's name — while the operator sleeps.
+AI Steward runs without the operator at the computer. It finds real improvements, implements them, verifies them, releases them — in the operator's name. Not as a one-time demonstration. Continuously, as normal operation.
 
-When the operator wakes up, they read the trail, see the reasoning, and trust it.
-
-That is the demonstration artifact. Everything else is in service of that moment.
+"While you sleep" is a figure of speech for earned unsupervised operation — not a specific milestone event. The destination is the system itself, running trustworthily. Trust is built run by run through the trail, not declared at a launch moment.
 
 ### Target model
 
@@ -78,6 +82,10 @@ The self-targeting case is the hardest and the most important:
 - The hash-chained ledger means self-modifications cannot be silently undone or rewritten
 
 Self-targeting is not a special mode. It is the same pipeline pointed at a different directory.
+
+### Visibility
+
+Private until MVP. The trail and vision are also documentation — when published, they are part of the public argument, not just internal records.
 
 ### Principles
 
