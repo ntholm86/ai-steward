@@ -1,0 +1,80 @@
+"""Configuration schema for ai-steward.
+
+Every design decision lives here in code:
+- Which model family handles which pipeline phase (model-family independence principle)
+- Harness-protocol integration contract (all LLM calls route through the proxy)
+- Scope enforcement (allowed/blocked file globs)
+- Safety budget (iteration cap and cost cap)
+"""
+
+from pathlib import Path
+from pydantic import BaseModel, field_validator
+
+
+class HarnessConfig(BaseModel):
+    """Connection config for harness-protocol proxy (port 8474 by default)."""
+
+    endpoint: str = "http://localhost:8474"
+
+    @field_validator("endpoint")
+    @classmethod
+    def no_trailing_slash(cls, v: str) -> str:
+        return v.rstrip("/")
+
+
+class ModelAssignment(BaseModel):
+    """Which model/provider handles which pipeline phase.
+
+    Specify as provider-native model identifiers — harness-protocol routes them to the
+    correct backend based on the endpoint path chosen by the execution layer.
+
+    Model-family independence principle: PROPOSE and VERIFY must use different model
+    families so that VERIFY is not simply re-running the same priors as PROPOSE.
+    JUDGE should use a third family.  The config validates this invariant.
+
+    Example:
+        analyze: "claude-haiku-4-5"      # fast, cheap analysis
+        propose: "claude-opus-4-5"        # high-quality proposal
+        implement: "claude-sonnet-4-5"    # balanced implementation
+        verify: "gpt-4o"                  # adversarial — different family from propose
+        judge: "gemini-2.5-pro"           # third-family gate
+    """
+
+    analyze: str
+    propose: str
+    implement: str
+    verify: str
+    judge: str
+
+
+class ScopeConfig(BaseModel):
+    """Controls which files the execution layer may read and write."""
+
+    allowed: list[str] = []  # glob patterns; empty means all files
+    blocked: list[str] = []  # glob patterns; always applied after allowed
+
+
+class AiStewardConfig(BaseModel):
+    """Top-level configuration loaded from .ai-steward.yaml in the target repo."""
+
+    repo: Path
+    harness: HarnessConfig = HarnessConfig()
+    models: ModelAssignment
+    scope: ScopeConfig = ScopeConfig()
+    max_iterations: int = 10
+    budget_usd: float = 5.0
+    sandbox: str = "docker"  # "docker" | "local"
+
+    @field_validator("repo")
+    @classmethod
+    def repo_must_exist(cls, v: Path) -> Path:
+        if not v.exists():
+            raise ValueError(f"repo path does not exist: {v}")
+        return v.resolve()
+
+    @field_validator("sandbox")
+    @classmethod
+    def valid_sandbox(cls, v: str) -> str:
+        if v not in ("docker", "local"):
+            raise ValueError(f"sandbox must be 'docker' or 'local', got: {v!r}")
+        return v

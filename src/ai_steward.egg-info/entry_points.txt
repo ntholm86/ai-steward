@@ -1,0 +1,2 @@
+[console_scripts]
+ai-steward = ai_steward.cli:main

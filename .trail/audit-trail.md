@@ -192,3 +192,46 @@ The founding session produced coherent, internally consistent architecture decis
 - Committed to this audit trail
 
 **Next:** First design sprint — read Evo's ARCHITECTURE.md, decide execution layer runtime and entry point, define ANALYZE phase inputs/outputs.
+
+---
+
+## 2026-05-15 — Evo architecture analysis; runtime decision; first scaffold
+
+**Skill:** Improve
+**Trigger:** First code sprint per retrospect candidate next moves (ranked #1: read Evo ARCHITECTURE.md and make take/leave/redesign decision).
+
+**Prediction:** Creating `pyproject.toml` + `src/ai_steward/config.py` with the pydantic config schema will make the multi-model-family principle concrete in code, establish the project as Python-based, and produce the first testable artifact. It will not accidentally inline LLM routing logic into the execution layer.
+
+### Evo take/leave/redesign decision
+
+| Component | Decision | Reason |
+|---|---|---|
+| Proof ledger (`proof.py`) | Leave — use harness-protocol | harness has a better implementation (JCS, SHA-256, multi-provider); duplicating it would create diverging schemas |
+| Git operations (`git.py`) | Take (adapt) | Branch/merge/tag/diff logic is the same need |
+| Sandbox isolation | Take | Same safety requirement — Docker + local modes |
+| Scope enforcement (`allowed_scopes`/`blocked_scopes`) | Take | Same need; same concept |
+| Risk classifier (`risk.py`) | Take | Same diff-scanning need |
+| Language profile detection (`lang.py`) | Take | Same DETECT phase need |
+| Inline LLM calls throughout pipeline phases | Leave | Evo's architectural mistake; ai-steward separates execution from reasoning |
+| Lessons journal (`lessons.py`) | Leave | Replaced by Skills suite (Trail, Retrospect) |
+| DIAGNOSE retry loop | Leave | Retry decisions belong to reasoning layer |
+| EVOLVE phase | Leave | Replaced by trail recording |
+| Pareto gate as hard rule | Redesign — soft evidence | Gates are reasoning decisions (founding realization); mechanical rules removed |
+| ANALYZE/PROPOSE/DECIDE phases | Redesign | Concept sound; LLM calls separated out to reasoning layer |
+| Gene library (`genomes.py`) | Leave | Not in ai-steward's design |
+
+**[!DECISION]** Runtime: Python.
+Rationale: LLM client libraries richest in Python. Evo is Python — components can be directly adapted. harness integration is HTTP (proxy endpoint), language-independent. Self-targeting (ai-steward improving itself) also requires Python for parity.
+Alternatives: Rust (rejected — harness is Rust but the two don't share a process; the harness integration is HTTP regardless of language); Go (rejected — no existing components, LLM library ecosystem thinner).
+
+**[!DECISION]** First scaffold: `pyproject.toml`, `src/ai_steward/__init__.py`, `src/ai_steward/config.py`.
+Rationale: The config schema is the single most valuable first artifact — it encodes the multi-model-family independence principle in code (each phase has a declared model assignment), defines the harness integration contract, and is immediately testable with pydantic. Everything else depends on knowing what the config looks like.
+
+**Actions:**
+- Created `pyproject.toml`, `src/ai_steward/__init__.py`, `src/ai_steward/config.py`
+- Committed as first code commit
+
+**Next ranked candidates:**
+1. Define the ANALYZE phase: `src/ai_steward/pipeline/analyze.py` — inputs (repo path, scope config), outputs (baseline metrics + weakness list as structured data, no LLM call)
+2. Define the execution layer's `pipeline/loop.py` — orchestrates phases, passes evidence to reasoning layer at gates
+3. Harness integration module — wraps HTTP calls through the proxy endpoint
