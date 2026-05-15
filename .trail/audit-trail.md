@@ -163,3 +163,32 @@ AI Steward is a genuinely new system, not an Evo fork. The execution layer is ne
 
 - Which specific parts of Evo's execution layer are worth taking (ledger schema, rollback design, profile system) versus which to redesign. This requires reading Evo's architecture documentation before the first architectural decision is made.
 - The multi-model phase assignment design — mentioned in the vision but not yet specified.
+
+---
+
+## 2026-05-15 — First retrospect run; launch orientation before first code sprint
+
+**Skill:** Retrospect v1.8.0
+**Trigger:** Operator stated "the harness protocol and ai-steward" as the active scope, with "continue, trail everything, improve skill." Harness-protocol was addressed first (extraction unit tests, commit `9e423ea`). ai-steward has no code; retrospect was the correct next move — establish orientation before work begins.
+
+**Scope statement:** Read the full founding arc and write `retrospect.md` — establishing current orientation before the first code sprint begins. The arc is short (one session, 2026-05-14) so this is a launch orientation, not a pattern-of-iterations read.
+
+**Freshness guard:** No `tools/record.py` exists. No derived artifacts (`history.md`, `learning.md`) to regenerate. Audit-trail.md is the sole trail document. Guard passes trivially.
+
+**Arc-read summary:**
+
+The founding session produced coherent, internally consistent architecture decisions. Key claims written to `retrospect.md`:
+
+1. The first execution decision (runtime, entry point, pipeline structure) has not been made. Vision says "informed by Evo" but Evo's ARCHITECTURE.md has not been read in this arc.
+2. The Vision skill run produced two reversals and one realization — all three structurally important and consistently held.
+3. The trail is a single session — no arc pattern yet, only a launch orientation.
+4. The harness-protocol precondition is now satisfied (2026-05-15: extraction layer has unit tests across all six capture paths).
+5. Model-family independence principle defined but phase assignment unresolved — the most concrete open design decision.
+
+**[!REALIZATION]** The risk going into the first code sprint is the mirror of harness-protocol's early loop problem. harness iterated on visible features while the core claim was untested. ai-steward's risk is deferring phase assignment and model family decisions until the pipeline "feels ready" — meaning those decisions get made by the code rather than before it. The operational rules in `retrospect.md` are designed to prevent this.
+
+**Actions:**
+- Created `c:\git\ai-steward\.trail\retrospect.md` (first retrospect for this repo)
+- Committed to this audit trail
+
+**Next:** First design sprint — read Evo's ARCHITECTURE.md, decide execution layer runtime and entry point, define ANALYZE phase inputs/outputs.
