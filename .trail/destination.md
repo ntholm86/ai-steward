@@ -1,4 +1,4 @@
-# Vision — AI Steward
+# Destination — AI Steward
 
 *Operator-held destination. Append or layer new insights; never destructively overwrite.*
 
