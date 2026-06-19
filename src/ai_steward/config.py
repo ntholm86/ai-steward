@@ -28,11 +28,20 @@ class ModelAssignment(BaseModel):
     Specify as provider-native model identifiers — harness-protocol routes them to the
     correct backend based on the endpoint path chosen by the execution layer.
 
-    Model-family independence principle: PROPOSE and VERIFY must use different model
-    families so that VERIFY is not simply re-running the same priors as PROPOSE.
-    JUDGE should use a third family.  The config validates this invariant.
+    V1 (single-model): assign the same model to all phases. This is valid and expected.
+    The token-efficiency constraint (destination 2026-06-19) means V1 uses only tier 0/1
+    reasoning; a single cheap model (e.g. claude-haiku-4-5) across all phases is correct.
 
-    Example:
+        analyze: "claude-haiku-4-5"
+        propose: "claude-haiku-4-5"
+        implement: "claude-haiku-4-5"
+        verify: "claude-haiku-4-5"
+        judge: "claude-haiku-4-5"
+
+    V2 (model-family independence): PROPOSE and VERIFY use different families so the
+    judge cannot share the proposer's blind spots. JUDGE should use a third family.
+    No validator enforces this in V1; that constraint is V2 work.
+
         analyze: "claude-haiku-4-5"      # fast, cheap analysis
         propose: "claude-opus-4-5"        # high-quality proposal
         implement: "claude-sonnet-4-5"    # balanced implementation

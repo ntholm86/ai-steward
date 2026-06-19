@@ -1,59 +1,71 @@
 # retrospect.md — ai-steward
 
-_Last updated: 2026-05-15 (run: founding-arc-first-retrospect)_
+_Last updated: 2026-06-19 (run: post-destination-refinement-orientation)_
 
 ---
 
 ## Current claims
 
-**1. The founding decisions are complete and coherent, but the first execution decision has not been made.**
-The arc covers naming, architecture, harness relationship, and vision clarification — all conceptual work from a single session (2026-05-14). No decision has been made about the execution layer's runtime (Python? Rust? Go?), entry point, or pipeline structure. Vision says "informed by Evo, not derived from it" — but Evo's execution layer documentation has not been read in this arc. The first code decision is suspended on a read that hasn't happened. A future run can falsify this by showing a trail entry where Evo's ARCHITECTURE.md was read and the execution layer design was decided.
+**1. The project has been dormant for 35 days; the destination just leapt forward.**
+Last substantive code work: 2026-05-15 (first scaffold). Last entry: 2026-05-28 (mechanical filename migration). The destination received major updates today — token efficiency as architectural constraint, V1 defined as lightweight autonomous loop stopping before release. The trail has not kept pace with the destination's evolution.
 
-**2. The Vision skill run produced two reversals and one realization — all three are structurally important.**
-The reversals corrected concrete wrong readings of the vision: "while you sleep" is continuous trusted operation, not a demo event; Evo is a reference, not a dependency. The realization — "the execution layer is deliberately dumb; gates are reasoning decisions, not mechanical rules" — is the single most important architectural constraint and has been held consistently across all subsequent entries. These are the three ideas to anchor the first design sprint against.
+**2. The founding decisions are structurally aligned with the new token-efficiency constraint.**
+The harness as tokenless structural capture, the "dumb execution layer" realization, the separation of execution from reasoning — these were articulated in May before token cost was named as a first-class constraint, but they support it directly. The founding vision's architecture *enables* the token-efficiency discipline; the June refinement *requires* it.
 
-**3. The trail is a single founding session. There is no arc yet — there is a launch orientation.**
-Every entry is dated 2026-05-14. No iteration, no Improve run, no code-level decision. A retrospect at this point cannot identify patterns in the loop's attention because there has been only one pass. The value of this run is: establish the current orientation before work begins, so future retrospects have a baseline to arc-read against.
+**3. The existing code (config.py) encodes the full vision, not V1.**
+`config.py` defines five-phase model assignment with model-family independence validation. V1 explicitly says: "Single-model operation (no model-family independence yet)." This is a concrete gap. Either the config needs simplification for V1 (a `ModelConfig` with one model, not `ModelAssignment` with five), or V1 inherits complexity it said it would defer. A future run can falsify this by showing the config was simplified or by showing V1's "single-model" claim was revised.
 
-**4. The harness-protocol precondition is now satisfied.**
-Vision designates harness-protocol as the structural integrity layer. As of 2026-05-15 (harness-protocol session), the extraction layer has unit test coverage across all six provider/execution-path combinations. The claim "if proxy and audit-trail diverge, the proxy wins" now rests on tested code. ai-steward can begin designing against harness-protocol as a reliable dependency.
+**4. The May retrospect's "next work" candidates are still open.**
+- ANALYZE phase definition: not built
+- Model-family phase assignment: config exists but no pipeline to use it
+- Harness integration module: not built
+These were ranked candidates 35 days ago. None advanced.
 
-**5. The model-family independence principle is architecturally sound but has no phase assignment.**
-Vision defines the principle clearly (proposer and judge from different families, so the judge cannot share the proposer's blind spots). But the trail has no entry assigning model families to pipeline phases. Which family handles ANALYZE? PROPOSE? VERIFY? JUDGE? This is the most concrete open design decision in the vision — it affects cost, latency, and the integrity guarantee's practical strength.
+**5. A tension now exists between the founding vision and V1 scope.**
+The founding vision describes: full model-family independence, multi-tier reasoning (tiers 2-3), complete Skills suite integration (Improve, Retrospect, Probe), convergence-based stopping. V1 explicitly defers all of these. The founding realizations (especially model-family independence as reasoning integrity mechanism) may pull toward complexity that V1 intentionally avoids.
+
+**Resolution:** V1 is a corrective commitment, not a regression. The founding vision is the destination; V1 is the first step toward it. The config.py gap is the signal: either simplify the config to match V1, or accept that V1 carries some V2 scaffolding that isn't load-bearing yet.
+
+**6. The harness precondition is still satisfied, but integration is unbuilt.**
+Harness-protocol exists at `C:\git\harness-protocol` with tested extraction. The first scaffold references it in `HarnessConfig`. No code actually calls it yet.
 
 ---
 
 ## What the next runs should test
 
-**1. Read Evo's ARCHITECTURE.md and make the take/leave/redesign decision.**
-This is the stated precondition for the first execution layer commit. Read `c:\git\evo\ARCHITECTURE.md`. For each major Evo component: take (as-is or adapted), leave (structurally wrong for ai-steward), or redesign (concept sound, implementation wrong). Record the decision in audit-trail.md before writing a line of code.
+**1. Resolve the config.py / V1 mismatch.**
+Either simplify `config.py` to match V1's "single-model, tier 0/1 only" scope, or explicitly document that the config carries forward structure for V2 while V1 uses a subset. The current state is ambiguous.
 
-**2. Decide the execution layer's runtime and entry point.**
-One decision per run. Likely candidates: Python (matches evo, rich LLM/RAG library ecosystem), Rust (performance, type safety — the operator is clearly comfortable with it), Go (JD nice-to-have, Corti stack). The decision should be traceable to the constraints in vision (multi-provider, self-targeting, structured pipeline).
+**2. Build the minimal V1 loop.**
+Per today's destination: analyze → propose → implement → verify → record. Single model. Tier 0 (structural) and tier 1 (cheap model) reasoning only. Manual trigger. Stops with proposal ready for human review. This is the concrete deliverable.
 
-**3. Define the first pipeline phase.**
-Vision specifies: analyze → propose → implement → verify → decide → release → record. Define ANALYZE in full: what inputs it takes, what it produces, what counts as correct output. This is the smallest possible slice that makes the rest of the pipeline testable.
+**3. Connect to harness-protocol.**
+The execution layer must route all LLM calls through `http://localhost:8474`. The harness captures evidence; the agent processes responses. This integration is the structural Observable Autonomy guarantee — V1 does not earn trust without it.
 
-**4. Assign model families to pipeline phases.**
-At minimum: decide which family handles PROPOSE (the high-creativity phase) and which handles VERIFY/JUDGE (the adversarial phase). This is the integrity mechanism; designing it as an afterthought risks building the whole pipeline around a single family.
+**4. Define what "tier 0" and "tier 1" mean in code.**
+The destination describes the tiers conceptually. What are the actual gates? "Tests pass" is tier 0. "Diff looks reasonable" is tier 1. Where exactly is the boundary? This needs to be concrete before the loop is built.
 
 ---
 
 ## Active operational rules
 
-- **Read Evo's ARCHITECTURE.md before the first execution layer commit.** Not after. The reversal "Evo is a reference, not a dependency" is only meaningful if the reference has actually been read. Designing from memory of Evo's README is not the same as reading the architecture.
-- **Execution layer must remain architecturally separate from the reasoning layer.** Do not mix inline LLM calls into pipeline logic. The execution layer executes, verifies, and logs. Reasoning calls go through the reasoning layer. This is the founding realization — violating it recreates Evo's architectural mistake.
-- **harness-protocol is outside ai-steward's autonomous improvement scope.** Changes to it require explicit operator action. This is a structural guarantee, not a gate — structural exclusion cannot be autonomously overridden.
-- **Write evidence before accepting model output.** The fail-closed design from harness applies here: ai-steward should never consume a model response without the harness having recorded it. If the ledger write fails, the response is withheld. Build the pipeline with this constraint from the first phase.
-- **Never scope milestones to single demonstration events.** The destination is continuous trusted operation, not a demo run. Milestones should be states of the system, not events.
-- **Record every design decision in audit-trail.md before writing code.** The trail is also documentation — when the repo goes public at MVP, the trail is part of the public argument. Decisions made in code with no trail entry are invisible to that argument.
+*Carried forward from May, updated where the destination changed:*
+
+- **V1 first.** Do not build multi-model-family infrastructure until the single-model loop works end-to-end. The founding realizations are valid; the ordering is corrected.
+- **Execution layer must remain separate from reasoning layer.** Do not mix inline LLM calls into pipeline logic. This founding realization holds.
+- **harness-protocol is outside ai-steward's autonomous scope.** Changes require explicit operator action. Structural exclusion, not a gate.
+- **Write evidence before accepting model output.** Fail-closed: if the ledger write fails, the response is withheld. This is the Observable Autonomy guarantee.
+- **Token cost is a design constraint, not an optimization.** Every LLM call must justify its tier. Most cycles should never reach tier 2/3.
+- **V1 stops before release.** The operator reviews and decides. Push/release autonomy is earned by demonstrating the pre-release loop produces consistently acceptable proposals.
 
 ---
 
 ## Loop-effectiveness notes
 
-The arc is too short to assess loop effectiveness in the usual sense — one session, no code, no Improve iterations. What can be said:
+**Bar this retrospect tested:** Internal consistency between the destination and the trail. Does the arc support the new direction?
 
-The Vision skill run was effective. It produced falsifiable reversals rather than affirmation. The founding decisions are internally consistent and cleanly separate the three layers. The dual-trust-level trail design (proxy-captured JSONL vs. `audit-trail.md`) is architecturally sound and has been consistently held.
+**Finding:** The founding decisions support the token-efficiency constraint, but the first code artifact (config.py) was written against the full vision, not V1. The trail has not kept pace with destination evolution.
 
-The risk going into the first code sprint is the opposite of what harness-protocol's early loop suffered (iterating on visible features while the core claim was untested). ai-steward's risk is: deferring the first phase assignment and model family decision until the pipeline feels "ready" — which means those decisions get made by the code rather than before it.
+**Bars not tested:** Whether V1's scope is actually achievable with tier 0/1 reasoning only (that requires building it). Whether the harness integration works in practice. Whether the token-budget numbers from Evo's history are transferable.
+
+**The deepest uncertainty:** Can the autonomous loop produce acceptable proposals without tier 2/3 reasoning? The destination asserts this is possible but offers no evidence. V1 is the test. If it fails — if tier 1 reasoning cannot produce proposals worth reviewing — then the token-efficiency constraint conflicts with the earned-delegation destination, and something has to give.

@@ -82,3 +82,86 @@ Private until MVP. The trail and vision are also documentation — when publishe
 
 Full statement: [Principles of Earned Autonomy](https://github.com/ntholm86/principles-of-earned-autonomy)
 
+---
+
+## 2026-06-19 — Token efficiency as architectural constraint
+
+### The constraint
+
+AI Steward must be economically viable at continuous operation. Token cost compounds; a system that burns expensive reasoning on every decision becomes unaffordable regardless of capability. **Token efficiency is not an optimization — it is a design constraint that shapes architecture.**
+
+The harness-protocol is the exemplar: it delivers Observable Autonomy (Principle 2) without consuming any tokens. It's a standalone Rust program that intercepts, logs, and chains evidence at the network layer. The agent never calls an LLM to capture the trail — the trail captures itself structurally.
+
+This is the pattern: **push as much as possible from cognitive (token-consuming) operations into structural (tokenless) mechanisms.**
+
+### Evaluation by layer
+
+**Structural integrity layer (harness-protocol)** — Already tokenless. Evidence capture, hash chaining, tamper detection, provider normalization — all happen without LLM calls. This is the gold standard. Cost: zero tokens.
+
+**Execution layer** — Mostly structural. Sandbox execution, test running, diff generation, rollback mechanics, file operations — none of these require reasoning. They require code. The execution layer should be primarily deterministic Python/Rust, calling LLMs only for the specific moments that require language understanding (e.g., "does this diff match the stated intent?"). Cost: minimal tokens, bounded per phase.
+
+**Reasoning layer** — This is where tokens live, and where discipline matters most. Not every decision needs a reasoning model. The hierarchy:
+
+1. **Structural gates (zero tokens):** File exists? Tests pass? Diff size within bounds? Hash chain intact? These are code, not cognition.
+2. **Pattern-matched decisions (cheap tokens):** Routine approvals, standard rejections, format compliance. Small models, short prompts, cached responses where valid.
+3. **Situated reasoning (expensive tokens):** Novel situations, ambiguous evidence, cross-cutting trade-offs, convergence judgment. This is where frontier models earn their cost — but only here.
+
+The discipline: **escalate up this hierarchy only when the lower tier cannot decide.** Most pipeline cycles should never reach tier 3.
+
+### Model-tier strategy
+
+Not all reasoning requires the same model. The cost difference between tiers is 10-100x.
+
+| Tier | Use case | Model class | Cost |
+|------|----------|-------------|------|
+| 0 | Structural checks | None (code) | Zero |
+| 1 | Routine classification | Small/fast (Haiku, GPT-4o-mini) | Low |
+| 2 | Standard reasoning | Mid-tier (Sonnet, GPT-4o) | Medium |
+| 3 | Judgment under ambiguity | Frontier (Opus, o3) | High |
+
+Model-family independence (the reasoning integrity requirement) applies at tier 2 and above. At tier 1, the cost of multi-family verification may exceed the value; the harness captures everything regardless, so the evidence exists for later audit if needed.
+
+### What this means for PEA conformance
+
+AI Steward is a case study. It must demonstrate that earned delegation is viable, not just theoretically sound. If the principles only work with unlimited token budget, they're not a governance discipline — they're a luxury.
+
+The claim to validate: **structural mechanisms can replace cognitive work for most of Observable Autonomy, and the remaining cognitive work can be tiered so that expensive reasoning is rare, not routine.**
+
+The Skills Suite demonstrated the principles at the behavioral layer (instructions that direct reasoning). The harness-protocol demonstrated them at the structural layer (capture that doesn't depend on the agent's compliance). AI Steward must demonstrate them at the **operational layer** — a system that runs continuously, earns trust over time, and remains economically sustainable.
+
+### V1 scope: lightweight
+
+Version 1 must be minimal. Not the full three-layer architecture — the smallest thing that demonstrates the concept works and provides real value.
+
+**V1 definition:** A complete autonomous loop that stops before release. The system can analyze → propose → implement → verify → record without human intervention. It does not push or release — the operator reviews and decides whether to accept. This is full autonomy over the improvement cycle, with a human gate before the world changes.
+
+**What v1 includes:**
+- Harness-protocol (`C:\git\harness-protocol`, already built, tokenless)
+- A single execution loop: analyze → propose → implement → verify → record
+- Tier 0 and tier 1 reasoning only — structural gates and cheap models
+- Single-model operation (no model-family independence yet)
+- One target repo at a time
+- Manual operator trigger to start, autonomous until the loop completes
+- Stops with a proposal ready for human review — does not push or release
+
+**What v1 defers:**
+- Push and release (human reviews before anything goes out)
+- Tier 2/3 reasoning (frontier models, situated judgment)
+- Model-family independence for reasoning integrity
+- Full Skills suite integration (Improve, Retrospect, Probe)
+- Self-targeting
+- Convergence-based stopping (use fixed iteration limits instead)
+- Continuous unattended operation (multiple cycles without operator)
+
+**Why this ordering:**
+The harness proves Observable Autonomy can be structural. V1 proves the execution loop works end-to-end and that tier 0/1 reasoning is sufficient for routine improvements. The human gate before release is both a safety mechanism and a learning opportunity — every review teaches us where the loop's judgment is good enough and where it isn't.
+
+Only after that foundation exists do we add the expensive reasoning machinery — and we add it incrementally, measuring cost/value as we go. Push/release autonomy is earned by demonstrating that the pre-release loop produces consistently acceptable proposals.
+
+### Open questions
+
+- Where exactly is the tier-escalation boundary? What evidence triggers escalation from tier 1 to tier 2?
+- Can convergence checking (Principle 3) be partially structural? E.g., "three consecutive runs with identical output" is a structural signal; "three evaluators found nothing to change" requires cognition.
+- What's the token budget per pipeline cycle that keeps continuous operation viable? This needs real numbers from Evo's operational history.
+- How do we measure "reasoning quality per token" to know if we're trading off correctly?
+
