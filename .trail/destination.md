@@ -875,3 +875,91 @@ The only structural requirements:
 - RECORD always runs. The harness always captures. Observable Autonomy applies to every domain.
 - The operator always reviews the staged diff. Trust is earned one accepted proposal at a time.
 - The harness (llm-harness-proxy) is still outside the agent. The guarantee is structural.
+
+---
+
+## 2026-06-20 — V2 architecture: full memory model pipeline
+
+### The core problem with V1 SCAN
+
+V1 pipeline: PRE-FLIGHT → SCAN → IMPLEMENT → VERIFY → RECORD.
+
+SCAN reads destination.md as a hint and then scans files for "something worth improving."
+This produces noise when the destination is thin. A poor destination equals wasted cycles.
+The pipeline was blind to its own work queue.
+
+**"ai-steward should never work towards blindness."**
+
+### The memory model must be in the pipeline, not outside it
+
+The destination skill, retrospect, and the improve skill are currently human-invoked tools
+that feed the pipeline. In V2, they ARE phases of the pipeline. The pipeline embodies the
+full memory model: Destination → Retrospect → SCAN (guided) → IMPLEMENT → VERIFY → RECORD.
+
+### Destination gate (Phase 0 — before any code is touched)
+
+Three cases:
+1. **No destination / thin destination** — the pipeline pauses. It reads raw context from
+   `.trail/` (docs, notes, specs, anything the operator dropped there), synthesizes inferences,
+   and asks the operator the minimum questions needed to produce a quality destination.md.
+   Only when destination.md is accurate does the pipeline proceed.
+
+2. **Stale destination** — detected when operator-added raw docs predate the last
+   destination update, or when the operator signals drift. Pipeline re-runs destination
+   derivation for the changed sections.
+
+3. **Quality destination** — proceed.
+
+The primary onboarding path: **operator drops raw context into `.trail/` → ai-steward
+derives destination.md → asks clarifying questions → destination confirmed → work begins.**
+This replaces "manually write destination.md before running."
+
+The pipeline must never start a SCAN cycle without a quality destination.
+The `ai-steward init` command is the stub of this; the full version derives from
+whatever context is available.
+
+### Retrospect gate (Phase 1 — work queue management)
+
+Retrospect produces the **prioritized work queue** — the ranked list of next-highest-leverage
+items. SCAN is guided by this queue, not by free-ranging file inspection.
+
+The work queue is a **persistent, lazy cache**. Retrospect runs only when the cache is invalid:
+
+- **Cold start** — no prior retrospect has run (`.trail/retrospect.md` absent or empty)
+- **Queue exhausted** — all items from the last retrospect have been completed
+- **Destination changed** — the operator updated destination.md, invalidating the prior queue
+
+Between these events, the pipeline consumes queue items one by one without re-running
+retrospect. Retrospect is expensive (full arc-read); it must not run redundantly.
+
+When retrospect re-runs and produces an empty queue: **Convergence Is Silence** is declared.
+The loop stops. The operator is informed. This is a success state, not a failure.
+
+### The full state machine
+
+```
+Destination gate
+    ├─ thin/missing → derive from raw docs + questions → loop back
+    └─ quality ✓
+         ↓
+Retrospect gate
+    ├─ stale/empty/changed → run retrospect → work queue
+    │       └─ queue empty → SILENCE (convergence declared, loop stops)
+    └─ valid queue ✓
+         ↓
+SCAN (guided by work queue top item)
+    └─ IMPLEMENT → VERIFY → RECORD → mark item done
+         ↓
+    Work queue empty? → back to Retrospect gate
+    Destination changed? → back to Destination gate
+    Otherwise → next queue item
+```
+
+### What does NOT change
+
+- The harness captures every LLM call. Observable Autonomy applies to Destination and
+  Retrospect phases too — their reasoning is captured, not just SCAN/IMPLEMENT.
+- The operator always reviews staged diffs. Trust is earned one accepted proposal at a time.
+- RECORD always runs when a proposal is staged.
+- The target is still unbounded — anything the LLM can read.
+- The trail anchor is always the git root.
