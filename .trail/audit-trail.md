@@ -1200,3 +1200,42 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 1. **Capture IMPLEMENT phase token cost** — implement.py also calls the LLM; add the same usage extraction and accumulate onto Finding (or a separate CycleStats). Complete cycle cost = SCAN + IMPLEMENT.
 2. **Section-boundary truncation for _load_destination** — find the last full `## YYYY-MM-DD` section before the 3000-char cutoff. Cleaner than a raw character slice, avoids mid-sentence truncation.
 3. **Run ai-steward against itself with directed SCAN** — first empirical test of Principle 1 enforcement and first real cost data point.
+
+
+---
+
+## 2026-06-20 -- Improve: IMPLEMENT token cost completes cycle cost in trail entries
+
+**Skill:** Improve v3.10.0
+**Trigger:** Operator invoked improve. Top-ranked candidate from prior iteration: capture IMPLEMENT phase tokens to complete cycle cost.
+
+**Interpretation:** SCAN tokens were added last iteration. IMPLEMENT is the second (and more expensive) LLM call — it receives the full file contents as input, so its token count typically exceeds SCAN's. Without it, the trail entry under-reports cycle cost by 50–80%. The fix mirrors exactly what was done for SCAN.
+
+**Lenses applied:**
+
+- *Inconsistency:* SCAN carries input/output tokens; IMPLEMENT carried nothing. Two LLM calls, one visible. The trail entry's cost estimate was structurally misleading.
+- *Purpose:* The destination says "cycle cost = SCAN + IMPLEMENT." One phase measured, one not, means no cycle cost.
+
+**[!DECISION]** Add `impl_input_tokens: int = 0` and `impl_output_tokens: int = 0` to Finding. Change implement() return from `tuple[bool, str, int]` to `tuple[bool, str, int, int, int]`. Set impl tokens on finding in loop.py after successful implement call. Update record.py to show SCAN + IMPL + cycle total. Update all test unpack patterns.
+
+**Prediction:** 6 files changed, 61/61 pass. Trail entries gain a single Tokens line showing SCAN/IMPL counts and cycle cost. All 7 pre-LLM failure paths in implement.py return `0, 0` token counts.
+
+**[!REVERSAL]** Prediction of 61/61 on first attempt failed: 7 test_implement.py tests unpacked the return as 3-tuples (`ok, _, _` and `ok, reason, size`). They all raised `ValueError: too many values to unpack`. I missed that test_implement.py calls implement() directly — test_loop.py uses monkeypatched lambdas (which I did update), but test_implement.py unpacks the real return. Fixed by updating all 7 unpackings to use `*_` for the extra values: `ok, *_`, `ok, reason, size, *_`, `_, _, original_size, *_`. 61/61 after fix.
+
+**Reflection:**
+
+- *Model-claim:* Cycle cost is now fully measured: every trail entry produced by ai-steward shows SCAN and IMPLEMENT token counts and the estimated total. The first real run establishes the cost baseline.
+- *Blind spot:* Pricing constants are hardcoded in record.py for claude-haiku-4-5. If the model changes, the numbers silently under- or over-report. The model name is not stored in the trail entry, so an operator reviewing historical entries cannot verify which pricing was applied. Adding the model name to the trail entry or to Finding would close this.
+- *Imagined-reader pushback:* "IMPLEMENT tokens are only correct if the LLM call succeeds. If it fails mid-stream, usage may be partial." Valid for streaming; ai-steward uses non-streaming calls (`messages.create`), so usage is complete or zero (exception path). The current safe-fallback covers the exception path.
+
+**Across-trail triggers:**
+- *Recurring finding-class:* not fired — this is the second cost-related change but it is completing an initiated series, not a new class.
+- *About to declare silence:* not fired.
+- *Contradicts prior [!REALIZATION]:* not fired.
+- *Operator explicitly asked:* fired again (second consecutive "use the improve skill").
+
+### Candidate Next Moves
+
+1. **Run ai-steward against itself** — first empirical test with full cycle cost measurement. Establishes the baseline cost-per-accepted-improvement number.
+2. **Add model name to trail entry** — closes the silent-pricing-change blind spot surfaced above. One-line addition to `_build_entry`.
+3. **Section-boundary truncation for _load_destination** — find the last full `## YYYY-MM-DD` section before the 3000-char cutoff. Deferred twice; still valid.

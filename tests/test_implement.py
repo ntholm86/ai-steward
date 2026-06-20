@@ -40,12 +40,14 @@ def _make_finding(file: str = "utils.py") -> Finding:
     )
 
 
-def _mock_client(response_text: str) -> MagicMock:
+def _mock_client(response_text: str, input_tokens: int = 0, output_tokens: int = 0) -> MagicMock:
     """Mock Anthropic client that returns a fixed text response."""
     block = MagicMock()
     block.text = response_text
     message = MagicMock()
     message.content = [block]
+    message.usage.input_tokens = input_tokens
+    message.usage.output_tokens = output_tokens
     client = MagicMock()
     client.messages.create.return_value = message
     return client
@@ -62,7 +64,7 @@ def test_implement_writes_content_and_returns_true(tmp_path: Path) -> None:
     new_content = "import sys\n\nx = 1\n"
     client = _mock_client(new_content)
 
-    ok, _, _ = implement(tmp_path, config, _make_finding(), client=client)
+    ok, *_ = implement(tmp_path, config, _make_finding(), client=client)
 
     assert ok is True
     assert (tmp_path / "utils.py").read_text(encoding="utf-8") == new_content
@@ -75,7 +77,7 @@ def test_implement_returns_original_size_bytes(tmp_path: Path) -> None:
     config = _make_config(tmp_path)
     client = _mock_client("import sys\n\nx = 1\n")
 
-    _, _, original_size = implement(tmp_path, config, _make_finding(), client=client)
+    _, _, original_size, *_ = implement(tmp_path, config, _make_finding(), client=client)
 
     assert original_size == len(original)
 
@@ -85,7 +87,7 @@ def test_implement_strips_markdown_fences(tmp_path: Path) -> None:
     config = _make_config(tmp_path)
     client = _mock_client("```python\nimport sys\nx = 1\n```")
 
-    ok, _, _ = implement(tmp_path, config, _make_finding(), client=client)
+    ok, *_ = implement(tmp_path, config, _make_finding(), client=client)
 
     assert ok is True
     written = (tmp_path / "utils.py").read_text(encoding="utf-8")
@@ -98,7 +100,7 @@ def test_implement_returns_false_if_file_missing(tmp_path: Path) -> None:
     finding = _make_finding(file="no_such_file.py")
     client = _mock_client("x = 1\n")
 
-    ok, reason, size = implement(tmp_path, config, finding, client=client)
+    ok, reason, size, *_ = implement(tmp_path, config, finding, client=client)
 
     assert ok is False
     assert "not found" in reason
@@ -111,7 +113,7 @@ def test_implement_returns_false_on_empty_response(tmp_path: Path) -> None:
     config = _make_config(tmp_path)
     client = _mock_client("   ")
 
-    ok, reason, size = implement(tmp_path, config, _make_finding(), client=client)
+    ok, reason, size, *_ = implement(tmp_path, config, _make_finding(), client=client)
 
     assert ok is False
     assert "empty" in reason
@@ -126,7 +128,7 @@ def test_implement_returns_false_on_llm_exception(tmp_path: Path) -> None:
     client = MagicMock()
     client.messages.create.side_effect = RuntimeError("connection refused")
 
-    ok, reason, size = implement(tmp_path, config, _make_finding(), client=client)
+    ok, reason, size, *_ = implement(tmp_path, config, _make_finding(), client=client)
 
     assert ok is False
     assert "LLM call failed" in reason
@@ -140,7 +142,7 @@ def test_implement_returns_false_for_non_utf8_file(tmp_path: Path) -> None:
     finding = _make_finding(file="data.bin")
     client = _mock_client("new content\n")
 
-    ok, reason, size = implement(tmp_path, config, finding, client=client)
+    ok, reason, size, *_ = implement(tmp_path, config, finding, client=client)
 
     assert ok is False
     assert "UTF-8" in reason

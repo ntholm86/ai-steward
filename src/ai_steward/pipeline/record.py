@@ -54,18 +54,25 @@ def record(
 
 def _build_entry(finding: Finding, diff: str) -> str:
     today = date.today().isoformat()
-    cost_usd = (
+    scan_cost = (
         finding.input_tokens * _INPUT_COST_PER_TOKEN
         + finding.output_tokens * _OUTPUT_COST_PER_TOKEN
     )
+    impl_cost = (
+        finding.impl_input_tokens * _INPUT_COST_PER_TOKEN
+        + finding.impl_output_tokens * _OUTPUT_COST_PER_TOKEN
+    )
+    cycle_cost = scan_cost + impl_cost
     return (
         f"\n---\n\n"
         f"## {today} \u2014 ai-steward: {finding.description}\n\n"
         f"**File:** {finding.file}  \n"
         f"**Risk:** {finding.risk}  \n"
         f"**Rationale:** {finding.rationale}\n\n"
-        f"**Tokens (SCAN):** {finding.input_tokens} in / {finding.output_tokens} out "
-        f"\u2014 est. ${cost_usd:.5f} USD  \n\n"
+        f"**Tokens:** "
+        f"SCAN {finding.input_tokens}/{finding.output_tokens} "
+        f"\u2014 IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
+        f"\u2014 cycle est. ${cycle_cost:.5f} USD  \n\n"
         f"**Proposed change:**\n```\n{finding.proposed_change}\n```\n\n"
         f"**Diff:**\n```diff\n{diff}\n```\n\n"
         f"*Staged for operator review. Not committed.*\n"

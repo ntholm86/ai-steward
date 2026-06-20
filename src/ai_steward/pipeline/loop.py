@@ -135,7 +135,7 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
                 trail_entry="SCAN: no actionable improvement found",
             )
 
-        ok, reason, original_size = implement(repo, config, finding)
+        ok, reason, original_size, impl_in_tok, impl_out_tok = implement(repo, config, finding)
         if not ok:
             return LoopResult(
                 status="implement_failed",
@@ -143,6 +143,8 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
                 diff=None,
                 trail_entry=f"IMPLEMENT FAILED: {reason}",
             )
+        finding.impl_input_tokens = impl_in_tok
+        finding.impl_output_tokens = impl_out_tok
 
     # VERIFY and RECORD are tier-0 — outside the harness LLM context.
     diff = _get_diff(repo, finding.file)

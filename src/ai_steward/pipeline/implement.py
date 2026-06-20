@@ -54,19 +54,19 @@ def implement(
     """
     target = repo / finding.file
     if not target.exists():
-        return False, f"target file not found: {finding.file}", 0
+        return False, f"target file not found: {finding.file}", 0, 0, 0
 
     try:
         original_bytes = target.read_bytes()
     except OSError as exc:
-        return False, f"could not read {finding.file}: {exc}", 0
+        return False, f"could not read {finding.file}: {exc}", 0, 0, 0
 
     original_size = len(original_bytes)
 
     try:
         original_text = original_bytes.decode("utf-8")
     except UnicodeDecodeError:
-        return False, f"file is not UTF-8: {finding.file}", 0
+        return False, f"file is not UTF-8: {finding.file}", 0, 0, 0
 
     if client is None:
         client = anthropic_client(config.harness)
@@ -88,7 +88,15 @@ def implement(
             messages=[{"role": "user", "content": user_message}],
         )
     except Exception as exc:  # noqa: BLE001
-        return False, f"LLM call failed: {exc}", 0
+        return False, f"LLM call failed: {exc}", 0, 0, 0
+
+    # Capture token usage before extracting content
+    try:
+        _in_tok = int(response.usage.input_tokens)
+        _out_tok = int(response.usage.output_tokens)
+    except (AttributeError, TypeError, ValueError):
+        _in_tok = 0
+        _out_tok = 0
 
     new_content = ""
     for block in response.content:
@@ -107,11 +115,11 @@ def implement(
             new_content += "\n"
 
     if not new_content.strip():
-        return False, "model returned empty content", 0
+        return False, "model returned empty content", 0, _in_tok, _out_tok
 
     try:
         target.write_text(new_content, encoding="utf-8")
     except OSError as exc:
-        return False, f"could not write {finding.file}: {exc}", 0
+        return False, f"could not write {finding.file}: {exc}", 0, _in_tok, _out_tok
 
-    return True, "", original_size
+    return True, "", original_size, _in_tok, _out_tok

@@ -22,6 +22,8 @@ class Finding:
     risk: Literal["low", "medium", "high"]
     input_tokens: int = 0
     output_tokens: int = 0
+    impl_input_tokens: int = 0
+    impl_output_tokens: int = 0
 
 
 @dataclass
