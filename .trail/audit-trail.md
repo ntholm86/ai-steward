@@ -1783,3 +1783,35 @@ Alternatives: Put in `_types.py` (rejected — that module is for data types, no
 **Verification:** 66/66 tests pass.
 
 **Blind spot surfaced:** Semantic identity was hidden by naming difference (`_baseline_tests` vs `_run_tests`). Function names should describe what they do, not when they're called.
+
+---
+
+## 2026-06-20 — Fix implement() return type annotation
+
+**Trigger:** Operator invoked improve skill (second iteration, same session). Lenses applied to remaining unexamined files.
+
+**[!REALIZATION]** `implement()` has `-> tuple[bool, str, int]` annotation but actually returns `tuple[bool, str, int, int, int]`. The two token-count return values (`input_tokens`, `output_tokens`) were added during P2 token-tracking work without updating the annotation or docstring. Tests used `*_` star-unpacking so nothing broke at runtime, but a type checker flags this. Loop.py correctly unpacks all 5 values — the mismatch is purely in the signature.
+
+**[!DECISION]** Fix the annotation to `-> tuple[bool, str, int, int, int]` and update the docstring to name all 5 return values.
+Alternatives: Add a return dataclass (over-engineered for V1; the 5-tuple is already consumed correctly everywhere); leave it (false annotation is worse than no annotation). 
+
+**Prediction:** 66/66 tests pass. No functional change.
+
+**What changed:**
+- `src/ai_steward/pipeline/implement.py`: annotation `tuple[bool, str, int]` → `tuple[bool, str, int, int, int]`, docstring updated to name all 5 elements.
+
+**Verification:** 66/66 tests pass. Prediction held.
+
+**Model-claim:** The codebase has at least one other annotation-class gap from incremental feature additions — the pattern of adding return values without updating signatures is a known drift vector. A mypy pass would surface any remaining instances.
+
+**Blind spot:** Did not verify whether mypy is configured in pyproject.toml or CI, so the full annotation-gap count is unknown.
+
+**Imagined-reader pushback:** "Run mypy now" — reasonable; deferred to next iteration as a bounded candidate.
+
+**Across-trail macro-reflection:** none of the 4 triggers fired (see entry body above).
+
+### Candidate Next Moves
+
+1. Run mypy over the codebase — this finding suggests annotation drift; a full pass would enumerate remaining gaps with no guesswork.
+2. External repo targeting — retrospect's highest-ranked structural next step; proves generalisation beyond self-targeting.
+3. Harness ledger hash-chain replay — structural mechanism exists but has never been exercised; integrity is untested.

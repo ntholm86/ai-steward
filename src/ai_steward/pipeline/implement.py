@@ -38,7 +38,7 @@ def implement(
     config: AiStewardConfig,
     finding: Finding,
     client: anthropic.Anthropic | None = None,
-) -> tuple[bool, str, int]:
+) -> tuple[bool, str, int, int, int]:
     """Apply *finding* to the target file.
 
     Args:
@@ -49,8 +49,9 @@ def implement(
                 Pass a mock client in tests to avoid real API calls.
 
     Returns:
-        ``(True, "", original_size_bytes)`` on success — the file is written.
-        ``(False, reason, 0)`` on any failure — the file is NOT modified.
+        ``(True, "", original_size_bytes, input_tokens, output_tokens)`` on success.
+        ``(False, reason, 0, input_tokens, output_tokens)`` on any failure — file NOT modified.
+        Token counts are 0 for failures that occur before the LLM call.
     """
     target = repo / finding.file
     if not target.exists():
