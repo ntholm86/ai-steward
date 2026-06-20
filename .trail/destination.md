@@ -496,3 +496,68 @@ The skill suite runs in Copilot Chat (Copilot token budget, no direct cost visib
 ### What counts as improvement
 
 An architectural change that reduces cost-per-accepted-improvement by X% is evidence of improvement — independently of whether the output "feels better." This is the same structural-evidence discipline the manifesto applies to reasoning fidelity: eliminate subjective claims, replace with auditable measurement.
+
+
+---
+
+## 2026-06-20 -- Self-targeting gate and development principles
+
+### Self-targeting is a milestone, not a mode
+
+ai-steward can target any repository, including its own. But self-targeting before the system earns it produces a demonstration of compliance, not a demonstration of Observable Autonomy. For ai-steward to serve as a PEA integration exemplar, two structural preconditions must hold before the first self-targeting run:
+
+**Precondition 1 -- P2 (Observable Autonomy) is structurally complete**
+
+The two-tier trust model must be functional end-to-end:
+- Harness sessions land in `.trail/sessions/` (co-located with `audit-trail.md`) -- done.
+- Every trail entry references the harness session by path -- done.
+- The link is verifiable: the referenced JSONL exists independently and cannot be modified by the agent.
+
+What is NOT yet done: the trail entry is still self-reported reasoning. The harness proves the *call happened*, but the *reasoning in the trail entry* is the agent's own account of what it decided and why. For full P2, the reasoning trace must either come from the harness (structural capture) or be independently verifiable. This is an open design question.
+
+**Precondition 2 -- P1 (Commander's Intent) + reasoning quality**
+
+The pipeline's reasoning layer must be at least as rigorous as the skill suite:
+- SCAN must apply structured reasoning: lenses, pre-commit prediction, blind spot identification
+- SCAN must make the reasoning visible in the trail entry -- not just the JSON finding
+- IMPLEMENT must also receive the destination (Commander's Intent is currently SCAN-only)
+- The operator must be able to read a pipeline trail entry and verify that the reasoning was sound, not just that the change was applied
+
+*Open question:* "Reasoning layer as good as the skillset" -- does this mean SCAN should produce a trail entry that looks like an improve skill entry (lenses, [!DECISION], [!REALIZATION])? Or does it mean the *outcomes* should be equivalently sound? The implementation differs. Operator clarification needed before building.
+
+**The gate rule:** Do not merge a self-targeting run into the main trail until both preconditions are met. Runs before the gate are experiments, not evidence.
+
+---
+
+### Development principles: KISS, YAGNI, DRY
+
+These are structural constraints on how ai-steward itself is built -- not general advice.
+
+**KISS (Keep It Simple):** Each pipeline phase does exactly one thing. SCAN identifies one improvement. IMPLEMENT applies one change. VERIFY checks one invariant set. Complexity that serves multiple purposes belongs in configuration, not in phase logic. If a phase needs to do two things, that is a signal to split it, not to add a branch.
+
+**YAGNI (You Aren't Gonna Need It):** V2 features do not ship before V1 is proven. The tier-escalation boundary, multi-family model verification, concurrent runs, proposal queues -- these are not built until V1 has established a baseline of cost-per-accepted-improvement and shown where the bottleneck actually is. Building V2 infrastructure before V1 data exists is speculation, not engineering.
+
+**DRY (Don't Repeat Yourself):** Prompt construction logic, file collection, trail appending -- these are not duplicated across phases. If two phases do the same thing, it is extracted. The `_load_destination()` function is the model: one place, used by any phase that needs it.
+
+These principles apply to the pipeline code. They do not apply to trail entries and destination sections -- prose that appears to repeat is often reinforcing, not duplicating.
+
+---
+
+### The cost-quality operating point
+
+ai-steward must operate on the **cost-efficiency frontier** -- the Pareto-optimal balance where:
+
+- Reducing cost further would degrade improvement quality below the acceptance threshold
+- Improving quality further would not justify the additional cost per accepted improvement
+
+This applies on two axes simultaneously:
+
+**Reasoning quality axis:** Model and tier selection. A cheaper model (haiku) reasons faster and costs less but produces lower-quality proposals. A more expensive model (sonnet, opus) reasons better but costs more per cycle. The right operating point is not the cheapest model -- it is the model where additional cost would not materially improve proposal acceptance rate. This is empirically determined, not assumed.
+
+**Output quality axis:** Context and prompt design. More context (larger destination excerpt, more file content) produces better-targeted proposals but costs more tokens. Less context is cheaper but produces less directed proposals. The right operating point is not maximum context -- it is the context window where additional tokens produce diminishing returns on proposal quality.
+
+**The constraint:** Architecture decisions are evaluated against cost-efficiency, not either axis alone. A change that improves proposal quality but doubles cycle cost is not an improvement unless the quality gain is proportionally demonstrated. A change that halves cycle cost but degrades acceptance rate is not an improvement either.
+
+**How to find the frontier:** Run baseline N cycles at current settings. Measure cost-per-accepted-improvement. Then vary one parameter (model, context window, prompt design) and measure the delta. The frontier is where the delta in quality matches the delta in cost. This requires the cost measurement infrastructure already in place.
+
+**The operating principle:** Start cheap (V1 is haiku, 2 calls, ~.002/cycle). Move toward the frontier as data accumulates. Never move away from it on instinct alone.
