@@ -2241,3 +2241,28 @@ Rejected: prompt instruction for missing destination.md (smaller, doesn't help n
 1. Better proxy error: when harness is unreachable, print the GitHub URL for llm-harness-proxy. Small, targeted, closes the last opaque failure mode.
 2. External repo targeting: run ai-steward against a small well-tested Python project to prove generalisation beyond self-targeting.
 3. Multi-cycle convergence: `ai-steward run` in a loop until SCAN returns nothing_found -- verify it stops cleanly.
+
+---
+
+## 2026-06-20 — feat-configurable-verify-command
+
+**Ask:** Make ai-steward technology-agnostic by replacing the hardcoded python -m pytest verify call with a configurable erify_command.
+
+**Examination:** un_tests(repo) was called in two places — PRE-FLIGHT (baseline) and VERIFY (Gate 3) — with the pytest invocation baked in. The config.py had no field for an alternative command. This locked ai-steward to Python projects exclusively.
+
+**Decision (one logical change):**
+Replace un_tests(repo) with un_verify_command(cmd: str, repo: Path) throughout. Default erify_command = "python -m pytest --tb=no -q" preserves all existing behavior. Empty string disables Gate 3 entirely — correct for doc, markdown, or song targets.
+
+**Actions:**
+- config.py: added erify_command: str = "python -m pytest --tb=no -q"
+- _utils.py: renamed function, added shlex.split(cmd) for OWASP safety (no shell=True)
+- erify.py: Gate 3 wrapped in if config.verify_command: — skipped when empty
+- loop.py: PRE-FLIGHT uses un_verify_command(config.verify_command, repo); empty → (True, 0)
+- 	ests/test_loop.py, 	ests/test_verify.py: updated all monkeypatches to 2-arg signature
+- New test: 	est_verify_skips_test_gate_when_verify_command_empty
+
+**Verification:** 74 tests passing (73 → 74). Commit 94b058d pushed.
+
+**Reflection:** The default preserves backward compatibility without any config migration. Non-Python operators set erify_command: npm test or erify_command: cargo test. Pure-doc targets set erify_command: "". The single-function rename propagated cleanly — no hidden callers.
+
+**Next iteration:** Git auto-init in PRE-FLIGHT — if the target dir is not a git repo, run git init (using directory name as commit author context) rather than failing. This removes the last Python/git prerequisite from the minimal assumption set.
