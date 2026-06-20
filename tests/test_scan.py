@@ -248,3 +248,25 @@ def test_scan_truncates_long_destination(tmp_path: Path) -> None:
     assert "truncated for token budget" in user_content
     assert "NEW: latest operator decision" in user_content
     assert "OLD: " + "A" * 2000 not in user_content
+
+
+def test_scan_truncation_starts_at_section_boundary(tmp_path: Path) -> None:
+    """When destination has dated sections, truncation starts at the nearest heading."""
+    (tmp_path / "utils.py").write_text("x = 1\n")
+    (tmp_path / ".trail").mkdir()
+    # Old section must be long enough that total > 3000 and cutoff lands before new heading.
+    old_section = "## 2026-05-14 — Old section\n\n" + "A" * 3500 + "\n\n"
+    new_section = "## 2026-06-20 — New section\n\nLatest operator decision.\n"
+    long_text = old_section + new_section
+    (tmp_path / ".trail" / "destination.md").write_bytes(long_text.encode("utf-8"))
+    config = _make_config(tmp_path)
+    client = _mock_client({"nothing": True})
+
+    scan(tmp_path, config, client=client)
+
+    call_kwargs = client.messages.create.call_args
+    user_content = call_kwargs[1]["messages"][0]["content"]
+    assert "## 2026-06-20 — New section" in user_content
+    assert "Latest operator decision." in user_content
+    # Must not start mid-sentence inside the old section
+    assert "## 2026-05-14 — Old section" not in user_content

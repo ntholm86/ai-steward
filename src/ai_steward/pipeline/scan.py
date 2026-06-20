@@ -85,8 +85,11 @@ def _load_destination(repo: Path) -> str | None:
     """Load Commander's Intent from .trail/destination.md if present.
 
     Caps at ~3000 chars (~750 tokens) to stay within cheap-model cost budget.
-    When truncating, takes the TAIL of the file — destination.md is append-only
-    so the most recent operator decisions are at the end.
+    When truncating, takes the TAIL of the file starting at the nearest
+    ``## YYYY-MM-DD`` section heading — destination.md is append-only so the
+    most recent operator decisions are at the end, and starting at a section
+    boundary avoids feeding SCAN a mid-sentence fragment.
+    Falls back to a raw tail slice if no section heading is found in the tail.
     Returns None if the file does not exist.
     """
     dest = repo / ".trail" / "destination.md"
@@ -94,9 +97,12 @@ def _load_destination(repo: Path) -> str | None:
         return None
     text = dest.read_text(encoding="utf-8", errors="ignore")
     if len(text) > 3000:
-        # Take the tail — destination.md is append-only, so the most recent
-        # operator decisions live at the end, not the beginning.
-        text = "[... destination.md truncated for token budget ...]\n\n" + text[-3000:]
+        cutoff = len(text) - 3000
+        # Find the first dated section heading at or after the cutoff so SCAN
+        # receives a complete, labelled section rather than a mid-sentence fragment.
+        match = re.search(r"^## \d{4}-\d{2}-\d{2}", text[cutoff:], re.MULTILINE)
+        tail = text[cutoff + match.start() :] if match else text[-3000:]
+        text = "[... destination.md truncated for token budget ...]\n\n" + tail
     return text
 
 

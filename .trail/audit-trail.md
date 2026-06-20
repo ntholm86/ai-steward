@@ -1477,3 +1477,42 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 **What is still open (at time of consolidation):** Nothing -- the consolidation resolved the clarity gap. The destination is crisp.
 
 **Action:** Committed destination.md consolidation (commit 933d9a3).
+
+---
+
+## 2026-06-20 -- Improve: section-boundary truncation for _load_destination
+
+**Skill:** Improve v3.10.0
+**Trigger:** Operator invoked improve. Top-ranked code candidate: section-boundary truncation (deferred 5 times).
+
+**Lenses applied:**
+
+- *Purpose:* _load_destination takes text[-3000:] -- a raw character slice that may land mid-sentence inside a ## YYYY-MM-DD section. SCAN receives a fragment with no context about what section it is in or what date it belongs to. Finding the first section heading at or after the cutoff gives SCAN a complete, labelled section to start from.
+- *Inconsistency:* The docstring said "takes the tail -- most recent operator decisions." Directionally correct, but starting mid-sentence contradicts the intent. Section-boundary truncation achieves the same goal more precisely.
+- *Waste:* destination.md now has a Current State section followed by dated historical sections. The tail almost certainly lands inside a historical section. A boundary-aware truncation starts at the nearest ## YYYY-MM-DD heading, giving SCAN full section context.
+
+**[!DECISION]** Add section-boundary logic to _load_destination: search for the first ## YYYY-MM-DD heading at or after the cutoff position using re.search with MULTILINE; if found, start there; fallback to raw tail. One new test. Existing test still passes (no headings in its test data, exercises fallback unchanged).
+
+**Prediction:** scan.py 1 function changed, test_scan.py 1 new test. 65 + 1 = 66 total. All pass.
+
+**[!REVERSAL]** Initial test data was ~2585 chars total -- below the 3000-char threshold -- so truncation never fired and both section headings appeared in the output. Fixed by increasing old_section padding from "A" * 2500 to "A" * 3500 (total ~3587 chars). Same class of mistake as the CRLF test failures: test data that does not actually trigger the code path under test.
+
+**Verification:** python -m pytest tests/ -q -> 66/66 after fix.
+
+**Reflection:**
+
+- *Model-claim:* SCAN now always starts destination context at a clean ## YYYY-MM-DD section boundary. The first run against the current destination.md (which has a Current State section at the top) will give SCAN the most recent dated section, not a mid-sentence fragment.
+- *Blind spot:* The 3000-char budget is still arbitrary. The correct budget depends on the model's context window and the token-to-char ratio for the destination content. Empirically, destination.md is ~12000 chars so the tail boundary logic will typically activate.
+- *Imagined-reader pushback:* "What if the new section heading is > 3000 chars from the end?" Then the fallback fires (raw tail). The section heading search is bounded to text[cutoff:] -- if there is no heading in the last 3000 chars, the fallback is correct.
+
+**Across-trail triggers:**
+- *Recurring finding-class:* FIRED (mild) -- test data too short to trigger truncation. Third test-data sizing mistake in this arc. Pattern: when testing truncation/threshold logic, verify test data actually crosses the threshold.
+- *About to declare silence:* evaluating. This was the last deferred code candidate. The remaining items are operational (run against itself) and retrospect update.
+- *Contradicts prior [!REALIZATION]:* not fired.
+- *Operator explicitly asked:* fired.
+
+### Candidate Next Moves
+
+1. **Run ai-steward against itself** -- P1+P2 complete, self-targeting gate open, all structural work done. This is the next action.
+2. **Update retrospect.md** -- current retrospect predates P1/P2 completion and section-boundary fix.
+3. **Convergence Is Silence** -- no more structural code gaps identified. The improve loop has reached structural completion for V1.
