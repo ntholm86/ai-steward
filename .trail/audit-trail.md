@@ -1092,3 +1092,44 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 1. **pipeline/_types.py refactor** — move Finding and LoopResult out of loop.py. Eliminates the lazy-import workaround in run(). Operational rule says this must happen before V2 phases. Clean mechanical change.
 2. **Update retrospect.md** — stale .pea/ references throughout; directed SCAN is now implemented; truncation defect resolved. The retrospect no longer reflects current state.
 3. **Section-boundary truncation** — find the last full ## YYYY-MM-DD section boundary before the 3000-char cutoff. Cleaner than a raw character slice.
+
+
+---
+
+## 2026-06-20 -- Improve: pipeline/_types.py refactor
+
+**Skill:** Improve v3.10.0
+**Trigger:** Operator asked to keep working. Top-ranked candidate: _types.py refactor. Operational rule: "before V2 phases."
+
+**Interpretation:** Finding and LoopResult live in loop.py. Every phase module (scan, implement, record) imports Finding from loop.py. loop.py lazy-imports those same modules inside run() to break the circular dependency. Moving Finding and LoopResult to _types.py breaks the cycle structurally: _types.py has no local imports, so all modules can import from it without creating a cycle.
+
+**Lenses applied:**
+
+- *Purpose:* _types.py is the canonical fix for this class of circular import. Without it, adding any V2 phase that needs Finding would require another lazy import workaround in run().
+- *Waste:* The lazy-import comment in run() said "scan/implement/record all import Finding from this module" — a documented structural smell. Carrying that comment is a promise to fix it.
+
+**[!DECISION]** Create pipeline/_types.py with Finding and LoopResult. Update imports across scan.py, implement.py, record.py, __init__.py, and all test files. Promote phase imports in run() to top-level.
+
+**Prediction:** 1 new file, 9 files modified, 61 tests pass. Circular import eliminated. Lazy-import workaround removed.
+
+**[!REVERSAL]** The top-level import promotion broke 3 tests. With lazy imports, monkeypatching scan_mod.scan worked because run() called rom scan import scan at call-time, capturing the patched attribute. With top-level imports, loop.scan is bound at module import time — before the monkeypatch runs. Fixed by updating the 3 failing tests to patch "ai_steward.pipeline.loop.scan" etc. — matching the existing pattern already used for _is_git_repo and friends. The unused scan_mod/impl_mod/verify_mod/record_mod imports were also removed.
+
+**Verification:** python -m pytest tests/ -q -> 61/61 after [!REVERSAL] fix.
+
+**Reflection:**
+
+- *Model-claim:* The circular import is structurally resolved. run() has clean top-level imports. The lazy-import workaround and its explanatory comment are gone. V2 phases can import from _types without concern.
+- *Blind spot:* The test fix required understanding the monkeypatch binding model. A conftest.py fixture for mocking phases (rather than inline monkeypatch.setattr calls) would make this class of mistake impossible — but that's an abstraction for multiple consumers. Current test count doesn't justify it.
+- *Imagined-reader pushback:* "You took a wrong turn with top-level imports and had to reverse it in tests." The reversal is honest and documented. The test pattern (patch the consuming module's namespace, not the source module) is actually the more correct approach; the original scan_mod.scan patches were only accidentally working via the lazy-import timing coincidence.
+
+**Across-trail triggers:**
+- *Recurring finding-class:* not fired.
+- *About to declare silence:* not fired.
+- *Contradicts prior [!REALIZATION]:* not fired — this change RESOLVES the [!REALIZATION] ("Finding and LoopResult belong in pipeline/_types.py") from the loop-wiring entry.
+- *Operator explicitly asked:* not fired.
+
+### Candidate Next Moves
+
+1. **Update retrospect.md** — stale throughout: .pea/ references, directed SCAN not reflected, _types.py debt marked as outstanding when it is now resolved. Retrospect run is warranted.
+2. **Section-boundary truncation for _load_destination** — find the last full section heading before the 3000-char cutoff instead of raw character slice. Minor quality improvement.
+3. **Run ai-steward against itself** — V1 self-targeting loop now has directed SCAN. The next run will see the post-V1 operator decisions in the prompt. Empirically verify SCAN proposes something destination-aligned.

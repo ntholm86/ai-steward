@@ -10,34 +10,15 @@ Full phase specification, gate conditions, and data types are in:
 from __future__ import annotations
 
 import subprocess
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
 
 from ai_steward.config import AiStewardConfig
-from ai_steward.harness import is_reachable
-
-
-@dataclass
-class Finding:
-    """Output of the SCAN phase: one improvement worth making."""
-
-    file: str
-    description: str
-    proposed_change: str
-    rationale: str
-    risk: Literal["low", "medium", "high"]
-
-
-@dataclass
-class LoopResult:
-    """Outcome of one complete pipeline cycle."""
-
-    status: Literal["proposed", "verify_failed", "nothing_found", "preflight_failed", "implement_failed"]
-    finding: Finding | None
-    diff: str | None
-    trail_entry: str
-    preflight_failure: str | None = None
+from ai_steward.harness import harness_session, is_reachable
+from ai_steward.pipeline._types import Finding, LoopResult
+from ai_steward.pipeline.implement import implement
+from ai_steward.pipeline.record import record
+from ai_steward.pipeline.scan import scan
+from ai_steward.pipeline.verify import verify
 
 
 # ---------------------------------------------------------------------------
@@ -133,16 +114,7 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
 
     PRE-FLIGHT → SCAN → IMPLEMENT → VERIFY → RECORD
     Stops before release: the staged change waits for operator review.
-
-    Phase modules are lazy-imported here to break the circular import:
-    scan/implement/record all import Finding from this module.
     """
-    from ai_steward.harness import harness_session
-    from ai_steward.pipeline.implement import implement
-    from ai_steward.pipeline.record import record
-    from ai_steward.pipeline.scan import scan
-    from ai_steward.pipeline.verify import verify
-
     passed, reason, baseline_count = preflight(repo, config)
     if not passed:
         return LoopResult(

@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from ai_steward.config import AiStewardConfig, ModelAssignment
-from ai_steward.pipeline.loop import Finding
+from ai_steward.pipeline import Finding
 from ai_steward.pipeline.record import record
 
 # ---------------------------------------------------------------------------

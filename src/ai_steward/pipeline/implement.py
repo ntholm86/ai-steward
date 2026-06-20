@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
-from ai_steward.pipeline.loop import Finding
+from ai_steward.pipeline._types import Finding
 
 if TYPE_CHECKING:
     import anthropic

@@ -17,7 +17,7 @@ from datetime import date
 from pathlib import Path
 
 from ai_steward.config import AiStewardConfig
-from ai_steward.pipeline.loop import Finding
+from ai_steward.pipeline._types import Finding
 
 
 def record(

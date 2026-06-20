@@ -11,9 +11,8 @@ from pathlib import Path
 import pytest
 
 from ai_steward.config import AiStewardConfig, HarnessConfig, ModelAssignment
+from ai_steward.pipeline import Finding, LoopResult
 from ai_steward.pipeline.loop import (
-    Finding,
-    LoopResult,
     _is_git_clean,
     _is_git_repo,
     preflight,
@@ -205,10 +204,6 @@ def test_preflight_dirty_tree_passes_when_allow_dirty(
 import contextlib
 
 import ai_steward.harness
-import ai_steward.pipeline.implement as impl_mod
-import ai_steward.pipeline.record as record_mod
-import ai_steward.pipeline.scan as scan_mod
-import ai_steward.pipeline.verify as verify_mod
 
 _FINDING = Finding(
     file="f.py",
@@ -229,7 +224,7 @@ def _pass_preflight(monkeypatch: pytest.MonkeyPatch, baseline: int = 5) -> None:
 
 def test_run_nothing_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _pass_preflight(monkeypatch)
-    monkeypatch.setattr(scan_mod, "scan", lambda *_a, **_k: None)
+    monkeypatch.setattr("ai_steward.pipeline.loop.scan", lambda *_a, **_k: None)
     monkeypatch.setattr("ai_steward.pipeline.loop._get_diff", lambda *_a: "")
 
     result = run(tmp_path, _reachable_config(tmp_path))
@@ -240,8 +235,8 @@ def test_run_nothing_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
 def test_run_implement_failed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _pass_preflight(monkeypatch)
-    monkeypatch.setattr(scan_mod, "scan", lambda *_a, **_k: _FINDING)
-    monkeypatch.setattr(impl_mod, "implement", lambda *_a, **_k: (False, "model returned empty content", 0))
+    monkeypatch.setattr("ai_steward.pipeline.loop.scan", lambda *_a, **_k: _FINDING)
+    monkeypatch.setattr("ai_steward.pipeline.loop.implement", lambda *_a, **_k: (False, "model returned empty content", 0))
     monkeypatch.setattr("ai_steward.pipeline.loop._get_diff", lambda *_a: "")
 
     result = run(tmp_path, _reachable_config(tmp_path))
@@ -252,10 +247,10 @@ def test_run_implement_failed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
 
 def test_run_verify_failed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _pass_preflight(monkeypatch)
-    monkeypatch.setattr(scan_mod, "scan", lambda *_a, **_k: _FINDING)
-    monkeypatch.setattr(impl_mod, "implement", lambda *_a, **_k: (True, "", 100))
+    monkeypatch.setattr("ai_steward.pipeline.loop.scan", lambda *_a, **_k: _FINDING)
+    monkeypatch.setattr("ai_steward.pipeline.loop.implement", lambda *_a, **_k: (True, "", 100))
     monkeypatch.setattr("ai_steward.pipeline.loop._get_diff", lambda *_a: "diff text")
-    monkeypatch.setattr(verify_mod, "verify", lambda *_a, **_k: (False, "syntax error"))
+    monkeypatch.setattr("ai_steward.pipeline.loop.verify", lambda *_a, **_k: (False, "syntax error"))
 
     result = run(tmp_path, _reachable_config(tmp_path))
 
@@ -265,11 +260,11 @@ def test_run_verify_failed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
 def test_run_proposed_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _pass_preflight(monkeypatch)
-    monkeypatch.setattr(scan_mod, "scan", lambda *_a, **_k: _FINDING)
-    monkeypatch.setattr(impl_mod, "implement", lambda *_a, **_k: (True, "", 100))
+    monkeypatch.setattr("ai_steward.pipeline.loop.scan", lambda *_a, **_k: _FINDING)
+    monkeypatch.setattr("ai_steward.pipeline.loop.implement", lambda *_a, **_k: (True, "", 100))
     monkeypatch.setattr("ai_steward.pipeline.loop._get_diff", lambda *_a: "diff text")
-    monkeypatch.setattr(verify_mod, "verify", lambda *_a, **_k: (True, ""))
-    monkeypatch.setattr(record_mod, "record", lambda *_a, **_k: "trail entry")
+    monkeypatch.setattr("ai_steward.pipeline.loop.verify", lambda *_a, **_k: (True, ""))
+    monkeypatch.setattr("ai_steward.pipeline.loop.record", lambda *_a, **_k: "trail entry")
 
     result = run(tmp_path, _reachable_config(tmp_path))
 
