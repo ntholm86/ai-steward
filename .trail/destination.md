@@ -272,3 +272,69 @@ This is not a temporary safety measure. It is permanent trust infrastructure. On
 4. **Implement probe** -- ARF probe per ARF-SPEC.md. Operator-triggered. Reports pass/fail with evidence.
 
 The ordering is: (1) schema, (2) directed SCAN, (3) retrospect, (4) probe. Each builds on the previous.
+
+---
+
+## 2026-06-20 -- Unification: .pea/ as the common standard
+
+### The architectural correction
+
+The TRAIL skill is a behavioral convention — it asks the LLM to append to a markdown file. The LLM is an unreliable narrator of itself. This is a structural problem that cannot be solved with better instructions.
+
+The harness-protocol is the structural solution. It intercepts LLM API traffic and writes a hash-chained ledger before the response is released. The LLM cannot fabricate, omit, or modify entries. Trail integrity becomes a technical guarantee, not a discipline.
+
+### What this means for ai-steward
+
+ai-steward uses Anthropic API keys routed through the harness at localhost:8474. The harness already captures every LLM call to `.harness/sessions/*.jsonl`. The structural trail exists.
+
+The memory model must be redesigned around this fact:
+
+- **The LLM reads from the memory directory.** Destination, orientation, recent context.
+- **The LLM does NOT write the authoritative trail.** The harness does.
+- **Derived artifacts (orientation, recent) are computed from the harness ledger.**
+
+### One directory, one standard: .pea/
+
+Three systems need context memory:
+
+1. The skill suite (currently .trail/)
+2. The harness-protocol (currently .harness/)
+3. ai-steward (was going to be .ai-steward/)
+
+These should be ONE directory with ONE standard.
+
+::
+
+  .pea/
+      destination.yaml     # Operator-written. Commander's Intent.
+      orientation.yaml     # Derived from ledger by retrospect.
+      sessions/            # Written by harness-protocol. Hash-chained.
+          *.jsonl          # The LLM does NOT write here.
+      (derived views)      # recent context computed from sessions/
+
+**Who writes what:**
+
+- `destination.yaml` — Operator. Never the LLM.
+- `sessions/*.jsonl` — Harness-protocol. Never the LLM.
+- `orientation.yaml` — LLM (retrospect), but derived from sessions/ which LLM did not author.
+
+**The compatibility path:**
+
+ai-steward defines `.pea/` as the standard. The skill suite migrates from `.trail/` to reading/writing `.pea/`. The harness-protocol migrates from `.harness/` to `.pea/sessions/`. One directory, one standard, structural integrity.
+
+### How this maps to the three principles
+
+**Principle 1 (Commander's Intent):** The operator authors `destination.yaml`. The LLM interprets it but does not self-author its instructions.
+
+**Principle 2 (Observable Autonomy):** The harness captures the authoritative record. The LLM cannot be the sole narrator of its own actions. Capture is structural, not behavioral.
+
+**Principle 3 (Convergence Is Silence):** Retrospect reads the harness ledger (which the LLM did not author) and produces orientation. The judgment of what the arc means comes from reading evidence the LLM could not fabricate.
+
+### Relation to AAS-1 proposals
+
+The Agent Audit Trail standard (AAS-1) is defining the schema for autonomous agent records. Two open proposals on the working group:
+
+1. Provenance (§6.9) should capture reasoning traces — the harness already captures this in the `reason` field.
+2. Reproducibility (§6.10) for non-deterministic models — reasoning reproducibility, not output-identical reproduction.
+
+ai-steward and the harness-protocol are reference implementations of what AAS-1 is standardizing. Alignment between the .pea/ standard and AAS-1 is a goal.
