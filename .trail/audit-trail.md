@@ -1901,3 +1901,50 @@ Alternatives: Add a return dataclass (over-engineered for V1; the 5-tuple is alr
 1. **Run retrospect** -- five commits since the last retrospect; the arc has moved meaningfully (mypy-clean, CI added). Time to update the orientation.
 2. **External repo targeting** -- structurally ready; CI would catch any regression the loop introduces in an external repo.
 3. **Harness ledger hash-chain replay** -- integrity mechanism never exercised end-to-end.
+
+---
+
+## 2026-06-20 — Retrospect: post-CI-closure
+
+**Skill:** Retrospect v1.9.0
+**Trigger:** Operator requested retrospect after five improve iterations (DRY, annotation fix, mypy-clean, pyproject config, CI).
+
+**Scope statement:** Read the arc since prior retrospect (P1+P2-closure). Assess what changed and whether orientation needs updating given five commits of annotation/infrastructure work.
+
+**Freshness guard:** No tools/record.py in ai-steward. No derived artifacts (learning.md, history.md) exist. Guard trivially passes.
+
+### Arc-read observations
+
+**What changed:** 5 iterations this session — DRY extraction, implement() annotation, mypy-clean, pyproject [tool.mypy], CI workflow. All type/annotation discipline + infrastructure. No functional code changes.
+
+**Recurring finding-class (closed):** Iterations 2–4 were all annotation gaps root-caused to P2 token-tracking landing without a type-check gate. Process gap closed by CI.
+
+**Reversal density:** 2 [!REVERSAL] markers across the full session (one from _types.py refactor, one from implement-tuple test unpacking). Honest, within expected noise.
+
+**Attention concentration:** Annotation discipline + CI this session. P1/P2 closure prior session. Focus has been correct.
+
+**What was avoided:** record.py (attractor loop, per prior retrospect warning). External repos (deferred). Harness ledger integrity (never exercised).
+
+**Candidate next moves tracking:** Each iteration picked the prior iteration's top candidate. Operator-gate steering efficiently.
+
+### Claims updated in retrospect.md
+
+1. V1 is structurally complete AND quality-gated (CI added)
+2. Annotation discipline debt is paid (new claim)
+3. record.py attractor loop was correctly avoided (not just documented)
+4. Candidate next moves are being followed efficiently (new claim)
+5. Three structural next steps remain (external targeting, harness integrity, multi-cycle convergence)
+6. Dual purpose holds (unchanged)
+
+### Operational rules added
+
+- Run mypy before committing annotation-adjacent changes (faster than waiting for CI)
+
+**[!REALIZATION] (arc-level):** Self-targeting has hit diminishing returns. Two consecutive sessions (P1/P2 closure + this CI session) found nothing functional to improve in ai-steward's own codebase. The loop is ready to prove generalisation by running against external repos.
+
+### Next-runs-should-test (updated priority)
+
+1. External repo targeting (top priority — self-targeting has converged)
+2. Multi-cycle convergence
+3. Harness ledger integrity (hash-chain replay)
+4. Accept or spec the trail format (breaks attractor loop permanently)
