@@ -270,3 +270,39 @@ def test_scan_truncation_starts_at_section_boundary(tmp_path: Path) -> None:
     assert "Latest operator decision." in user_content
     # Must not start mid-sentence inside the old section
     assert "## 2026-05-14 — Old section" not in user_content
+
+
+def test_scan_returns_none_when_change_already_exists(tmp_path: Path) -> None:
+    """already_exists_check quotes text found in the file → false-positive rejected."""
+    (tmp_path / "utils.py").write_text("def handle(x):\n    if x is None:\n        return 0\n    return x\n")
+    config = _make_config(tmp_path)
+    client = _mock_client({
+        "file": "utils.py",
+        "description": "Add None guard in handle()",
+        "proposed_change": "Add `if x is None: return 0` at the top of handle()",
+        "rationale": "prevents crash on None input",
+        "risk": "low",
+        "already_exists_check": "if x is None:",
+    })
+
+    result = scan(tmp_path, config, client=client)
+
+    assert result is None
+
+
+def test_scan_proceeds_when_already_exists_check_is_not_found(tmp_path: Path) -> None:
+    """already_exists_check = 'not found' → proposal is genuine, proceeds normally."""
+    (tmp_path / "utils.py").write_text("def handle(x):\n    return x\n")
+    config = _make_config(tmp_path)
+    client = _mock_client({
+        "file": "utils.py",
+        "description": "Add None guard in handle()",
+        "proposed_change": "Add `if x is None: return 0` at the top of handle()",
+        "rationale": "prevents crash on None input",
+        "risk": "low",
+        "already_exists_check": "not found",
+    })
+
+    result = scan(tmp_path, config, client=client)
+
+    assert isinstance(result, Finding)

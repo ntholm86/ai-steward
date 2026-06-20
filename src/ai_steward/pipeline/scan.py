@@ -37,7 +37,8 @@ Respond with a JSON object only — no prose, no markdown fences, no explanation
   "proposed_change": "<precise description of the exact change — what to add, remove, or replace and where, in one or two sentences. Do NOT include file contents.>",
   "rationale": "<why this change earns its maintenance cost>",
   "risk": "<low | medium | high>",
-  "blind_spot": "<one area or file you did not examine and why — be specific>"
+  "blind_spot": "<one area or file you did not examine and why — be specific>",
+  "already_exists_check": "<paste the exact line(s) from the target file that prove this change is already implemented; write 'not found' if the change is not yet there>"
 }
 
 If you find nothing worth changing, respond with exactly: {"nothing": true}
@@ -47,6 +48,8 @@ Rules:
 - The file must be in the provided file list.
 - Be specific: "Remove unused import os from utils.py" not "clean up imports".
 - proposed_change must describe the change, not reproduce file contents.
+- IMPORTANT: Before proposing, read the target file and verify the change is not already implemented.
+  If you find evidence it already exists, respond with {"nothing": true}.
 """
 
 def _extract_json(text: str) -> dict | None:
@@ -219,6 +222,15 @@ def scan(
     target = repo / file_path
     if not target.is_file():
         return None
+
+    # Guard: reject if the model's own check confirms the change is already implemented.
+    # The model is asked to quote the specific line(s) that prove existence; if the
+    # quoted text is actually found in the file, the proposal is a false-positive.
+    already_check = data.get("already_exists_check", "not found").strip()
+    if already_check.lower() != "not found" and len(already_check) >= 10:
+        target_content = target.read_text(encoding="utf-8", errors="ignore")
+        if already_check.lower() in target_content.lower():
+            return None
 
     return Finding(
         file=file_path,
