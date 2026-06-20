@@ -36,7 +36,8 @@ Respond with a JSON object only — no prose, no markdown fences, no explanation
   "description": "<what the improvement is, one sentence>",
   "proposed_change": "<precise description of the exact change — what to add, remove, or replace and where, in one or two sentences. Do NOT include file contents.>",
   "rationale": "<why this change earns its maintenance cost>",
-  "risk": "<low | medium | high>"
+  "risk": "<low | medium | high>",
+  "blind_spot": "<one area or file you did not examine and why — be specific>"
 }
 
 If you find nothing worth changing, respond with exactly: {"nothing": true}
@@ -221,4 +222,5 @@ def scan(
         risk=data["risk"],
         input_tokens=_in_tok,
         output_tokens=_out_tok,
+        blind_spot=data.get("blind_spot", ""),
     )

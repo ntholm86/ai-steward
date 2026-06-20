@@ -69,7 +69,26 @@ def test_scan_returns_finding_on_valid_response(tmp_path: Path) -> None:
     assert isinstance(result, Finding)
     assert result.file == "utils.py"
     assert result.risk == "low"
+    assert result.blind_spot == ""
     client.messages.create.assert_called_once()
+
+
+def test_scan_extracts_blind_spot_when_present(tmp_path: Path) -> None:
+    (tmp_path / "utils.py").write_text("import os\n\nx = 1\n")
+    config = _make_config(tmp_path)
+    client = _mock_client({
+        "file": "utils.py",
+        "description": "Remove unused import os",
+        "proposed_change": "Remove the import os line",
+        "rationale": "os is not referenced",
+        "risk": "low",
+        "blind_spot": "Did not examine test files for os usage",
+    })
+
+    result = scan(tmp_path, config, client=client)
+
+    assert isinstance(result, Finding)
+    assert result.blind_spot == "Did not examine test files for os usage"
 
 
 # ---------------------------------------------------------------------------

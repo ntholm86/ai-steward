@@ -1376,3 +1376,42 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 1. **Add blind_spot to SCAN** -- add blind_spot: str = "" to Finding (_types.py), add blind_spot field to SCAN system prompt JSON schema (scan.py), record.py uses it. Completes the trail entry reasoning structure. Single-field addition; same 1 LLM call.
 2. **Section-boundary truncation for _load_destination** -- find last full ## YYYY-MM-DD section before 3000-char cutoff. Deferred 4 times.
 3. **Harness session discovery test** -- harness_session() before/after scanning has no test coverage.
+
+---
+
+## 2026-06-20 -- Improve: add blind_spot to SCAN -- P1 reasoning visibility complete
+
+**Skill:** Improve v3.10.0
+**Trigger:** Operator invoked improve. Top-ranked candidate: add blind_spot to SCAN JSON schema to close the last open P1 requirement.
+
+**Lenses applied:**
+
+- *Purpose:* The blind_spot line in every trail entry said "Not captured in V1 -- add blind_spot to SCAN JSON schema." The model already knows what it did not examine when it produces the SCAN response. Adding one field to the existing JSON schema costs zero extra LLM calls and closes the last open P1 requirement from the retrospect.
+- *Waste:* The model performs reasoning about what to examine and what to skip. That insight was discarded. Asking it to name one thing it chose not to investigate (as part of the same response) recovers that insight for free.
+- *Inconsistency:* record.py already had the blind_spot output position. The placeholder said "add blind_spot to SCAN JSON schema" -- the infrastructure was ready; only the field was missing.
+
+**[!DECISION]** Three coordinated changes, no new LLM calls: add blind_spot: str = "" to Finding in _types.py; add blind_spot to SCAN system prompt JSON schema and extract with .get() (not in required -- degrades gracefully if model omits it); update record.py to use finding.blind_spot with a minimal fallback.
+
+**Prediction:** 3 files changed, 1 new test, 62 total, all pass.
+
+**Verification:** python -m pytest tests/ -q -> 62/62. Prediction held exactly. No reversals.
+
+**Reflection:**
+
+- *Model-claim:* P1 reasoning visibility is now structurally complete. Every pipeline-generated trail entry carries: [!DECISION], Prediction, Lenses (Commander's Intent + Code examination), Blind spot (model-identified, not placeholder), File, Tokens, Harness session. An operator reviewing a self-targeting run can verify the reasoning structure.
+- *Blind spot this run:* Did not examine whether the blind_spot text from the model is reliably useful in practice. The model might produce generic statements ("Did not examine all files") rather than specific ones. Quality is empirically determined from real runs.
+- *Imagined-reader pushback:* "blind_spot is not in required -- what if the model omits it?" The fallback is "Not identified for this run." which is honest. Over time, if the model consistently omits it, we can promote it to required. For now, graceful degradation is correct.
+
+**Across-trail triggers:**
+- *Recurring finding-class:* not fired.
+- *About to declare silence:* FIRED -- P1 reasoning visibility is now complete. The self-targeting gate's P1 precondition is met.
+- *Contradicts prior [!REALIZATION]:* not fired -- this resolves the placeholder introduced last iteration.
+- *Operator explicitly asked:* fired.
+
+**[!REALIZATION]** P1 (Commander's Intent + reasoning visibility) is now structurally complete. Both P2 (harness capture) and P1 were listed as preconditions for merging self-targeting runs. Both are now met. The self-targeting gate is open.
+
+### Candidate Next Moves
+
+1. **Run ai-steward against itself** -- both preconditions are now met. The next self-targeting run is the first that will produce a trail entry with full P1+P2 compliance. This is the highest-value next action.
+2. **Section-boundary truncation for _load_destination** -- find last full ## YYYY-MM-DD section before 3000-char cutoff. Deferred 5 times now.
+3. **Harness session discovery test** -- harness_session() before/after scanning has no test coverage.
