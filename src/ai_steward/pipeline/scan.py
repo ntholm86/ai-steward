@@ -84,6 +84,8 @@ def _load_destination(repo: Path) -> str | None:
     """Load Commander's Intent from .trail/destination.md if present.
 
     Caps at ~3000 chars (~750 tokens) to stay within cheap-model cost budget.
+    When truncating, takes the TAIL of the file — destination.md is append-only
+    so the most recent operator decisions are at the end.
     Returns None if the file does not exist.
     """
     dest = repo / ".trail" / "destination.md"
@@ -91,7 +93,9 @@ def _load_destination(repo: Path) -> str | None:
         return None
     text = dest.read_text(encoding="utf-8", errors="ignore")
     if len(text) > 3000:
-        text = text[:3000] + "\n\n[... destination.md truncated for token budget ...]"
+        # Take the tail — destination.md is append-only, so the most recent
+        # operator decisions live at the end, not the beginning.
+        text = "[... destination.md truncated for token budget ...]\n\n" + text[-3000:]
     return text
 
 

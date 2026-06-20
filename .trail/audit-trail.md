@@ -1053,3 +1053,42 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 1. **Fix destination truncation direction** — change 	ext[:3000] to 	ext[-3000:] in _load_destination(). One-line fix, one updated test. High impact: SCAN now sees the operator's most recent intent instead of the founding vision.
 2. **pipeline/_types.py refactor** — move Finding and LoopResult out of loop.py. Eliminates the lazy-import workaround. Mechanical but blocks adding V2 phases cleanly.
 3. **Update retrospect.md** — current retrospect still references .pea/ throughout (stale after the naming decision). Rewrite with .trail/ and updated claims (directed SCAN is now implemented).
+
+
+---
+
+## 2026-06-20 -- Improve: fix destination truncation direction
+
+**Skill:** Improve v3.10.0
+**Trigger:** Operator asked to keep working. Top-ranked candidate from prior iteration: fix the [!REALIZATION]-flagged truncation direction defect.
+
+**Interpretation:** The [!REALIZATION] from the directed SCAN iteration explicitly named this: 	ext[:3000] delivers the founding vision (oldest content); 	ext[-3000:] delivers the most recent operator decisions. The destination.md is append-only. Newest entries are at the bottom. This is a one-line fix with high SCAN quality impact.
+
+**Lenses applied:**
+
+- *Inconsistency:* The comment in _load_destination() said "takes the tail" but the code did [:3000] (the head). The docstring was written with the correct intent but the wrong code shipped. A reader trusting the docstring would be misled about what the model actually receives.
+- *Purpose:* SCAN's job is to understand the operator's current intent. The most recent destination entries (post-V1 direction, .trail/ decision, cross-project scope) are exactly what a directed SCAN should read. Feeding the founding vision instead is actively counterproductive for current-state improvements.
+
+**[!DECISION]** Change 	ext[:3000] to 	ext[-3000:]. Move truncation marker to the top of the excerpt (as a preamble) rather than the bottom (where it was appended, misleadingly inside the "recent" content). Update docstring to make the tail-taking explicit.
+
+**Prediction:** One-line code change, one test refactored to verify old content is excluded and new content is preserved, 61 tests total, all pass.
+
+**Verification:** python -m pytest tests/ -q -> 61/61. Prediction held exactly.
+
+**Reflection:**
+
+- *Model-claim:* The truncation direction is now correct. When ai-steward runs against its own repo, SCAN will receive the post-V1 operator decisions (directed SCAN, .trail/ standard, cross-project scope) rather than the May founding vision. This is a meaningful improvement to proposal relevance.
+- *Blind spot:* The 3000-char budget still cuts across a section boundary mid-sentence. A cleaner approach would be to find the last full ## YYYY-MM-DD section boundary before the 3000-char cutoff. Deferred — the tail approximation is already correct directionally.
+- *Imagined-reader pushback:* "The truncation marker at the top is confusing — it implies the reader missed something at the beginning, but the beginning is the old content they don't need." Fair. The marker placement is a UX choice; a future iteration could drop it when truncation is routine.
+
+**Across-trail triggers:**
+- *Recurring finding-class:* not fired.
+- *About to declare silence:* not fired — change made.
+- *Contradicts prior [!REALIZATION]:* not fired — this change RESOLVES the [!REALIZATION] from the prior entry.
+- *Operator explicitly asked:* not fired.
+
+### Candidate Next Moves
+
+1. **pipeline/_types.py refactor** — move Finding and LoopResult out of loop.py. Eliminates the lazy-import workaround in run(). Operational rule says this must happen before V2 phases. Clean mechanical change.
+2. **Update retrospect.md** — stale .pea/ references throughout; directed SCAN is now implemented; truncation defect resolved. The retrospect no longer reflects current state.
+3. **Section-boundary truncation** — find the last full ## YYYY-MM-DD section boundary before the 3000-char cutoff. Cleaner than a raw character slice.

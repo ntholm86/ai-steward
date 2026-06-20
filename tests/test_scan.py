@@ -209,10 +209,13 @@ def test_scan_works_without_destination(tmp_path: Path) -> None:
 
 
 def test_scan_truncates_long_destination(tmp_path: Path) -> None:
-    """Destination content is capped at ~3000 chars to honour token budget."""
+    """Destination takes the tail when over budget — most recent content is preserved."""
     (tmp_path / "utils.py").write_text("x = 1\n")
     (tmp_path / ".trail").mkdir()
-    long_text = "A" * 5000
+    # Old content at start, new content at end — truncation must preserve the end.
+    old_content = "OLD: " + "A" * 2000
+    new_content = "NEW: latest operator decision"
+    long_text = old_content + "B" * 1000 + new_content
     (tmp_path / ".trail" / "destination.md").write_bytes(long_text.encode("utf-8"))
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
@@ -222,4 +225,5 @@ def test_scan_truncates_long_destination(tmp_path: Path) -> None:
     call_kwargs = client.messages.create.call_args
     user_content = call_kwargs[1]["messages"][0]["content"]
     assert "truncated for token budget" in user_content
-    assert "A" * 5000 not in user_content
+    assert "NEW: latest operator decision" in user_content
+    assert "OLD: " + "A" * 2000 not in user_content
