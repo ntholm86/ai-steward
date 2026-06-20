@@ -2266,3 +2266,50 @@ Replace un_tests(repo) with un_verify_command(cmd: str, repo: Path) throughout
 **Reflection:** The default preserves backward compatibility without any config migration. Non-Python operators set erify_command: npm test or erify_command: cargo test. Pure-doc targets set erify_command: "". The single-function rename propagated cleanly — no hidden callers.
 
 **Next iteration:** Git auto-init in PRE-FLIGHT — if the target dir is not a git repo, run git init (using directory name as commit author context) rather than failing. This removes the last Python/git prerequisite from the minimal assumption set.
+
+---
+
+## 2026-06-20 -- Improve: technology-agnostic default SCAN scope
+
+**Skill:** Improve v3.10.0
+**Trigger:** Operator asked "continue." Underspecified; hunches sourced from destination and trail.
+
+**Hunches formed:**
+
+*Hunch 1 (highest-confidence):* Default scope `["**/*.py"]` is a functional blocker. `_collect_files` returns `{}` on any non-Python repo → SCAN returns None → `LoopResult("nothing_found")` silently. Destination says "widely adoptable, works on anything." This is not adopted behaviour — it is a broken-by-default tool for 95% of real repos.
+
+*Hunch 2:* Git auto-init in PRE-FLIGHT — UX friction but not a functional blocker. Was explicitly the "next iteration" from the session.
+
+*Falsifiable question:* Does SCAN's `**/*.py` default prevent the pipeline from working on non-Python repos out of the box? Answer: Yes.
+
+**[!DECISION]** Change default scope from `["**/*.py"]` to `["**/*"]` with binary file filtering (NUL-byte heuristic, same as git) and system directory exclusions (`.trail`, `.git`, `.harness`, `node_modules`, `__pycache__`, `.venv`, `.mypy_cache`, `.pytest_cache`, `.tox`). Binary filter and directory exclusions apply only in default mode — explicit `scope.allowed` gives the operator full control.
+
+**Lenses:**
+
+- *Purpose:* Destination: "easy workflow: write a destination, let it do its thing." With `**/*.py`, a non-Python project silently returns nothing — not "works on anything."
+- *Inconsistency:* `verify_command` was just made configurable to serve non-Python targets. The scope defaulting to `**/*.py` meant SCAN would still find nothing even if verification worked. The two changes needed to land together.
+- *Waste:* `_DEFAULT_SKIP_DIRS` prevents SCAN from reading `.trail/audit-trail.md`, `.git/` objects, and `node_modules/` — all noise that would consume context window and confuse the model.
+
+**Prediction:** 74 + 2 new tests = 76 total. All pass. Pre-existing tests unaffected.
+
+**[!REVERSAL]** First run: 2 pre-existing tests failed. `**/*` collected `.trail/destination.md` as a file, causing its raw content to appear twice in the SCAN prompt (once from `_load_destination()`, once from `_collect_files()`). Fix: add `_DEFAULT_SKIP_DIRS` to exclude `.trail/` and other system dirs when using the default scope. Fixed in same iteration.
+
+**Verification:** python -m pytest tests/ -q -> 76/76 after `_DEFAULT_SKIP_DIRS` fix. Commit bedac02 pushed.
+
+**Reflection:**
+
+- *Model-claim:* ai-steward now works out of the box on any text-based target. The last Python-specific default has been removed. A Markdown repo, TypeScript project, or YAML config dir all work without any YAML configuration.
+- *Blind spot:* `_DEFAULT_SKIP_DIRS` is hardcoded. A monorepo might have intentional `node_modules` under a subpath they want scanned, or a `.venv` with hand-edited files. This is an edge case; V1 is for "any text target" not "any possible directory layout." The operator can override with explicit `scope.allowed`.
+- *Imagined-reader pushback:* "Why not put the skip dirs in ScopeConfig.blocked defaults?" Because blocked is operator-configurable, and these dirs should be automatically excluded in the default mode — not the operator's concern. The split (default mode filters vs. explicit mode full control) is correct.
+
+**Across-trail triggers:**
+- *Recurring finding-class:* [!REVERSAL] fired again — test relying on directory isolation broke when scope was widened. Class: "test isolation assumptions break when collection scope widens." Documented. Mitigated by `_DEFAULT_SKIP_DIRS`.
+- *About to declare silence:* not fired.
+- *Contradicts prior [!REALIZATION]:* not fired.
+- *Operator explicitly asked:* fired (continue).
+
+### Candidate Next Moves
+
+1. **Git auto-init in PRE-FLIGHT** — if the target dir is not a git repo, run `git init` instead of failing. Last remaining prerequisite preventing zero-setup adoption.
+2. **Run ai-steward against itself** — both P1 and P2 complete, verify_command configurable, scope now technology-agnostic. Self-targeting gate is fully open. This is the V1 milestone.
+3. **`_DEFAULT_SKIP_DIRS` as a configurable default** — currently hardcoded. A config field `scope.default_skip_dirs` would let advanced operators adjust it without forfeiting the convenience of default mode.
