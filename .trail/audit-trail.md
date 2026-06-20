@@ -1283,3 +1283,57 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 1. **Reasoning layer depth (P1 + P1 quality)** -- SCAN produces a JSON blob, not structured reasoning. The improve skill applies lenses, makes predictions, documents blind spots. The pipeline's reasoning is opaque to the operator. Closing this gap is the remaining precondition before self-targeting is meaningful.
 2. **Add a test for session path discovery** -- `harness_session()` now does before/after scanning but has no test for the session discovery logic. The existing tests only verify HARNESS_ROOT value and restore behavior.
 3. **Section-boundary truncation for _load_destination** -- deferred three times. Still valid.
+
+---
+
+## 2026-06-20 -- Retrospect: post-destination-consolidation
+
+**Skill:** Retrospect v1.9.0
+**Trigger:** Operator asked for retrospect after destination consolidation (dual purpose: proof + tool).
+
+**Scope statement:** Read the full arc (20+ entries, May 14 – June 20). What does the arc show now that the destination is crisp?
+
+**Freshness guard:** No tools/record.py. No derived artifacts. Guard trivially passes.
+
+### Arc-read summary
+
+**What changed and in what order:**
+1. May 14: Founding decisions (execution/reasoning separation, harness independence, self-targeting as validation)
+2. May 15: First scaffold (config.py, Evo take/leave)
+3. May 28: Mechanical filename migration (vision -> destination)
+4. June 19: V1 sprint -- 10+ improve iterations building pipeline from scratch
+5. June 20: V1 milestone achieved, P1/P2 compliance work, destination consolidated
+
+**Reversal density:** 4 `[!REVERSAL]` markers across 20+ entries. High prediction accuracy. Recurring class (test assertions on changed contracts) documented and mitigated.
+
+**Where attention was concentrated:** Execution layer (100% of code), then P1/P2 compliance, then destination clarity.
+
+**What has been consistently avoided:**
+- Reasoning layer depth (SCAN produces JSON, not visible reasoning)
+- Multi-language support (hardcoded to pytest/Python)
+- Concurrent operation (single-run only)
+
+### Arc-level realizations
+
+**[!REALIZATION]** The dual purpose (proof + tool) was always implicit but never stated. The consolidation didn't change direction; it made the direction visible. Every decision since May 14 served both purposes.
+
+**[!REALIZATION]** The remaining P1 gap is structural, not cognitive. SCAN reasons (harness proves it). But the reasoning is NOT visible in the audit-trail.md entry. The destination says "every decision is reasoned, and the reasoning is independently verified." The harness proves reasoning happened; the trail entry should show what it was.
+
+**[!REALIZATION]** Cost tracking is complete but there's no baseline yet. The ~$ .002/cycle from the first run is the baseline. Future changes evaluated against it.
+
+### Arc-claims written to retrospect.md
+
+1. Dual purpose is now explicit
+2. V1 structural work is complete
+3. P2 (Observable Autonomy) is structurally complete
+4. P1 (Commander's Intent) is partially complete -- reasoning visibility is the gap
+5. Cost-efficiency infrastructure is complete
+6. Self-targeting gate is semantically still closed until P1 reasoning visibility is done
+
+### Candidate Next Moves
+
+1. **P1 reasoning visibility** -- refactor record.py to produce improve-skill-style trail entries. Highest priority.
+2. **Run ai-steward against itself post-P1** -- real self-targeting test with visible reasoning.
+3. **Section-boundary truncation** -- deferred 4 times, still valid.
+4. **Harness session discovery test** -- no test coverage for before/after scanning.
+
