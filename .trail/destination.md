@@ -386,3 +386,53 @@ The next milestone is not "implement directed SCAN." It is:
 - The schema is implementable in ai-steward, adoptable by harness and skills
 
 This is design work before implementation. The schema must converge before the code does.
+
+---
+
+## 2026-06-20 -- Correction: Context Memory is a standard, not a project artifact
+
+### The naming problem
+
+`.pea/` names the directory after the Principles of Earned Autonomy project. That's backwards. A common standard should be named for **what it is**, not **where it came from**.
+
+The directory holds **context memory** — the working memory an agent reads at the start of a run and the evidence trail the harness writes during execution. The name should say that.
+
+### The standardization insight
+
+The schema should not be defined in ai-steward's documentation. It should live in **its own repository** — a formal schema definition that:
+
+- Declares the directory structure
+- Declares file formats (YAML, JSONL)
+- Declares field schemas with validation rules
+- Declares token budget constraints
+- Is versioned independently
+
+ai-steward, harness-protocol, and the skill suite all **reference and conform to** this standard. They are consumers of the schema, not authors of it.
+
+### What this means
+
+1. **New repository needed:** A "context-memory" or similarly named repo that defines the standard. This is the authoritative schema source.
+
+2. **Directory name TBD:** Not `.pea/`. Something that describes function: `.context/`, `.memory/`, `.agent-context/`, or similar. The name will be decided when the schema repo is created.
+
+3. **Relationship clarified:**
+   - The schema repo defines the standard
+   - ai-steward is an early implementer (may influence schema design)
+   - harness-protocol produces data conforming to the schema
+   - skill suite consumes and produces data conforming to the schema
+
+4. **ai-steward's role shifts:** From "defines the standard" to "implements the standard and provides feedback on whether the schema works under real usage."
+
+### What does NOT change
+
+- The token budget constraints (~200 destination, ~150 orientation, ~300 recent)
+- The principle that harness writes the authoritative trail, not the LLM
+- The principle that schema design precedes implementation
+- The convergence order (ai-steward implements first, proves it works, others align)
+
+### Open questions for the schema repo
+
+- What directory name? (Must describe function, not origin)
+- What file format for the schema definition? (JSON Schema? YAML schema? Prose + examples?)
+- What versioning scheme?
+- How do conforming implementations declare which schema version they target?
