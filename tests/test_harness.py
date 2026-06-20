@@ -62,13 +62,14 @@ def test_harness_session_restores_on_exception(tmp_path: Path) -> None:
 
 
 def test_harness_session_discovers_new_session(tmp_path: Path) -> None:
-    """A session directory created during the context is returned as session_path."""
+    """A session .jsonl file created during the context is returned as session_path."""
     config = HarnessConfig()
     session_id = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
     with harness_session(tmp_path, config) as result:
-        session_dir = tmp_path / ".trail" / "sessions" / session_id
-        session_dir.mkdir(parents=True)
-    assert result["session_path"] == f".trail/sessions/{session_id}"
+        sessions_dir = tmp_path / ".trail" / "sessions"
+        sessions_dir.mkdir(parents=True)
+        (sessions_dir / f"{session_id}.jsonl").write_bytes(b'{"v":1}\n')
+    assert result["session_path"] == f".trail/sessions/{session_id}.jsonl"
 
 
 def test_harness_session_picks_latest_when_multiple_created(tmp_path: Path) -> None:
@@ -78,9 +79,10 @@ def test_harness_session_picks_latest_when_multiple_created(tmp_path: Path) -> N
     later   = "01BX5ZZKBKACTAV9WEVGEMMVS0"
     with harness_session(tmp_path, config) as result:
         sessions = tmp_path / ".trail" / "sessions"
-        (sessions / earlier).mkdir(parents=True)
-        (sessions / later).mkdir(parents=True)
-    assert result["session_path"] == f".trail/sessions/{later}"
+        sessions.mkdir(parents=True)
+        (sessions / f"{earlier}.jsonl").write_bytes(b'{"v":1}\n')
+        (sessions / f"{later}.jsonl").write_bytes(b'{"v":1}\n')
+    assert result["session_path"] == f".trail/sessions/{later}.jsonl"
 
 
 def test_harness_session_returns_none_when_no_session_created(tmp_path: Path) -> None:

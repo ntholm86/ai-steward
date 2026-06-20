@@ -1516,3 +1516,107 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 1. **Run ai-steward against itself** -- P1+P2 complete, self-targeting gate open, all structural work done. This is the next action.
 2. **Update retrospect.md** -- current retrospect predates P1/P2 completion and section-boundary fix.
 3. **Convergence Is Silence** -- no more structural code gaps identified. The improve loop has reached structural completion for V1.
+
+---
+
+## 2026-06-20 — ai-steward: Refactor _build_entry to capture reasoning structure (lenses, predictions, blind spots) in improve-skill-style format to meet structural equivalence requirement from destination 2026-06-20.
+
+**[!DECISION]** Proposed: Refactor _build_entry to capture reasoning structure (lenses, predictions, blind spots) in improve-skill-style format to meet structural equivalence requirement from destination 2026-06-20.  
+*Rationale:* Structural equivalence means the trail entry itself must be readable as a reasoning audit, not just an outcome record. Current format makes 'Lenses applied' a bullet-point narrative; it should name specific analytical lenses (Commander's Intent alignment, structural code examination, scope validation) so future VERIFY or JUDGE phases can independently examine which blind spots existed in this cycle.  
+*Risk:* low
+
+**Prediction:** Expand _build_entry to explicitly structure the trail entry with a separate **Lenses applied** section that lists each lens applied during SCAN (destination alignment, file-level code examination, etc.), add a **[!REVERSAL]** placeholder section for capturing prediction mismatches in future runs, and reorganize the entry so the blind_spot field is prominent as a named decision gate rather than a trailing afterthought.  
+*Expected outcome:* Structural equivalence means the trail entry itself must be readable as a reasoning audit, not just an outcome record. Current format makes 'Lenses applied' a bullet-point narrative; it should name specific analytical lenses (Commander's Intent alignment, structural code examination, scope validation) so future VERIFY or JUDGE phases can independently examine which blind spots existed in this cycle.
+
+**Lenses applied:**
+- *Commander’s Intent:* Operator destination (`.trail/destination.md`) loaded — improvement selected against stated direction.
+- *Code examination:* Repository files within scope scanned for structural improvements.
+
+**Blind spot:** I did not examine the VERIFY phase's use of trail data or any tooling that may already parse these entries; a change to _build_entry format could break downstream log parsers if they exist. I also did not review whether destination.md contains further constraints on the exact markdown structure expected for lenses sections.
+
+**File:** `src/ai_steward/pipeline/record.py`  
+**Tokens:** SCAN 11736/471 — IMPL 1630/1486 — cycle est. $0.01852 USD  
+**Harness session:** `not captured (harness not running or no calls made)`  
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/pipeline/record.py b/src/ai_steward/pipeline/record.py
+index 16d54dc..447724b 100644
+--- a/src/ai_steward/pipeline/record.py
++++ b/src/ai_steward/pipeline/record.py
+@@ -72,19 +72,29 @@ def _build_entry(finding: Finding, diff: str, harness_session_path: str | None =
+         if harness_session_path
+         else "not captured (harness not running or no calls made)"
+     )
++    
++    blind_spot_text = finding.blind_spot or "Not identified for this run."
++    
+     return (
+         f"\n---\n\n"
+         f"## {today} \u2014 ai-steward: {finding.description}\n\n"
+         f"**[!DECISION]** Proposed: {finding.description}  \n"
+         f"*Rationale:* {finding.rationale}  \n"
+         f"*Risk:* {finding.risk}\n\n"
+-        f"**Prediction:** {finding.proposed_change}  \n"
+-        f"*Expected outcome:* {finding.rationale}\n\n"
+-        f"**Lenses applied:**\n"
+-        f"- *Commander\u2019s Intent:* Operator destination (`.trail/destination.md`) "
+-        f"loaded \u2014 improvement selected against stated direction.\n"
+-        f"- *Code examination:* Repository files within scope scanned for structural improvements.\n\n"
+-        f"**Blind spot:** {finding.blind_spot or 'Not identified for this run.'}\n\n"
++        f"**Analytical Lenses Applied (Reasoning Structure):**\n"
++        f"1. *Commander\u2019s Intent Alignment:* Operator destination (`.trail/destination.md`) "
++        f"loaded \u2014 improvement selected against stated strategic direction.  \n"
++        f"2. *Structural Code Examination:* Repository files within scope scanned for "
++        f"code-level improvements (style, clarity, performance, maintainability).  \n"
++        f"3. *Scope Validation:* Change boundary assessed to ensure minimal blast radius.  \n\n"
++        f"**Prediction:**  \n"
++        f"Expected outcome: {finding.rationale}  \n"
++        f"Proposed change: {finding.proposed_change}\n\n"
++        f"**[!REVERSAL]** Prediction Mismatch Gate:  \n"
++        f"*(Placeholder for future runs: if outcome diverges from prediction, "
++        f"this section will capture the mismatch and trigger re-examination.)*\n\n"
++        f"**Blind Spot (Decision Gate):**  \n"
++        f"{blind_spot_text}\n\n"
+         f"**File:** `{finding.file}`  \n"
+         f"**Tokens:** "
+         f"SCAN {finding.input_tokens}/{finding.output_tokens} "
+
+```
+
+*Staged for operator review. Not committed.*
+
+
+---
+
+## 2026-06-20 -- fix: P2 harness session capture -- X-Harness-Root per-request header
+
+**Trigger:** Self-targeting run proved the pipeline structurally complete, but `harness_session_path` in every trail entry read "not captured (harness not running or no calls made)". The harness WAS running and API calls DID succeed (tokens confirmed). P2 (harness capture) gap remained open.
+
+**Root cause analysis:** Two independent bugs:
+1. `harness_session()` set `os.environ["HARNESS_ROOT"]` in the Python process. The Rust proxy is a separately-running process — environment variables set in the Python process never reach it. The proxy reads `HARNESS_ROOT` once at startup from its own environment; per-run env overrides have no effect.
+2. `harness_session()` discovery used `p.is_dir()` to find new sessions. SPEC §8.1 defines sessions as `<root>/sessions/<sid>.jsonl` files — not directories. The before/after diff never found any new directories, so `session_path` was always None.
+
+**[!DECISION]** Fix via per-request header: `X-Harness-Root`. The Rust proxy already had the pattern (`X-Harness-Session`, `X-Harness-Upstream` as per-request overrides). Adding `X-Harness-Root` follows the same pattern. When present, the proxy writes the session to `<header-value>/sessions/<sid>.jsonl` instead of the static startup root. All three handlers updated (openai, anthropic, gemini — both SSE and buffered paths). Header stripped from upstream forwarding.
+
+On the Python side: `anthropic_client(config, harness_root=None)` — when `harness_root` is provided, adds `X-Harness-Root: <path>` to the httpx client's default headers. Both `scan.py` and `implement.py` pass `harness_root=repo / ".trail"`.
+
+**[!DECISION]** Discard staged bad diff from self-targeting run. The RECORD phase proposed hardcoding `[!REVERSAL]` in every trail entry as a "prediction mismatch placeholder." `[!REVERSAL]` is a marker for actual reversals — a hardcoded placeholder semantically pollutes the learning signal. Diff discarded with `git restore --staged; git checkout --`.
+
+**Prediction:** Next self-targeting run will produce a genuine session path in the trail entry: `.trail/sessions/<ulid>.jsonl`, and that file will exist in the ai-steward repo's `.trail/sessions/` directory.
+
+**Verification:** 66/66 tests pass. Rust proxy rebuilt successfully. Discovery tests updated to create `.jsonl` files matching SPEC §8.1.
+
+**Files changed:**
+- `src/ai_steward/harness.py` — `anthropic_client` signature extended; `harness_session` discovery fixed (`.is_dir()` → `.is_file() and .suffix == ".jsonl"`)
+- `src/ai_steward/pipeline/scan.py` — `anthropic_client(config.harness, harness_root=repo / ".trail")`
+- `src/ai_steward/pipeline/implement.py` — same
+- `tests/test_harness.py` — discovery tests use `.jsonl` files instead of directories
+
+**Companion commit in harness-protocol:** `ROOT_HEADER = "x-harness-root"` added to all three handlers + `send_upstream` strip list.
+
+### Candidate Next Moves
+
+1. **Re-run self-targeting** — the fix is structural; first run with X-Harness-Root active will confirm P2 genuine closure. Session path should appear in trail entry.
+2. **Update retrospect.md** — stale: predates P1/P2 completion, section-boundary fix, and this harness capture fix.
+3. **Convergence gate** — all V1 structural gaps are now closed. The next improve loop is the first run where reasoning trail AND harness evidence are both captured. That is the convergence proof.

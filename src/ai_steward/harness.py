@@ -53,7 +53,10 @@ def anthropic_base_url(config: HarnessConfig) -> str:
     return config.endpoint
 
 
-def anthropic_client(config: HarnessConfig) -> "anthropic.Anthropic":
+def anthropic_client(
+    config: HarnessConfig,
+    harness_root: "Path | None" = None,
+) -> "anthropic.Anthropic":
     """Anthropic SDK client pre-configured for the harness proxy.
 
     The harness proxy compresses responses with gzip but omits the
@@ -62,16 +65,26 @@ def anthropic_client(config: HarnessConfig) -> "anthropic.Anthropic":
     request prevents compression and allows the SDK to parse responses
     correctly.
 
+    When harness_root is provided, the X-Harness-Root header directs the
+    proxy to write the session ledger to <harness_root>/sessions/<sid>.jsonl
+    instead of the proxy's default root. This is the mechanism that makes
+    Observable Autonomy structural: sessions land in the target repo's
+    .trail/ directory, co-located with audit-trail.md.
+
     Usage:
-        client = anthropic_client(config.harness)
+        client = anthropic_client(config.harness, harness_root=repo / ".trail")
         message = client.messages.create(...)
     """
     import anthropic as _anthropic
     import httpx as _httpx
 
+    default_headers: dict[str, str] = {"Accept-Encoding": "identity"}
+    if harness_root is not None:
+        default_headers["X-Harness-Root"] = str(harness_root)
+
     return _anthropic.Anthropic(
         base_url=config.endpoint,
-        http_client=_httpx.Client(headers={"Accept-Encoding": "identity"}),
+        http_client=_httpx.Client(headers=default_headers),
     )
 
 
@@ -98,8 +111,9 @@ def harness_session(target_repo: Path, config: HarnessConfig):
 
     # Snapshot existing sessions before any calls — used to identify
     # which session was created during this run.
+    # Sessions are .jsonl files per SPEC §8.1: <root>/sessions/<sid>.jsonl
     before = (
-        {p.name for p in sessions_dir.iterdir() if p.is_dir()}
+        {p.name for p in sessions_dir.iterdir() if p.is_file() and p.suffix == ".jsonl"}
         if sessions_dir.is_dir()
         else set()
     )
@@ -115,9 +129,10 @@ def harness_session(target_repo: Path, config: HarnessConfig):
         else:
             os.environ[key] = prev
         # Identify the session created during this run by diffing before/after.
-        # ULID names are time-ordered; the newest new entry is the one we want.
+        # Sessions are .jsonl files per SPEC §8.1. ULID names are time-ordered;
+        # the newest new entry is the one we want.
         if sessions_dir.is_dir():
-            after = {p.name for p in sessions_dir.iterdir() if p.is_dir()}
+            after = {p.name for p in sessions_dir.iterdir() if p.is_file() and p.suffix == ".jsonl"}
             new = sorted(after - before)
             if new:
                 result["session_path"] = f".trail/sessions/{new[-1]}"
