@@ -9,6 +9,7 @@ Full phase specification, gate conditions, and data types are in:
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -34,6 +35,31 @@ def _is_git_repo(repo: Path) -> bool:
         capture_output=True,
     )
     return result.returncode == 0
+
+
+def _git_auto_init(repo: Path) -> bool:
+    """Initialise a git repo with an initial commit.
+
+    Used by PRE-FLIGHT when the target directory has no git history.
+    Sets a minimal git identity so the commit succeeds in any environment.
+    Returns True if all steps succeeded, False if git is unavailable.
+    """
+    env = {
+        **os.environ,
+        "GIT_AUTHOR_NAME": "ai-steward",
+        "GIT_AUTHOR_EMAIL": "ai-steward@local",
+        "GIT_COMMITTER_NAME": "ai-steward",
+        "GIT_COMMITTER_EMAIL": "ai-steward@local",
+    }
+    for cmd in [
+        ["git", "init"],
+        ["git", "add", "-A"],
+        ["git", "commit", "--allow-empty", "-m", "initial commit (provisioned by ai-steward)"],
+    ]:
+        result = subprocess.run(cmd, cwd=repo, capture_output=True, env=env)
+        if result.returncode != 0:
+            return False
+    return True
 
 
 def _is_git_clean(repo: Path) -> bool:
@@ -75,7 +101,8 @@ def preflight(repo: Path, config: AiStewardConfig) -> tuple[bool, str, int]:
         return False, f"repo path does not exist: {repo}", 0
 
     if not _is_git_repo(repo):
-        return False, f"not a git repository: {repo}", 0
+        if not _git_auto_init(repo):
+            return False, "not a git repository and git init failed — is git installed?", 0
 
     if not _is_git_clean(repo) and not config.allow_dirty:
         return False, "working tree has uncommitted changes", 0

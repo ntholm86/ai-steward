@@ -109,12 +109,16 @@ def test_preflight_fails_path_not_exist(tmp_path: Path) -> None:
     assert count == 0
 
 
-def test_preflight_fails_not_git_repo(tmp_path: Path) -> None:
+def test_preflight_auto_inits_git_if_not_repo(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # No git repo — preflight should auto-init and then pass all remaining gates.
+    monkeypatch.setattr("ai_steward.pipeline.loop.is_reachable", lambda _: True)
+    monkeypatch.setattr("ai_steward.pipeline.loop.run_verify_command", lambda cmd, repo: (True, 0))
     config = _reachable_config(tmp_path)
     passed, reason, count = preflight(tmp_path, config)
-    assert not passed
-    assert "git" in reason.lower()
-    assert count == 0
+    assert passed
+    assert (tmp_path / ".git").exists()  # git was provisioned
 
 
 def test_preflight_fails_dirty_tree(tmp_path: Path) -> None:
