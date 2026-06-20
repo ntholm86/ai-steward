@@ -453,3 +453,46 @@ The naming discussion is closed. `.trail/` is the standard directory name.
 4. Schema repo (if created) defines the `.trail/` structure
 
 The prior discussion about naming was premature optimization. Ship with what works.
+
+
+---
+
+## 2026-06-20 -- Cost-efficiency as a first-class measurement goal
+
+### The missing axis
+
+ai-steward makes real API calls with real cost. Claims about improvement mean nothing without the cost side of the ledger. "V2 is better than V1" is an assertion; "V2 achieves the same improvement quality at 40% lower token cost" is evidence.
+
+Cost-efficiency must be a declared measurement dimension alongside improvement quality — not an afterthought.
+
+### What to measure
+
+- **Tokens per improvement cycle** — SCAN + IMPLEMENT + VERIFY call counts, prompt tokens, completion tokens, total cost in USD. Captured by the harness ledger already; needs surfacing.
+- **Cost per accepted improvement** — improvements that reach a passing VERIFY are the unit of value. Cost = total tokens spent in the cycle that produced the accepted improvement.
+- **Cost trend over iterations** — if the architecture improves, cost per accepted improvement should decrease or quality should increase at equal cost. Flat or rising cost with flat quality is a signal the loop is not converging.
+
+### ROI definition
+
+ROI = quality of accepted improvements / total token cost
+
+"Quality" is measured by the harness trail (accepted by VERIFY, not reverted). "Cost" is measured by the ledger. Both sides are auditable structural evidence — not self-reported.
+
+### Why this matters for the skills
+
+The skill suite runs in Copilot Chat (Copilot token budget, no direct cost visibility) and in AI-steward cycles (paid API calls, full cost visibility). The discipline is the same in both contexts:
+
+- A skill that requires 10 LLM calls to do what 1 call should do is a structural waste, not a style choice.
+- Token budget constraints in skill prompts (~200 tokens for destination, ~150 for orientation) are cost constraints, not just window constraints.
+- Improvements to prompt efficiency are as valuable as improvements to output quality.
+
+### Implementation direction
+
+1. **Harness ledger already captures token counts** — no new data needed.
+2. **Surface cost per cycle** — ai-steward run output should report: total tokens, estimated USD cost, tokens per phase.
+3. **Record cost in trail entries** — each improve iteration's trail entry should include the token cost of that cycle.
+4. **Track trend** — retrospect.md should include a cost-trend claim when enough data exists.
+5. **Establish a baseline** — the first N runs establish the baseline cost per accepted improvement. Future architectural changes are evaluated against it.
+
+### What counts as improvement
+
+An architectural change that reduces cost-per-accepted-improvement by X% is evidence of improvement — independently of whether the output "feels better." This is the same structural-evidence discipline the manifesto applies to reasoning fidelity: eliminate subjective claims, replace with auditable measurement.
