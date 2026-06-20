@@ -1,71 +1,71 @@
 # retrospect.md — ai-steward
 
-_Last updated: 2026-06-19 (run: post-destination-refinement-orientation)_
+_Last updated: 2026-06-20 (run: V1-completion-arc-read)_
 
 ---
 
 ## Current claims
 
-**1. The project has been dormant for 35 days; the destination just leapt forward.**
-Last substantive code work: 2026-05-15 (first scaffold). Last entry: 2026-05-28 (mechanical filename migration). The destination received major updates today — token efficiency as architectural constraint, V1 defined as lightweight autonomous loop stopping before release. The trail has not kept pace with the destination's evolution.
+**1. V1 is structurally complete but operationally untested.**
+57 tests pass. All five phases exist (PRE-FLIGHT, SCAN, IMPLEMENT, VERIFY, RECORD), the loop is wired, the CLI loads config and calls `run()`. Every test uses mocks — no real LLM call, no real harness connection, no real diff, has ever been exercised. The loop has never produced a proposal on a real repo. The next event that matters is the first real run, not more code.
 
-**2. The founding decisions are structurally aligned with the new token-efficiency constraint.**
-The harness as tokenless structural capture, the "dumb execution layer" realization, the separation of execution from reasoning — these were articulated in May before token cost was named as a first-class constraint, but they support it directly. The founding vision's architecture *enables* the token-efficiency discipline; the June refinement *requires* it.
+**2. The execution layer received all attention; the reasoning layer has zero code presence.**
+10 consecutive improve iterations built the execution layer in one day. This is correct for V1. But the destination names model-family independence, Probe-based reasoning verification, and convergence-based stopping as the differentiators. None of these exist yet. The arc shows a risk pattern: the loop is most comfortable in execution-layer infrastructure and may stay there. A future run can falsify this by showing reasoning-layer code was added.
 
-**3. The existing code (config.py) encodes the full vision, not V1.**
-`config.py` defines five-phase model assignment with model-family independence validation. V1 explicitly says: "Single-model operation (no model-family independence yet)." This is a concrete gap. Either the config needs simplification for V1 (a `ModelConfig` with one model, not `ModelAssignment` with five), or V1 inherits complexity it said it would defer. A future run can falsify this by showing the config was simplified or by showing V1's "single-model" claim was revised.
+**3. Observable Autonomy is structurally implemented but not verified at integration level.**
+`harness.py` enforces fail-closed via TCP check; RECORD writes the trail entry and stages the file. These are correct. But the harness ledger write path — the actual `HARNESS_ROOT` JSONL append that is the independent evidence — has never been exercised in this arc. `is_reachable()` only proves TCP. A proxy accepting connections but failing all ledger writes would pass PRE-FLIGHT and produce no evidence trail. This is the most important untested claim in V1.
 
-**4. The May retrospect's "next work" candidates are still open.**
-- ANALYZE phase definition: not built
-- Model-family phase assignment: config exists but no pipeline to use it
-- Harness integration module: not built
-These were ranked candidates 35 days ago. None advanced.
+**4. The founding architecture decisions aged exactly as predicted.**
+The "dumb execution layer" realization (May 2026) was validated by the V1 build: tier 0/1 loop built in one session, no inline reasoning needed. Model-family independence as a reasoning integrity mechanism (not performance) remains the right frame but is deferred to V2. The five-field `ModelAssignment` in config.py was not a mistake — V1 sets all five to the same model, and the structure is forward-compatible.
 
-**5. A tension now exists between the founding vision and V1 scope.**
-The founding vision describes: full model-family independence, multi-tier reasoning (tiers 2-3), complete Skills suite integration (Improve, Retrospect, Probe), convergence-based stopping. V1 explicitly defers all of these. The founding realizations (especially model-family independence as reasoning integrity mechanism) may pull toward complexity that V1 intentionally avoids.
+**5. One recurring test-infrastructure hazard: CRLF on Windows.**
+Three hits in one session (verify tests, implement tests; caught at design for scan tests). Documented and partially mitigated (`write_bytes` for byte-sensitive tests; `newline="\n"` in `record.py`). The root cause — Windows `write_text` emitting CRLF — remains live for any new test that writes files and compares byte sizes.
 
-**Resolution:** V1 is a corrective commitment, not a regression. The founding vision is the destination; V1 is the first step toward it. The config.py gap is the signal: either simplify the config to match V1, or accept that V1 carries some V2 scaffolding that isn't load-bearing yet.
-
-**6. The harness precondition is still satisfied, but integration is unbuilt.**
-Harness-protocol exists at `C:\git\harness-protocol` with tested extraction. The first scaffold references it in `HarnessConfig`. No code actually calls it yet.
+**6. One structural debt deferred: `pipeline/_types.py`.**
+`Finding` and `LoopResult` live in `loop.py`. Every phase module imports `Finding` from `loop.py`, which creates a circular import. `run()` uses lazy phase imports as a workaround. This is a smell. The correct fix — `pipeline/_types.py` — was recognized, noted as `[!REALIZATION]`, and explicitly deferred. It will compound if V2 adds phases or phases import each other for other reasons.
 
 ---
 
 ## What the next runs should test
 
-**1. Resolve the config.py / V1 mismatch.**
-Either simplify `config.py` to match V1's "single-model, tier 0/1 only" scope, or explicitly document that the config carries forward structure for V2 while V1 uses a subset. The current state is ambiguous.
+**1. First real run (highest priority).**
+Install pyyaml. Start harness proxy. Create `.ai-steward.yaml` in a small real Python repo. Run `ai-steward run <repo>`. Observe what actually happens: does the loop produce a useful proposal, does VERIFY catch anything, does the trail entry look right, does the harness ledger get written? This is V1's test. No amount of additional code work advances the destination more than this.
 
-**2. Build the minimal V1 loop.**
-Per today's destination: analyze → propose → implement → verify → record. Single model. Tier 0 (structural) and tier 1 (cheap model) reasoning only. Manual trigger. Stops with proposal ready for human review. This is the concrete deliverable.
+**2. Harness ledger verification.**
+After the first real run, check `<repo>/.harness/` for the JSONL ledger entries. Verify both LLM calls were captured with full request/response. This is the Observable Autonomy guarantee made concrete. If the ledger is empty or absent, the structural guarantee has a hole.
 
-**3. Connect to harness-protocol.**
-The execution layer must route all LLM calls through `http://localhost:8474`. The harness captures evidence; the agent processes responses. This integration is the structural Observable Autonomy guarantee — V1 does not earn trust without it.
+**3. `pipeline/_types.py` refactor.**
+Move `Finding` and `LoopResult` to a dedicated types module. Eliminates the lazy-import workaround in `run()`. Changes ~10 files mechanically. Do this before adding any V2 phases.
 
-**4. Define what "tier 0" and "tier 1" mean in code.**
-The destination describes the tiers conceptually. What are the actual gates? "Tests pass" is tier 0. "Diff looks reasonable" is tier 1. Where exactly is the boundary? This needs to be concrete before the loop is built.
+**4. Reasoning layer first contact.**
+After the first real run produces one proposal: run the Improve skill on the PROPOSAL itself (is the proposed change sensible?). That is the first time the reasoning layer examines what the execution layer produced. This is the V1→V2 bridge.
 
 ---
 
 ## Active operational rules
 
-*Carried forward from May, updated where the destination changed:*
+*Updated from the V1 build arc. Rules that changed are marked.*
 
-- **V1 first.** Do not build multi-model-family infrastructure until the single-model loop works end-to-end. The founding realizations are valid; the ordering is corrected.
-- **Execution layer must remain separate from reasoning layer.** Do not mix inline LLM calls into pipeline logic. This founding realization holds.
+- **V1 stops before release.** The operator reviews the staged diff and decides. This remains inviolable — do not wire auto-commit.
 - **harness-protocol is outside ai-steward's autonomous scope.** Changes require explicit operator action. Structural exclusion, not a gate.
-- **Write evidence before accepting model output.** Fail-closed: if the ledger write fails, the response is withheld. This is the Observable Autonomy guarantee.
-- **Token cost is a design constraint, not an optimization.** Every LLM call must justify its tier. Most cycles should never reach tier 2/3.
-- **V1 stops before release.** The operator reviews and decides. Push/release autonomy is earned by demonstrating the pre-release loop produces consistently acceptable proposals.
+- **Write evidence before accepting model output.** Fail-closed: harness ledger write must succeed before the loop continues. Not yet verified at runtime — see claim 3.
+- **Token cost is a design constraint.** Every LLM call must justify its tier. V1 uses 2 calls per cycle. Any new phase that adds a call must justify it in the trail.
+- **Execution layer must remain separate from reasoning layer.** No inline reasoning in pipeline phases. The phases execute; Improve/Retrospect/Probe reason about what they produced.
+- **Use `write_bytes(content.encode("utf-8"))` in tests that compare byte sizes.** [NEW — from CRLF [!REALIZATION]] Windows `write_text` emits CRLF; byte counts will diverge silently.
+- **Record every design decision before writing code.** Consistently followed in V1 build. Carry forward.
+- **Session summaries are forward-planning, not code-describing.** [NEW] The `allow_dirty` gap was described in a session summary as "config carries the field, code ignores it" — but the field didn't exist. Always verify claims against actual files.
+- **`_types.py` refactor before adding V2 phases.** [NEW] The lazy-import workaround in `run()` will compound. Do not add phases on top of it.
 
 ---
 
 ## Loop-effectiveness notes
 
-**Bar this retrospect tested:** Internal consistency between the destination and the trail. Does the arc support the new direction?
+**Bar this retrospect tested:** Arc consistency, reversal density, coverage of the destination's claims, operational debt accumulation.
 
-**Finding:** The founding decisions support the token-efficiency constraint, but the first code artifact (config.py) was written against the full vision, not V1. The trail has not kept pace with destination evolution.
+**Finding:** The loop built V1 correctly and efficiently. Predictions held at high rate; reversals were marked and explained. No pattern of confabulation detected. The loop is examining the right thing *for now* — but "execution layer completeness" is a bar V1 has clearly satisfied. The next bar is "operational correctness," and the loop has not been challenged on it yet.
 
-**Bars not tested:** Whether V1's scope is actually achievable with tier 0/1 reasoning only (that requires building it). Whether the harness integration works in practice. Whether the token-budget numbers from Evo's history are transferable.
+**Bars not tested by this retrospect:** Whether V1 produces useful proposals on real code (requires a real run). Whether the harness ledger writes are correct. Whether tier 1 reasoning is sufficient without tier 2/3 (V1's deepest open question from the June 19 retrospect — still open, still the right question).
 
-**The deepest uncertainty:** Can the autonomous loop produce acceptable proposals without tier 2/3 reasoning? The destination asserts this is possible but offers no evidence. V1 is the test. If it fails — if tier 1 reasoning cannot produce proposals worth reviewing — then the token-efficiency constraint conflicts with the earned-delegation destination, and something has to give.
+**Silence on:** Internal code quality (unit test coverage, structural correctness of each phase). The test suite is comprehensive for its scope.
+
+**Bars not tested, explicitly named:** End-to-end integration correctness, proposal quality on real repositories, harness ledger integrity at runtime, reasoning layer existence and behavior.

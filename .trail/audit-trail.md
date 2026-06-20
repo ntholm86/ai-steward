@@ -805,3 +805,56 @@ src/ai_steward/
 1. **Move Finding + LoopResult to `pipeline/_types.py`** -- eliminates the lazy-import debt in run(). Structural cleanup; changes ~10 files mechanically.
 2. **Smoke test CLI end-to-end** -- install pyyaml, create .ai-steward.yaml in a test repo, run `ai-steward run <repo>` against a real target. First actual end-to-end exercise of V1.
 3. **Update retrospect.md** -- current retrospect is from 2026-06-19 pre-build; all six claims are now stale. Run the Retrospect skill to re-orient the trail.
+
+---
+
+## 2026-06-20 -- Retrospect: V1-completion-arc-read
+
+**Skill:** Retrospect v1.9.0
+**Trigger:** Operator asked to "make sure we trailed everything, then run retrospect." All 10 improve iterations confirmed in trail before running.
+
+**Scope statement:** Read the full trail (15 entries, 2026-05-14 through 2026-06-20). Where is V1 now? What has the loop avoided? Is the loop examining the right parts of the target?
+
+**Freshness guard:** No tools/record.py in ai-steward. No derived history.md or learning.md -- guard trivially passes (no stale artifacts possible). Arc-claims allowed.
+
+### Arc-read summary
+
+**What changed and in what order:**
+1. May 14: Three founding sessions -- architecture, naming, vision, Vision skill run (2 [!REVERSAL], multiple [!REALIZATION])
+2. May 15: First retrospect + first code (config.py scaffold, Evo take/leave analysis)
+3. May 28: Mechanical filename migration (vision to destination)
+4. June 19: Destination refinement, retrospect, then 10 consecutive Improve iterations building V1 from scratch in one day
+5. June 20: allow_dirty gap closure, this retrospect
+
+**Reversal density:** 2 [!REVERSAL] markers across 15 entries. Prediction accuracy: high -- most held exactly. One class of mistake repeated 3 times (CRLF/byte-size on Windows), documented and mitigated.
+
+**Where attention was concentrated:** Execution layer exclusively. Config, harness, loop, scan, implement, verify, record -- built in dependency order.
+
+**What has been consistently avoided:**
+- The reasoning layer (zero code presence) -- correct for V1, risk pattern for V2
+- Harness ledger integration at runtime -- structurally implemented, never exercised
+- Self-targeting test -- never run the loop against itself
+- Multi-language support -- hardcoded to pytest/Python
+
+**[!REALIZATION]s that aged well:**
+- "Dumb execution layer" (May 14) -- V1 built in one day, no tier 2/3 reasoning needed
+- "Model-family independence as reasoning integrity mechanism" -- still valid, V2 target
+- CRLF test hazard (June 19) -- immediately applied in record.py
+
+**[!REALIZATION] arc-level (new -- surfaces from arc-read not visible in any iteration):**
+The deepest gap in V1 is not structural code quality (strong) but the untested claim at the center of the destination: "tier 1 reasoning is sufficient for routine improvements." This has been design-asserted since June 19 and remains unverified. The first real run is the only evidence that can move this claim.
+
+### Arc-claims written to retrospect.md
+
+1. V1 is structurally complete but operationally untested.
+2. The execution layer received all attention; reasoning layer has zero code presence.
+3. Observable Autonomy is structurally implemented but not verified at integration level.
+4. The founding architecture decisions aged exactly as predicted.
+5. CRLF test hazard: recurring, documented, partially mitigated.
+6. pipeline/_types.py structural debt: deferred, will compound.
+
+### Actions
+
+- Committed outstanding changes (record.py, wired loop, cli, allow_dirty, trail entries) before running
+- Rewrote .trail/retrospect.md with current arc-based orientation (per Retrospect skill: retrospect.md is the distillation, not append-only)
+- Appended this entry to audit-trail.md
