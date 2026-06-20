@@ -16,6 +16,7 @@ from ai_steward.pipeline.loop import (
     _is_git_clean,
     _is_git_repo,
     preflight,
+    run,
 )
 
 # ---------------------------------------------------------------------------
@@ -143,3 +144,105 @@ def test_preflight_passes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
     assert passed
     assert reason == ""
     assert count == 13
+
+
+def test_preflight_dirty_tree_passes_when_allow_dirty(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _git_init(tmp_path)
+    (tmp_path / "wip.py").write_text("x = 1")  # dirty working tree
+    config = AiStewardConfig(
+        repo=tmp_path,
+        models=_V1_MODELS,
+        harness=HarnessConfig(endpoint="http://127.0.0.1:19999"),
+        allow_dirty=True,
+    )
+    monkeypatch.setattr("ai_steward.pipeline.loop.is_reachable", lambda _: True)
+    monkeypatch.setattr("ai_steward.pipeline.loop._baseline_tests", lambda _: (True, 5))
+
+    passed, reason, count = preflight(tmp_path, config)
+
+    assert passed
+    assert reason == ""
+    assert count == 5
+
+
+# ---------------------------------------------------------------------------
+# run() — full pipeline (all phases mocked to isolate loop logic)
+# ---------------------------------------------------------------------------
+
+import contextlib
+
+import ai_steward.harness
+import ai_steward.pipeline.implement as impl_mod
+import ai_steward.pipeline.record as record_mod
+import ai_steward.pipeline.scan as scan_mod
+import ai_steward.pipeline.verify as verify_mod
+
+_FINDING = Finding(
+    file="f.py",
+    description="Remove unused import",
+    proposed_change="x = 1\n",
+    rationale="unused",
+    risk="low",
+)
+
+
+def _pass_preflight(monkeypatch: pytest.MonkeyPatch, baseline: int = 5) -> None:
+    monkeypatch.setattr("ai_steward.pipeline.loop._is_git_repo", lambda _r: True)
+    monkeypatch.setattr("ai_steward.pipeline.loop._is_git_clean", lambda _r: True)
+    monkeypatch.setattr("ai_steward.pipeline.loop._baseline_tests", lambda _r: (True, baseline))
+    monkeypatch.setattr("ai_steward.pipeline.loop.is_reachable", lambda _c: True)
+    monkeypatch.setattr(ai_steward.harness, "harness_session", lambda *_a: contextlib.nullcontext())
+
+
+def test_run_nothing_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _pass_preflight(monkeypatch)
+    monkeypatch.setattr(scan_mod, "scan", lambda *_a, **_k: None)
+    monkeypatch.setattr("ai_steward.pipeline.loop._get_diff", lambda *_a: "")
+
+    result = run(tmp_path, _reachable_config(tmp_path))
+
+    assert result.status == "nothing_found"
+    assert result.finding is None
+
+
+def test_run_implement_failed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _pass_preflight(monkeypatch)
+    monkeypatch.setattr(scan_mod, "scan", lambda *_a, **_k: _FINDING)
+    monkeypatch.setattr(impl_mod, "implement", lambda *_a, **_k: (False, "model returned empty content", 0))
+    monkeypatch.setattr("ai_steward.pipeline.loop._get_diff", lambda *_a: "")
+
+    result = run(tmp_path, _reachable_config(tmp_path))
+
+    assert result.status == "implement_failed"
+    assert result.finding is _FINDING
+
+
+def test_run_verify_failed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _pass_preflight(monkeypatch)
+    monkeypatch.setattr(scan_mod, "scan", lambda *_a, **_k: _FINDING)
+    monkeypatch.setattr(impl_mod, "implement", lambda *_a, **_k: (True, "", 100))
+    monkeypatch.setattr("ai_steward.pipeline.loop._get_diff", lambda *_a: "diff text")
+    monkeypatch.setattr(verify_mod, "verify", lambda *_a, **_k: (False, "syntax error"))
+
+    result = run(tmp_path, _reachable_config(tmp_path))
+
+    assert result.status == "verify_failed"
+    assert result.diff == "diff text"
+
+
+def test_run_proposed_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _pass_preflight(monkeypatch)
+    monkeypatch.setattr(scan_mod, "scan", lambda *_a, **_k: _FINDING)
+    monkeypatch.setattr(impl_mod, "implement", lambda *_a, **_k: (True, "", 100))
+    monkeypatch.setattr("ai_steward.pipeline.loop._get_diff", lambda *_a: "diff text")
+    monkeypatch.setattr(verify_mod, "verify", lambda *_a, **_k: (True, ""))
+    monkeypatch.setattr(record_mod, "record", lambda *_a, **_k: "trail entry")
+
+    result = run(tmp_path, _reachable_config(tmp_path))
+
+    assert result.status == "proposed"
+    assert result.finding is _FINDING
+    assert result.diff == "diff text"
+    assert result.trail_entry == "trail entry"

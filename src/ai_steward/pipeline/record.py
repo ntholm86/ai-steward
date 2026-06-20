@@ -1,0 +1,79 @@
+"""RECORD phase — tier 0, no LLM call.
+
+Appends an audit trail entry to <target_repo>/.trail/audit-trail.md
+and stages the changed file (git add) for operator review.
+
+Called after VERIFY has confirmed the change is safe to stage.
+The operator reviews the staged diff and commits or discards.
+
+See .trail/audit-trail.md (2026-06-19 V1 Pipeline Design) for the
+full spec and rationale.
+"""
+
+from __future__ import annotations
+
+import subprocess
+from datetime import date
+from pathlib import Path
+
+from ai_steward.config import AiStewardConfig
+from ai_steward.pipeline.loop import Finding
+
+
+def record(
+    repo: Path,
+    config: AiStewardConfig,
+    finding: Finding,
+    diff: str,
+) -> str:
+    """Append a trail entry and stage the changed file.
+
+    Args:
+        repo: Repository root.
+        config: Pipeline configuration (reserved for future use in V2).
+        finding: The change that was applied by IMPLEMENT.
+        diff: Output of ``git diff HEAD -- <file>`` captured before staging.
+
+    Returns:
+        The trail entry string that was appended.
+    """
+    entry = _build_entry(finding, diff)
+    _append_to_trail(repo, entry)
+    _stage_file(repo, finding.file)
+    return entry
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+
+def _build_entry(finding: Finding, diff: str) -> str:
+    today = date.today().isoformat()
+    return (
+        f"\n---\n\n"
+        f"## {today} \u2014 ai-steward: {finding.description}\n\n"
+        f"**File:** {finding.file}  \n"
+        f"**Risk:** {finding.risk}  \n"
+        f"**Rationale:** {finding.rationale}\n\n"
+        f"**Proposed change:**\n```\n{finding.proposed_change}\n```\n\n"
+        f"**Diff:**\n```diff\n{diff}\n```\n\n"
+        f"*Staged for operator review. Not committed.*\n"
+    )
+
+
+def _append_to_trail(repo: Path, entry: str) -> None:
+    trail_dir = repo / ".trail"
+    trail_dir.mkdir(exist_ok=True)
+    trail_file = trail_dir / "audit-trail.md"
+    with trail_file.open("a", encoding="utf-8", newline="\n") as fh:
+        fh.write(entry)
+
+
+def _stage_file(repo: Path, rel_path: str) -> None:
+    """Stage the changed file. Silent on failure — operator will notice on review."""
+    subprocess.run(
+        ["git", "add", "--", rel_path],
+        cwd=repo,
+        capture_output=True,
+    )

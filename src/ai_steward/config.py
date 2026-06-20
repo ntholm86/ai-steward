@@ -73,6 +73,7 @@ class AiStewardConfig(BaseModel):
     max_iterations: int = 10
     budget_usd: float = 5.0
     sandbox: str = "docker"  # "docker" | "local"
+    allow_dirty: bool = False  # skip the clean-tree gate (operator opt-in)
 
     @field_validator("repo")
     @classmethod

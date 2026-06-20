@@ -33,7 +33,7 @@ class Finding:
 class LoopResult:
     """Outcome of one complete pipeline cycle."""
 
-    status: Literal["proposed", "verify_failed", "nothing_found", "preflight_failed"]
+    status: Literal["proposed", "verify_failed", "nothing_found", "preflight_failed", "implement_failed"]
     finding: Finding | None
     diff: str | None
     trail_entry: str
@@ -82,6 +82,17 @@ def _baseline_tests(repo: Path) -> tuple[bool, int]:
     return result.returncode == 0, count
 
 
+def _get_diff(repo: Path, rel_path: str) -> str:
+    """Capture unstaged diff of a file vs HEAD."""
+    result = subprocess.run(
+        ["git", "diff", "HEAD", "--", rel_path],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout
+
+
 # ---------------------------------------------------------------------------
 # PRE-FLIGHT (tier 0 — all gates must pass before first LLM call)
 # ---------------------------------------------------------------------------
@@ -99,7 +110,7 @@ def preflight(repo: Path, config: AiStewardConfig) -> tuple[bool, str, int]:
     if not _is_git_repo(repo):
         return False, f"not a git repository: {repo}", 0
 
-    if not _is_git_clean(repo):
+    if not _is_git_clean(repo) and not config.allow_dirty:
         return False, "working tree has uncommitted changes", 0
 
     if not is_reachable(config.harness):
@@ -120,10 +131,19 @@ def preflight(repo: Path, config: AiStewardConfig) -> tuple[bool, str, int]:
 def run(repo: Path, config: AiStewardConfig) -> LoopResult:
     """Run one V1 pipeline cycle.
 
-    PRE-FLIGHT is fully implemented.
-    SCAN, IMPLEMENT, VERIFY, RECORD are built in subsequent iterations.
+    PRE-FLIGHT → SCAN → IMPLEMENT → VERIFY → RECORD
+    Stops before release: the staged change waits for operator review.
+
+    Phase modules are lazy-imported here to break the circular import:
+    scan/implement/record all import Finding from this module.
     """
-    passed, reason, _baseline = preflight(repo, config)
+    from ai_steward.harness import harness_session
+    from ai_steward.pipeline.implement import implement
+    from ai_steward.pipeline.record import record
+    from ai_steward.pipeline.scan import scan
+    from ai_steward.pipeline.verify import verify
+
+    passed, reason, baseline_count = preflight(repo, config)
     if not passed:
         return LoopResult(
             status="preflight_failed",
@@ -133,6 +153,42 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
             preflight_failure=reason,
         )
 
-    # SCAN → IMPLEMENT → VERIFY → RECORD
-    # (see .trail/audit-trail.md 2026-06-19 for full spec)
-    raise NotImplementedError("SCAN phase not yet implemented")
+    with harness_session(repo, config.harness):
+        finding = scan(repo, config)
+        if finding is None:
+            return LoopResult(
+                status="nothing_found",
+                finding=None,
+                diff=None,
+                trail_entry="SCAN: no actionable improvement found",
+            )
+
+        ok, reason, original_size = implement(repo, config, finding)
+        if not ok:
+            return LoopResult(
+                status="implement_failed",
+                finding=finding,
+                diff=None,
+                trail_entry=f"IMPLEMENT FAILED: {reason}",
+            )
+
+    # VERIFY and RECORD are tier-0 — outside the harness LLM context.
+    diff = _get_diff(repo, finding.file)
+    changed_file = repo / finding.file
+    ok, reason = verify(repo, config, changed_file, original_size, baseline_count)
+    if not ok:
+        return LoopResult(
+            status="verify_failed",
+            finding=finding,
+            diff=diff,
+            trail_entry=f"VERIFY FAILED: {reason}",
+        )
+
+    trail_entry = record(repo, config, finding, diff)
+
+    return LoopResult(
+        status="proposed",
+        finding=finding,
+        diff=diff,
+        trail_entry=trail_entry,
+    )
