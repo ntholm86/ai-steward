@@ -1415,3 +1415,40 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 1. **Run ai-steward against itself** -- both preconditions are now met. The next self-targeting run is the first that will produce a trail entry with full P1+P2 compliance. This is the highest-value next action.
 2. **Section-boundary truncation for _load_destination** -- find last full ## YYYY-MM-DD section before 3000-char cutoff. Deferred 5 times now.
 3. **Harness session discovery test** -- harness_session() before/after scanning has no test coverage.
+
+---
+
+## 2026-06-20 -- Improve: harness session discovery tests -- P2 structural guarantee verified
+
+**Skill:** Improve v3.10.0
+**Trigger:** Operator invoked improve. Top-ranked code candidate: harness session discovery test.
+
+**Lenses applied:**
+
+- *Purpose:* The self-targeting gate just opened. The session discovery logic in harness_session() is the mechanism that links every trail entry to its harness evidence -- the P2 structural guarantee. It has before/after snapshot logic with ULID sorting. No test covered this discovery path; existing tests only verified HARNESS_ROOT value and restore behavior. A regression here would break P2 silently.
+- *Inconsistency:* Two iterations ago we declared "P2 (Observable Autonomy) is structurally complete." Structural completeness without test coverage is a claim, not a guarantee. Section-boundary truncation (the other candidate) is quality-of-life. Session discovery is correctness.
+- *Waste:* The before/after snapshot, sorted(after - before), new[-1] pick -- non-trivial logic at the moment of highest consequence (link from memory to evidence). Writing the tests costs little; a silent P2 regression is costly.
+
+**[!DECISION]** Add 3 tests for harness_session() session discovery: (1) single new session discovered, (2) latest ULID picked when multiple sessions created, (3) None when no session created. No production code changes.
+
+**Prediction:** 3 new tests in test_harness.py. 62 + 3 = 65 total. All pass.
+
+**Verification:** python -m pytest tests/ -q -> 65/65. Prediction held exactly. No reversals.
+
+**Reflection:**
+
+- *Model-claim:* harness_session() session discovery is now tested and verified. The P2 structural guarantee -- that trail entries correctly reference their harness evidence -- has test-level confidence, not just design-level confidence.
+- *Blind spot:* Did not test the case where a pre-existing session was created BEFORE the context (should not be picked). The current logic uses set difference, so pre-existing sessions are excluded by construction. The test coverage for this is implicit in test_harness_session_picks_latest -- but a dedicated regression test would be more explicit.
+- *Imagined-reader pushback:* "These tests simulate the harness by creating directories manually -- they don't test that the real harness actually creates directories in the right place." True. Integration testing with a live harness is a separate concern. These unit tests verify the discovery logic itself.
+
+**Across-trail triggers:**
+- *Recurring finding-class:* not fired.
+- *About to declare silence:* evaluating -- section-boundary truncation is deferred 5 times, harness session discovery is now covered. The remaining substantive code gaps are: section-boundary truncation (minor quality), and the self-targeting run itself (operational).
+- *Contradicts prior [!REALIZATION]:* not fired.
+- *Operator explicitly asked:* fired.
+
+### Candidate Next Moves
+
+1. **Run ai-steward against itself** -- both P1 and P2 preconditions met, session discovery now tested. The first compliant self-targeting run is the highest-value next action.
+2. **Section-boundary truncation for _load_destination** -- find last full ## YYYY-MM-DD section before 3000-char cutoff. Deferred 5 times. Genuinely minor.
+3. **Update retrospect.md** -- current retrospect predates the P1/P2 completion. Claims 4 and 6 are stale.
