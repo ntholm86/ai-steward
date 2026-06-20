@@ -1719,3 +1719,47 @@ index 16d54dc..bf41785 100644
 ```
 
 *Staged for operator review. Not committed.*
+
+
+---
+
+## 2026-06-20 -- Retrospect: post-P1-P2-closure
+
+**Skill:** Retrospect v1.9.0
+**Trigger:** Operator requested retrospect after P1/P2 structural work complete and first P1+P2-complete self-targeting run.
+
+**Scope statement:** Read the arc from destination consolidation through P1/P2 closure. What has the target become? Where does the loop's attention need to go now?
+
+**Freshness guard:** No tools/record.py in ai-steward. Guard trivially passes.
+
+### Arc-read summary
+
+**What changed since last retrospect:**
+- P1 closure: blind_spot added to SCAN schema, lenses/predictions in trail entries
+- P2 closure: X-Harness-Root per-request header, harness session capture fixed
+- Section-boundary truncation implemented
+- First P1+P2-complete self-targeting run succeeded
+- Harness session genuinely captured: `.trail/sessions/01KVHXEFZ5DJ6THCP099PKA8WB.jsonl`
+- Two self-targeting proposals rejected (same `[!REVERSAL]` placeholder error)
+
+**Reversal density:** 1 `[!REVERSAL]` in the `_types.py` refactor (monkeypatch timing). Honest handling.
+
+**Where attention was concentrated:** Structural completeness (P1/P2 closure). The focus was correct for V1 closure.
+
+**[!REALIZATION] (arc-level):** The AI keeps proposing the same wrong fix to `record.py`. The destination says "improve-skill-style entries" without defining them. This creates an attractor loop: every self-targeting run reads the destination, concludes record.py needs restructuring, and produces a proposal with hardcoded `[!REVERSAL]` placeholders. Either define the format concretely or accept the current format as sufficient.
+
+### Arc-claims written to retrospect.md
+
+1. V1 is structurally complete (P1+P2 closed)
+2. Observable Autonomy is structural, not policy
+3. Commander's Intent is structural, not policy
+4. Trail entries capture reasoning structure
+5. The AI keeps targeting record.py with the wrong proposal (attractor loop documented)
+6. Dual purpose holds (proof + tool)
+
+### Candidate Next Moves
+
+1. **Accept the current trail format or write a spec** — breaks the attractor loop.
+2. **Run against external repos** — prove the mechanism generalizes.
+3. **Multi-cycle convergence** — test that the loop stops when done.
+4. **Harness ledger integrity audit** — verify hash-chain replay.
