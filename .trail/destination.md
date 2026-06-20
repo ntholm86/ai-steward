@@ -127,7 +127,7 @@ Gates are reasoning decisions, not hard rules. The execution layer presents evid
 
 **Reasoning layer** (from the Skills suite)
 
-- Vision: persistent operator intent across sessions
+- destination: persistent operator intent across sessions
 - Trail: decisions and reasoning recorded as they happen
 - Improve: meta-cognitive improvement loop; silence is a valid outcome
 - Retrospect: reads the full arc — is the loop improving the right thing?
