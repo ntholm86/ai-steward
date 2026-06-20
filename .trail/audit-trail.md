@@ -964,3 +964,51 @@ The destination's founding claim — "structural guarantees replace social contr
 The loop can run again. Each subsequent run is the same pipeline. The operator reviews each proposal. This is how the loop "takes over."
 
 Next high-value run targets: unused imports, missing test coverage, type annotation gaps.
+
+
+---
+
+## 2026-06-20 -- Retrospect: post-V1-milestone-orientation
+
+**Skill:** Retrospect v1.9.0
+**Trigger:** Operator asked for retrospect to establish clear orientation after the V1 milestone and destination expansion (cross-project .pea/ unification).
+
+**Scope statement:** Read the full arc through the V1 milestone. What has the target become? Where should the next runs look now that the founding hypothesis validated?
+
+**Freshness guard:** No tools/record.py in ai-steward. No derived artifacts to regenerate. Guard trivially passes.
+
+### Arc-read summary
+
+**What changed:**
+- V1 milestone achieved: first self-targeting run completed
+- Destination expanded: .pea/ as unified memory standard across 3 projects
+- Principle 1 gap identified: undirected SCAN violates Commander's Intent
+
+**Reversal density:** 2 [!REVERSAL] markers across 17 entries. High prediction accuracy. CRLF class documented and mitigated.
+
+**Where attention was concentrated:** Execution layer exclusively through V1. Then architecture design (destination expansion).
+
+**[!REALIZATION] (arc-level):** The founding hypothesis — "structural guarantees replace social contracts" — validated under operational contact. This is the most important confirmation in the arc. The hypothesis is no longer theoretical.
+
+**[!REALIZATION] (arc-level):** The next gap is not more code. SCAN works but is undirected. The architectural constraint now is schema design for .pea/ memory model before directed SCAN implementation.
+
+### Arc-claims written to retrospect.md
+
+1. V1 milestone achieved: the founding hypothesis validated
+2. Tier 1 reasoning is sufficient for routine improvements — empirically confirmed
+3. Observable Autonomy held structurally
+4. The execution layer is complete; the architectural gap is now Principle 1
+5. The next work is schema design, not implementation
+6. Three projects are now in scope
+
+### Actions
+
+- Rewrote .trail/retrospect.md with post-V1 orientation
+- Appended this entry to audit-trail.md
+
+### Candidate Next Moves
+
+1. **Define the .pea/ schema** — destination.yaml fields, orientation.yaml derivation, recent context window. Design document before code. ~650 total token budget.
+2. **Implement directed SCAN** — reads destination + orientation, proposes improvements that advance operator's stated direction.
+3. **Configure harness for .pea/sessions/** — verify HARNESS_ROOT respects the new path.
+4. **Implement ai-steward probe** — ARF probe on demand.

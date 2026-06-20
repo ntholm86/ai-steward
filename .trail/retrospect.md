@@ -1,71 +1,82 @@
-# retrospect.md — ai-steward
+﻿# retrospect.md — ai-steward
 
-_Last updated: 2026-06-20 (run: V1-completion-arc-read)_
+_Last updated: 2026-06-20 (run: post-V1-milestone-orientation)_
 
 ---
 
 ## Current claims
 
-**1. V1 is structurally complete but operationally untested.**
-57 tests pass. All five phases exist (PRE-FLIGHT, SCAN, IMPLEMENT, VERIFY, RECORD), the loop is wired, the CLI loads config and calls `run()`. Every test uses mocks — no real LLM call, no real harness connection, no real diff, has ever been exercised. The loop has never produced a proposal on a real repo. The next event that matters is the first real run, not more code.
+**1. V1 milestone achieved: the founding hypothesis validated.**
+`ai-steward run c:\git\ai-steward` completed. Five blockers fell. The harness captured both LLM calls. VERIFY passed. The AI proposed a real security improvement to its own codebase. The destination's founding claim — "structural guarantees replace social contracts" — held under first operational contact. This is no longer untested.
 
-**2. The execution layer received all attention; the reasoning layer has zero code presence.**
-10 consecutive improve iterations built the execution layer in one day. This is correct for V1. But the destination names model-family independence, Probe-based reasoning verification, and convergence-based stopping as the differentiators. None of these exist yet. The arc shows a risk pattern: the loop is most comfortable in execution-layer infrastructure and may stay there. A future run can falsify this by showing reasoning-layer code was added.
+**2. Tier 1 reasoning is sufficient for routine improvements — empirically confirmed.**
+The June 19 retrospect named this as "V1's deepest open question." The first self-targeting run answered it: claude-haiku-4-5 found a path traversal vulnerability in scan.py that the human author missed. The token-efficiency constraint is viable. Tier 2/3 is for ambiguity and judgment, not routine scanning.
 
-**3. Observable Autonomy is structurally implemented but not verified at integration level.**
-`harness.py` enforces fail-closed via TCP check; RECORD writes the trail entry and stages the file. These are correct. But the harness ledger write path — the actual `HARNESS_ROOT` JSONL append that is the independent evidence — has never been exercised in this arc. `is_reachable()` only proves TCP. A proxy accepting connections but failing all ledger writes would pass PRE-FLIGHT and produce no evidence trail. This is the most important untested claim in V1.
+**3. Observable Autonomy held structurally.**
+The harness ledger at `C:\git\harness-protocol\.harness\sessions\` contains the SCAN and IMPLEMENT calls with full request/response. The agent could not have fabricated, omitted, or modified these entries. The trail entry in `audit-trail.md` matches the ledger but is secondary evidence — the ledger is ground truth. The structural integrity layer works.
 
-**4. The founding architecture decisions aged exactly as predicted.**
-The "dumb execution layer" realization (May 2026) was validated by the V1 build: tier 0/1 loop built in one session, no inline reasoning needed. Model-family independence as a reasoning integrity mechanism (not performance) remains the right frame but is deferred to V2. The five-field `ModelAssignment` in config.py was not a mistake — V1 sets all five to the same model, and the structure is forward-compatible.
+**4. The execution layer is complete; the architectural gap is now Principle 1.**
+All five phases exist and work. 58 tests pass. But SCAN is undirected — it reads file contents but not the operator's destination. An undirected SCAN violates Commander's Intent (Principle 1). V1 proved the loop works. The next milestone is not more loop code — it is directed SCAN that reads destination.yaml.
 
-**5. One recurring test-infrastructure hazard: CRLF on Windows.**
-Three hits in one session (verify tests, implement tests; caught at design for scan tests). Documented and partially mitigated (`write_bytes` for byte-sensitive tests; `newline="\n"` in `record.py`). The root cause — Windows `write_text` emitting CRLF — remains live for any new test that writes files and compares byte sizes.
+**5. The next work is schema design, not implementation.**
+The destination expanded today to name .pea/ as the unified memory standard across ai-steward, harness-protocol, and the skill suite. The schema (destination.yaml, orientation.yaml, recent context derivation) must converge before implementation. The arc shows: schema design precedes implementation; code written before schema locks risks rework.
 
-**6. One structural debt deferred: `pipeline/_types.py`.**
-`Finding` and `LoopResult` live in `loop.py`. Every phase module imports `Finding` from `loop.py`, which creates a circular import. `run()` uses lazy phase imports as a workaround. This is a smell. The correct fix — `pipeline/_types.py` — was recognized, noted as `[!REALIZATION]`, and explicitly deferred. It will compound if V2 adds phases or phases import each other for other reasons.
+**6. Three projects are now in scope.**
+The memory model convergence affects:
+- ai-steward (consumer — reads .pea/)
+- harness-protocol (producer — writes .pea/sessions/)
+- skill suite (legacy — migrates from .trail/ to .pea/)
+
+ai-steward defines the standard. The others align. This is the first time this repo's arc has cross-project scope.
 
 ---
 
 ## What the next runs should test
 
-**1. First real run (highest priority).**
-Install pyyaml. Start harness proxy. Create `.ai-steward.yaml` in a small real Python repo. Run `ai-steward run <repo>`. Observe what actually happens: does the loop produce a useful proposal, does VERIFY catch anything, does the trail entry look right, does the harness ledger get written? This is V1's test. No amount of additional code work advances the destination more than this.
+**1. Define the .pea/ schema (highest priority)**
+destination.yaml: what fields? ~200 token budget.  
+orientation.yaml: what derivation strategy from sessions/? ~150 token budget.  
+recent context: what window into sessions/? ~300 token budget.  
+Write the schema as a design document before touching config.py or scan.py.
 
-**2. Harness ledger verification.**
-After the first real run, check `<repo>/.harness/` for the JSONL ledger entries. Verify both LLM calls were captured with full request/response. This is the Observable Autonomy guarantee made concrete. If the ledger is empty or absent, the structural guarantee has a hole.
+**2. Implement directed SCAN**
+After schema is locked: SCAN reads destination.yaml and orientation.yaml. The prompt includes Commander's Intent, not just file contents. Test: does SCAN propose improvements that advance the destination, or does it still find the first arbitrary fix?
 
-**3. `pipeline/_types.py` refactor.**
-Move `Finding` and `LoopResult` to a dedicated types module. Eliminates the lazy-import workaround in `run()`. Changes ~10 files mechanically. Do this before adding any V2 phases.
+**3. Configure harness to write to .pea/sessions/**
+Currently writes to `.harness/`. The spec says `HARNESS_ROOT` controls this. Verify the harness respects it. This is harness-protocol work, not ai-steward work.
 
-**4. Reasoning layer first contact.**
-After the first real run produces one proposal: run the Improve skill on the PROPOSAL itself (is the proposed change sensible?). That is the first time the reasoning layer examines what the execution layer produced. This is the V1→V2 bridge.
+**4. Probe on demand**
+The destination says ARF probe is operator-triggered. Implement `ai-steward probe` — runs the ARF-SPEC.md novelty probe, returns pass/fail with evidence. Not every-N-cycles.
 
 ---
 
 ## Active operational rules
 
-*Updated from the V1 build arc. Rules that changed are marked.*
+*Carried from previous retrospect + updates from V1 milestone arc.*
 
-- **V1 stops before release.** The operator reviews the staged diff and decides. This remains inviolable — do not wire auto-commit.
-- **harness-protocol is outside ai-steward's autonomous scope.** Changes require explicit operator action. Structural exclusion, not a gate.
-- **Write evidence before accepting model output.** Fail-closed: harness ledger write must succeed before the loop continues. Not yet verified at runtime — see claim 3.
-- **Token cost is a design constraint.** Every LLM call must justify its tier. V1 uses 2 calls per cycle. Any new phase that adds a call must justify it in the trail.
-- **Execution layer must remain separate from reasoning layer.** No inline reasoning in pipeline phases. The phases execute; Improve/Retrospect/Probe reason about what they produced.
-- **Use `write_bytes(content.encode("utf-8"))` in tests that compare byte sizes.** [NEW — from CRLF [!REALIZATION]] Windows `write_text` emits CRLF; byte counts will diverge silently.
-- **Record every design decision before writing code.** Consistently followed in V1 build. Carry forward.
-- **Session summaries are forward-planning, not code-describing.** [NEW] The `allow_dirty` gap was described in a session summary as "config carries the field, code ignores it" — but the field didn't exist. Always verify claims against actual files.
-- **`_types.py` refactor before adding V2 phases.** [NEW] The lazy-import workaround in `run()` will compound. Do not add phases on top of it.
+- **V1 stops before release.** Operator reviews every staged diff. Inviolable.
+- **harness-protocol is outside ai-steward's autonomous scope.** Structural exclusion.
+- **Token cost is a design constraint.** V1 uses 2 LLM calls per cycle. Justified.
+- **Execution layer must remain separate from reasoning layer.** Phases execute; skills reason.
+- **Use `write_bytes(content.encode("utf-8"))` in byte-sensitive tests.** [CRLF hazard]
+- **Record design decisions before writing code.** Followed; carry forward.
+- **`_types.py` refactor before adding V2 phases.** Debt is real, deferred.
+- **LLM does NOT write the authoritative trail.** [NEW] The harness writes .pea/sessions/. The LLM reads but does not author evidence.
+- **Schema design precedes implementation.** [NEW] .pea/ schema must lock before directed SCAN code.
+- **ai-steward defines the standard; others align.** [NEW] The skill suite adopts .pea/ after ai-steward proves it.
 
 ---
 
 ## Loop-effectiveness notes
 
-**Bar this retrospect tested:** Arc consistency, reversal density, coverage of the destination's claims, operational debt accumulation.
+**Bar this retrospect tested:** V1 operational correctness (first run succeeded), token-tier sufficiency (tier 1 worked), arc consistency, cross-project scope clarity.
 
-**Finding:** The loop built V1 correctly and efficiently. Predictions held at high rate; reversals were marked and explained. No pattern of confabulation detected. The loop is examining the right thing *for now* — but "execution layer completeness" is a bar V1 has clearly satisfied. The next bar is "operational correctness," and the loop has not been challenged on it yet.
+**Finding:** The loop is examining the right thing. V1 proved the execution layer. The destination evolved during the arc — not drift, but operator-directed expansion. The loop correctly identified Principle 1 (Commander's Intent) as the next gap, not more execution code.
 
-**Bars not tested by this retrospect:** Whether V1 produces useful proposals on real code (requires a real run). Whether the harness ledger writes are correct. Whether tier 1 reasoning is sufficient without tier 2/3 (V1's deepest open question from the June 19 retrospect — still open, still the right question).
+**Silence on:** Internal code quality (58 tests pass; structural correctness confirmed). Execution-layer completeness.
 
-**Silence on:** Internal code quality (unit test coverage, structural correctness of each phase). The test suite is comprehensive for its scope.
-
-**Bars not tested, explicitly named:** End-to-end integration correctness, proposal quality on real repositories, harness ledger integrity at runtime, reasoning layer existence and behavior.
+**Bars not tested:**
+- Directed SCAN effectiveness (requires schema + implementation)
+- Proposal quality over multiple cycles (only one cycle run)
+- Harness ledger integrity over sustained operation
+- Cross-project coordination (work not yet begun)
