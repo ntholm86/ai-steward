@@ -436,3 +436,20 @@ ai-steward, harness-protocol, and the skill suite all **reference and conform to
 - What file format for the schema definition? (JSON Schema? YAML schema? Prose + examples?)
 - What versioning scheme?
 - How do conforming implementations declare which schema version they target?
+
+---
+
+## 2026-06-20 -- Decision: .trail/ is the standard
+
+The naming discussion is closed. `.trail/` is the standard directory name.
+
+**Rationale:** The skill suite already uses `.trail/`. It works. Changing the name for theoretical purity adds migration cost with no practical benefit. The standard can evolve in the future if needed, but the current convention is the starting point.
+
+**What this means:**
+
+1. ai-steward uses `.trail/` (not `.pea/`, not `.context/`)
+2. harness-protocol writes to `.trail/sessions/` (not `.harness/`)
+3. skill suite continues as-is
+4. Schema repo (if created) defines the `.trail/` structure
+
+The prior discussion about naming was premature optimization. Ship with what works.
