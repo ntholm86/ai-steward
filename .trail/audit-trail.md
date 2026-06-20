@@ -1986,3 +1986,46 @@ SCAN correctly read the destination and identified a genuine, scoped improvement
 1. Add a deletion guard to VERIFY: reject changes where new_size < original_size * 0.5 (file lost more than half its content). Low-risk, language-agnostic, catches the exact failure mode observed.
 2. Add language-aware compile check to VERIFY config (e.g. erify_command in .ai-steward.yaml). More powerful, operator-configurable.
 3. Constrain IMPLEMENT prompt to prohibit wholesale rewrites — add explicit instruction: "preserve all code not directly related to the described change."
+
+---
+
+## 2026-06-20 — verify-deletion-guard
+
+- **skill:** improve (iteration: post-vectorium-VERIFY-gap)
+- **commit:** 0735b04
+
+### Interpretation of the ask
+
+Operator: "continue working on ai-steward — highest leverage change." Retrospect named VERIFY gap as highest-risk open item: Gate 2 guarded against growth (>2x) but not deletion (<50%), which allowed a bulk-deletion pass silently on the vectorium run (175 lines deleted, all gates passed).
+
+### Examination
+
+Gate 2 asymmetry: 
+ew_size > original_size_bytes * 2 catches rewrites but 
+ew_size < original_size_bytes * 0.5 was absent. Vectorium: ~200-line file reduced to ~5% of original — undetected.
+
+**Purpose lens:** The gate exists to catch IMPLEMENT going rogue. A one-sided guard catches one failure mode (explosion) but misses the other (collapse). Symmetric guard closes both.
+
+**Challenge:** Considered making threshold configurable via .ai-steward.yaml. Rejected — V1 principle is KISS; 50% is a defensible hard threshold. One additional edge case: original_size_bytes == 0 would cause   * 0.5 = 0, so 
+ew_size < 0 is never true. Added original_size_bytes > 0 guard to be explicit.
+
+### Prediction (pre-commit)
+
+- Vectorium's 175-line deletion (~5% of original) would now be caught.
+- 70%-of-original legitimate refactor would pass (tested explicitly).
+- All 66 prior tests pass; 2 new tests added.
+- Gate 2 is now symmetric: rejects both explosion and collapse.
+
+### Action
+
+- erify.py: Gate 2 updated — added lower-bound check 
+ew_size < original_size_bytes * 0.5; updated module docstring and comment to reflect symmetric guard.
+- 	est_verify.py: Added 	est_verify_fails_bulk_deletion_and_rolls_back and 	est_verify_passes_modest_shrink.
+
+### Outcome
+
+68/68 tests pass. Prediction confirmed: bulk-deletion test fails, modest-shrink test passes. Gate 2 is now symmetric.
+
+### Reflection
+
+The VERIFY gap was the highest-risk open item from the vectorium run. It is now closed. Next open items per retrospect: multi-cycle convergence (does the loop stop appropriately?) and harness ledger integrity (hash-chain replay end-to-end untested). Both require a live run rather than a code change.
