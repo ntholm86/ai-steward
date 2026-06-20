@@ -2354,3 +2354,68 @@ Replace un_tests(repo) with un_verify_command(cmd: str, repo: Path) throughout
 1. **Run ai-steward against itself** — V1 milestone. All three adoption prerequisites removed. P1+P2 complete. Self-targeting is the validation gate. This is the highest-value next action.
 2. **Warn on potential secrets in auto-init** — check for common secret files (`.env`, `*.key`, `*.pem`) before `git add -A` and log a warning. Safety improvement.
 3. **Retrospect update** — current retrospect predates all three technology-agnostic changes. Arc-claims 4 and 6 are stale (P1 complete, self-targeting gate fully open with zero prerequisites).
+
+---
+
+## 2026-06-20 — ai-steward: Add explicit git installation check in preflight before attempting git commands to provide clearer error messaging when git is unavailable.
+
+**[!DECISION]** Proposed: Add explicit git installation check in preflight before attempting git commands to provide clearer error messaging when git is unavailable.  
+*Rationale:* The destination.md (2026-06-20) explicitly states 'If git is not installed: fail PRE-FLIGHT with a clear message: install git.' Currently, the code attempts git operations without first verifying git exists, which could produce cryptic subprocess errors. An explicit check provides the promised clear messaging and aligns with the stated design.  
+*Risk:* low
+
+**Prediction:** In the `preflight()` function, add a check at the start that verifies git is installed by running `git --version` and returning a clear error message if it fails, before calling `_is_git_repo()` or `_git_auto_init()`. This provides immediate feedback rather than letting git commands fail implicitly.  
+*Expected outcome:* The destination.md (2026-06-20) explicitly states 'If git is not installed: fail PRE-FLIGHT with a clear message: install git.' Currently, the code attempts git operations without first verifying git exists, which could produce cryptic subprocess errors. An explicit check provides the promised clear messaging and aligns with the stated design.
+
+**Lenses applied:**
+- *Commander’s Intent:* Operator destination (`.trail/destination.md`) loaded — improvement selected against stated direction.
+- *Code examination:* Repository files within scope scanned for structural improvements.
+
+**Blind spot:** src/ai_steward/cli.py — the init command and run command's error handling paths; I did not trace whether there are other entry points or wrapper logic that might also need this check.
+
+**File:** `src/ai_steward/pipeline/loop.py`  
+**Tokens:** SCAN 14216/292 — IMPL 2027/1842 — cycle est. $0.02153 USD  
+**Harness session:** `.trail/sessions/01KVJT44749AKAKQVSD6CP1TDT.jsonl`  
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/pipeline/loop.py b/src/ai_steward/pipeline/loop.py
+index 31e0351..ba5e00a 100644
+--- a/src/ai_steward/pipeline/loop.py
++++ b/src/ai_steward/pipeline/loop.py
+@@ -28,6 +28,15 @@ from ai_steward.pipeline.verify import verify
+ # ---------------------------------------------------------------------------
+ 
+ 
++def _is_git_installed() -> bool:
++    """Check if git is available on the system."""
++    result = subprocess.run(
++        ["git", "--version"],
++        capture_output=True,
++    )
++    return result.returncode == 0
++
++
+ def _is_git_repo(repo: Path) -> bool:
+     result = subprocess.run(
+         ["git", "rev-parse", "--git-dir"],
+@@ -97,6 +106,9 @@ def preflight(repo: Path, config: AiStewardConfig) -> tuple[bool, str, int]:
+     Returns (passed, failure_reason, baseline_test_count).
+     baseline_test_count is 0 when any gate fails before the test run.
+     """
++    if not _is_git_installed():
++        return False, "git is not installed â€” install git to proceed", 0
++
+     if not repo.exists():
+         return False, f"repo path does not exist: {repo}", 0
+ 
+@@ -183,4 +195,4 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
+         diff=diff,
+         trail_entry=trail_entry,
+         harness_session_path=harness_session_path,
+-    )
++    )
+\ No newline at end of file
+
+```
+
+*Staged for operator review. Not committed.*
