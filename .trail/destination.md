@@ -820,3 +820,58 @@ The question ai-steward must be able to answer yes to:
 > traceable improvement cycle with a tamper-evident trail — without touching Python or git?"
 
 If the answer is no, the universal claim is not yet true.
+
+
+---
+
+## 2026-06-20 — Clarification: git as anchor, not constraint
+
+### The git model (corrected)
+
+Git is **assumed but not required to be pre-existing**. The invariant is:
+
+> The git repository root is always the anchor for .trail/.
+
+ai-steward provides git if needed:
+- If the target directory is already a git repo: use it as-is.
+- If git is installed but the target is not a git repo: git init it.
+  ai-steward derives the repo name from the directory name (or makes one cheap LLM call
+  to suggest a meaningful name from the content). The operator can rename later.
+- If git is not installed: fail PRE-FLIGHT with a clear message: install git.
+
+Git is not a dependency the operator must arrange. It is infrastructure ai-steward sets up.
+This means .trail/ always has a canonical home, rollback always works, and the diff is
+always a git diff — regardless of whether the target was "a Python repo" or "a folder of
+song lyrics the user just created."
+
+### What this changes
+
+PRE-FLIGHT stops being a gate that says "you must bring a git repo." It becomes:
+1. Is git installed? If not: fail with instructions.
+2. Is the target a git repo? If not: git init it.
+3. Is the working tree clean? Apply only if git was pre-existing (a fresh init is always clean).
+4. Verify command (if configured): run it. If empty: skip.
+
+The "git clean" gate applies to pre-existing repos only. A freshly-init'd repo is always clean.
+
+### The target is unbounded
+
+The target of ai-steward is not defined by file type, language, or domain.
+It is defined by: **anything the LLM can read and reason about**.
+
+Song lyrics, legal documents, a Python codebase, a Rust library, a book manuscript,
+a marketing strategy, a research paper. The LLM is swappable per purpose.
+ai-steward provides the discipline layer — proposal, application, verification, trail.
+What gets improved is the operator's choice.
+
+The only structural requirements:
+1. Git is available (ai-steward will init if needed)
+2. The target consists of files (ai-steward reads them; IMPLEMENT writes them back)
+3. The operator writes a .trail/destination.md (or ai-steward scaffolds one via init)
+
+### What this does NOT change
+
+- The trail anchor is always the git root. .trail/ lives there. Always.
+- RECORD always runs. The harness always captures. Observable Autonomy applies to every domain.
+- The operator always reviews the staged diff. Trust is earned one accepted proposal at a time.
+- The harness (llm-harness-proxy) is still outside the agent. The guarantee is structural.
