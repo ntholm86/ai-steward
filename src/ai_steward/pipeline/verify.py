@@ -2,7 +2,7 @@
 
 Runs after IMPLEMENT has applied a change. All checks are structural:
   1. Python syntax check (V1: Python files only)
-  2. Diff size guard (modified file must be ≤ 2× original byte size)
+  2. Diff size guard (modified file must stay within 50 %–200 % of original byte size)
   3. Test suite must pass with count ≥ baseline
 
 On any failure: rolls back the file to HEAD and returns (False, reason).
@@ -54,7 +54,8 @@ def verify(
             rollback_file(repo, changed_file)
             return False, f"syntax error in {changed_file.name}: {exc}"
 
-    # Gate 2: Diff size guard — modified file must not exceed 2× original
+    # Gate 2: Diff size guard — modified file must stay within 50 %–200 % of original.
+    # Upper bound catches whole-file rewrites; lower bound catches bulk deletion.
     new_size = changed_file.stat().st_size
     if new_size > original_size_bytes * 2:
         rollback_file(repo, changed_file)
@@ -62,6 +63,13 @@ def verify(
             False,
             f"{changed_file.name} grew from {original_size_bytes}B to {new_size}B "
             f"(exceeds 2× limit — likely a whole-file rewrite)",
+        )
+    if original_size_bytes > 0 and new_size < original_size_bytes * 0.5:
+        rollback_file(repo, changed_file)
+        return (
+            False,
+            f"{changed_file.name} shrank from {original_size_bytes}B to {new_size}B "
+            f"(below 50 % of original — likely bulk deletion)",
         )
 
     # Gate 3: Test suite

@@ -95,6 +95,39 @@ def test_verify_fails_file_too_large_and_rolls_back(
     assert f.read_text() == "x = 1\n"  # rolled back
 
 
+def test_verify_fails_bulk_deletion_and_rolls_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original = "x = 1\n" * 40  # ~240 bytes
+    f = _git_repo_with_file(tmp_path, "mod.py", original)
+    original_size = f.stat().st_size
+    f.write_bytes(b"x = 1\n" * 2)  # ~12 bytes — ~5% of original, far below 50%
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 5))
+    config = _make_config(tmp_path)
+
+    passed, reason = verify(tmp_path, config, f, original_size, 5)
+
+    assert not passed
+    assert "50" in reason or "shrank" in reason or "deletion" in reason
+    assert f.read_text(encoding="utf-8") == original  # rolled back
+
+
+def test_verify_passes_modest_shrink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original = "x = 1\n" * 10  # 60 bytes
+    f = _git_repo_with_file(tmp_path, "mod.py", original)
+    original_size = f.stat().st_size
+    f.write_text("x = 1\n" * 7, encoding="utf-8")  # 42 bytes — 70% of original, above 50%
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 5))
+    config = _make_config(tmp_path)
+
+    passed, reason = verify(tmp_path, config, f, original_size, 5)
+
+    assert passed
+    assert reason == ""
+
+
 def test_verify_fails_tests_fail_and_rolls_back(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
