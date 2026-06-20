@@ -338,3 +338,51 @@ The Agent Audit Trail standard (AAS-1) is defining the schema for autonomous age
 2. Reproducibility (§6.10) for non-deterministic models — reasoning reproducibility, not output-identical reproduction.
 
 ai-steward and the harness-protocol are reference implementations of what AAS-1 is standardizing. Alignment between the .pea/ standard and AAS-1 is a goal.
+
+---
+
+## 2026-06-20 -- Scope expansion: cross-project memory model convergence
+
+### The full scope of work
+
+The `.pea/` unification is not just ai-steward work. It requires coordinated changes across three projects:
+
+1. **ai-steward** — reads destination + derives context from sessions/ — the consumer
+2. **harness-protocol** — writes to `.pea/sessions/` instead of `.harness/sessions/` — the producer
+3. **skill suite** — migrates from `.trail/` to `.pea/` — the legacy system
+
+### What has NOT converged
+
+The memory model schema is not yet defined. The token budget constraints are stated (~200 destination, ~150 orientation, ~300 recent) but the actual YAML/JSONL structure that achieves those budgets under real usage has not been designed.
+
+**Open design questions:**
+
+- What fields in `destination.yaml`? How do we compress the skill suite's free-form prose into structured data that fits in ~200 tokens?
+- How does `orientation.yaml` get derived from `sessions/*.jsonl`? What's the summarization strategy?
+- What is "recent context"? Last N entries? Last N tokens? Entries from the last M hours? How is it computed from the harness ledger?
+- How does the harness know to write to `.pea/sessions/`? Is it HARNESS_ROOT pointing to `.pea/`? A new config option?
+- What migration path for existing `.trail/` and `.harness/` directories?
+
+### The convergence path
+
+The memory model standard will be defined through ai-steward development. The pattern:
+
+1. **ai-steward implements first.** Design choices are made, tested against real usage, refined.
+2. **The standard crystallizes.** Once ai-steward proves the model works cost-efficiently, it becomes the standard.
+3. **harness-protocol aligns.** Config option or default change to write to `.pea/sessions/`.
+4. **skill suite aligns.** Instructions updated to read/write `.pea/` instead of `.trail/`.
+
+ai-steward is the proving ground. The other projects align to what works.
+
+### What this means for the work ahead
+
+The next milestone is not "implement directed SCAN." It is:
+
+**Define the `.pea/` memory model schema such that:**
+
+- destination.yaml fits in ~200 tokens and captures Commander's Intent
+- orientation.yaml fits in ~150 tokens and captures current arc orientation
+- recent context derivation from sessions/ fits in ~300 tokens
+- The schema is implementable in ai-steward, adoptable by harness and skills
+
+This is design work before implementation. The schema must converge before the code does.
