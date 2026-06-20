@@ -157,3 +157,69 @@ def test_collect_files_respects_blocked(tmp_path: Path) -> None:
 
     assert "keep.py" in files
     assert "skip.py" not in files
+
+
+# ---------------------------------------------------------------------------
+# Directed SCAN — Commander's Intent injection
+# ---------------------------------------------------------------------------
+
+
+def test_scan_includes_destination_when_present(tmp_path: Path) -> None:
+    """SCAN prompt must include destination content when .trail/destination.md exists."""
+    (tmp_path / "utils.py").write_text("import os\nx = 1\n")
+    (tmp_path / ".trail").mkdir()
+    (tmp_path / ".trail" / "destination.md").write_text(
+        "# Destination\nBuild a fast reliable pipeline.", encoding="utf-8"
+    )
+    config = _make_config(tmp_path)
+    client = _mock_client({
+        "file": "utils.py",
+        "description": "Remove unused import",
+        "proposed_change": "Remove the import os line.",
+        "rationale": "unused",
+        "risk": "low",
+    })
+
+    scan(tmp_path, config, client=client)
+
+    call_kwargs = client.messages.create.call_args
+    user_content = call_kwargs[1]["messages"][0]["content"]
+    assert "Commander's Intent" in user_content
+    assert "Build a fast reliable pipeline." in user_content
+
+
+def test_scan_works_without_destination(tmp_path: Path) -> None:
+    """SCAN falls back gracefully when no destination.md exists."""
+    (tmp_path / "utils.py").write_text("import os\nx = 1\n")
+    config = _make_config(tmp_path)
+    client = _mock_client({
+        "file": "utils.py",
+        "description": "Remove unused import",
+        "proposed_change": "Remove import os.",
+        "rationale": "unused",
+        "risk": "low",
+    })
+
+    result = scan(tmp_path, config, client=client)
+
+    assert isinstance(result, Finding)
+    call_kwargs = client.messages.create.call_args
+    user_content = call_kwargs[1]["messages"][0]["content"]
+    assert "Commander's Intent" not in user_content
+
+
+def test_scan_truncates_long_destination(tmp_path: Path) -> None:
+    """Destination content is capped at ~3000 chars to honour token budget."""
+    (tmp_path / "utils.py").write_text("x = 1\n")
+    (tmp_path / ".trail").mkdir()
+    long_text = "A" * 5000
+    (tmp_path / ".trail" / "destination.md").write_bytes(long_text.encode("utf-8"))
+    config = _make_config(tmp_path)
+    client = _mock_client({"nothing": True})
+
+    scan(tmp_path, config, client=client)
+
+    call_kwargs = client.messages.create.call_args
+    user_content = call_kwargs[1]["messages"][0]["content"]
+    assert "truncated for token budget" in user_content
+    assert "A" * 5000 not in user_content

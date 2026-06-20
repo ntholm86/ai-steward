@@ -80,6 +80,21 @@ def _extract_json(text: str) -> dict | None:
     return None
 
 
+def _load_destination(repo: Path) -> str | None:
+    """Load Commander's Intent from .trail/destination.md if present.
+
+    Caps at ~3000 chars (~750 tokens) to stay within cheap-model cost budget.
+    Returns None if the file does not exist.
+    """
+    dest = repo / ".trail" / "destination.md"
+    if not dest.is_file():
+        return None
+    text = dest.read_text(encoding="utf-8", errors="ignore")
+    if len(text) > 3000:
+        text = text[:3000] + "\n\n[... destination.md truncated for token budget ...]"
+    return text
+
+
 def _collect_files(repo: Path, config: AiStewardConfig) -> dict[str, str]:
     """Read files within scope for the SCAN context window.
 
@@ -131,6 +146,16 @@ def scan(
         f"=== {rel} ===\n{content}" for rel, content in files.items()
     )
 
+    destination = _load_destination(repo)
+    if destination:
+        user_content = (
+            f"Commander's Intent (operator destination):\n\n{destination}\n\n"
+            f"---\n\nRepository files:\n\n{file_list}\n\n"
+            "Identify one improvement that advances the stated destination."
+        )
+    else:
+        user_content = f"Repository files:\n\n{file_list}\n\nIdentify one improvement."
+
     message = client.messages.create(
         model=config.models.analyze,
         max_tokens=1024,
@@ -138,7 +163,7 @@ def scan(
         messages=[
             {
                 "role": "user",
-                "content": f"Repository files:\n\n{file_list}\n\nIdentify one improvement.",
+                "content": user_content,
             }
         ],
     )
