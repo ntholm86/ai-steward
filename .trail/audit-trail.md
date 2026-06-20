@@ -1847,3 +1847,31 @@ Alternatives: Add a return dataclass (over-engineered for V1; the 5-tuple is alr
 1. Add mypy to CI / pyproject.toml [tool.mypy] -- prevents the annotation-debt pattern from recurring; closes the process gap the recurring-class finding exposed.
 2. External repo targeting -- retrospect's structural next step; proves generalisation beyond self-targeting.
 3. Harness ledger hash-chain replay -- untested structural mechanism; integrity unverified.
+
+---
+
+## 2026-06-20 - Add mypy to pyproject.toml
+
+**Trigger:** Operator invoked improve skill (fourth iteration). Candidate next move #1 from prior iteration: wire mypy into the project config.
+
+**Examination:** pyproject.toml had [tool.pytest.ini_options] but no [tool.mypy]. Running mypy required passing --ignore-missing-imports as a manual flag -- not tracked anywhere. No CI exists. No [project.optional-dependencies].
+
+**[!DECISION]** Add [tool.mypy] + [project.optional-dependencies] dev extras to pyproject.toml. Minimum change that makes mypy a tracked, consistently-configured tool. No new files, no CI workflows -- that is the next layer.
+
+**Prediction:** mypy src/ with no flags reports clean. 66/66 tests pass.
+
+**Verification:** Success: no issues found in 13 source files. 66/66 passed. Prediction held.
+
+**Model-claim:** pyproject.toml is now the single source of truth for both test and type-check configuration. A new contributor running pip install -e ".[dev]" && mypy src/ && pytest gets a fully reproducible quality baseline with zero tribal knowledge.
+
+**Blind spot:** ignore_missing_imports = true suppresses stub errors for anthropic/httpx/click. Strict mode requires stub packages -- a V2 decision.
+
+**Imagined-reader pushback:** Does not enforce mypy in CI -- true; no CI exists yet. Config is the precondition; CI is the next layer.
+
+**Across-trail macro-reflection:** recurring-class not fired (this iteration is infrastructure, not annotation fix -- class broke). Other triggers not fired.
+
+### Candidate Next Moves
+
+1. Add GitHub Actions CI running mypy src/ && pytest on push -- the natural next layer above the config change.
+2. External repo targeting -- retrospect's structural top candidate; proves generalisation beyond self-targeting.
+3. Harness ledger hash-chain replay -- structural mechanism exists, integrity never exercised.
