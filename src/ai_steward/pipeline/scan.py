@@ -162,17 +162,22 @@ def scan(
     if not required.issubset(data.keys()):
         return None
 
+    # Validate the file path to reject directory traversal and absolute paths
+    file_path = data["file"]
+    if ".." in file_path or file_path.startswith("/") or ":" in file_path:
+        return None
+
     # V1 gate: skip high-risk findings
     if data["risk"] == "high":
         return None
 
     # Validate the file actually exists
-    target = repo / data["file"]
+    target = repo / file_path
     if not target.is_file():
         return None
 
     return Finding(
-        file=data["file"],
+        file=file_path,
         description=data["description"],
         proposed_change=data["proposed_change"],
         rationale=data["rationale"],

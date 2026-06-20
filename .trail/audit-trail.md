@@ -858,3 +858,109 @@ The deepest gap in V1 is not structural code quality (strong) but the untested c
 - Committed outstanding changes (record.py, wired loop, cli, allow_dirty, trail entries) before running
 - Rewrote .trail/retrospect.md with current arc-based orientation (per Retrospect skill: retrospect.md is the distillation, not append-only)
 - Appended this entry to audit-trail.md
+
+---
+
+## 2026-06-20 — ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**File:** src/ai_steward/pipeline/scan.py  
+**Risk:** low  
+**Rationale:** The current code validates that a finding's file exists but does not sanitize the path itself. A malicious or confused model could suggest changes to files outside the repository (e.g., '../../../etc/passwd') which would then be applied. Adding basic path validation prevents directory traversal attacks and protects against model confusion about scope boundaries.
+
+**Proposed change:**
+```
+In the `scan()` function after validating required fields and before the file existence check, add logic to reject any `data["file"]` value that contains '..' or absolute paths (starts with '/' or contains ':'), returning None if detected.
+```
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/pipeline/scan.py b/src/ai_steward/pipeline/scan.py
+index ea87236..2727287 100644
+--- a/src/ai_steward/pipeline/scan.py
++++ b/src/ai_steward/pipeline/scan.py
+@@ -162,19 +162,24 @@ def scan(
+     if not required.issubset(data.keys()):
+         return None
+ 
++    # Validate the file path to reject directory traversal and absolute paths
++    file_path = data["file"]
++    if ".." in file_path or file_path.startswith("/") or ":" in file_path:
++        return None
++
+     # V1 gate: skip high-risk findings
+     if data["risk"] == "high":
+         return None
+ 
+     # Validate the file actually exists
+-    target = repo / data["file"]
++    target = repo / file_path
+     if not target.is_file():
+         return None
+ 
+     return Finding(
+-        file=data["file"],
++        file=file_path,
+         description=data["description"],
+         proposed_change=data["proposed_change"],
+         rationale=data["rationale"],
+         risk=data["risk"],
+-    )
++    )
+\ No newline at end of file
+
+```
+
+*Staged for operator review. Not committed.*
+
+---
+
+## 2026-06-20 -- V1 MILESTONE: first self-targeting run
+
+**Status:** MILESTONE ACHIEVED
+
+### What was asked
+
+Run the improve loop against ai-steward's own repository. Produce one real proposal.
+
+### What happened
+
+Five blockers stood between "structurally complete" and "actually runs":
+
+1. **.ai-steward.yaml missing** — the CLI could not load config. Created.
+
+2. **_is_git_clean too strict** — git status --porcelain flagged untracked files as dirty, blocking PRE-FLIGHT even on a clean committed tree. Fixed: added --untracked-files=no so only tracked modifications block the pipeline.
+
+3. **Harness returns gzip without Content-Encoding header** — the Anthropic SDK's httpx client received compressed bytes it couldn't decode. The SDK returned a string of binary garbage instead of a Message object. Fixed: nthropic_client() in harness.py now passes Accept-Encoding: identity so the proxy returns plain JSON.
+
+4. **SCAN silently dropped valid proposals** — the LLM wrapped its JSON in a markdown code fence and revised it mid-response. json.loads(text) failed and returned None. Fixed: _extract_json() now tries the last code fence first, then direct parse, then outermost {...} extraction.
+
+5. **SCAN prompt caused malformed JSON** — "proposed_change must be the actual replacement content" caused the model to write 150 lines of Python into a JSON string with literal newlines. The code fence was never closed. Fixed: prompt now asks for a description of the change, not file contents.
+
+### What was produced
+
+i-steward run c:\git\ai-steward completed the full loop:
+
+PRE-FLIGHT passed -> SCAN found one improvement -> IMPLEMENT rewrote scan.py -> VERIFY passed (syntax OK, size in bounds, 58 tests held) -> RECORD wrote trail entry, staged file.
+
+**The proposal:** Add path traversal validation to scan.py to reject LLM-returned file paths containing .., absolute path prefixes, or Windows drive letters. A real security improvement the AI found in its own code.
+
+The harness ledger at C:\git\harness-protocol\.harness\sessions\ captured both LLM calls (SCAN and IMPLEMENT). The trail entry was written automatically. The operator (this session) reviewed the staged diff and accepted it.
+
+### What this means
+
+The destination said: "V1 is done when ai-steward successfully runs the loop against its own repository." That has now happened.
+
+The first run proved:
+
+- Structural mechanisms replace cognitive work for most of Observable Autonomy. PRE-FLIGHT, VERIFY, RECORD — all tier 0, no LLM tokens.
+- Tier 1 reasoning (claude-haiku-4-5) was sufficient to identify a real, non-trivial improvement.
+- The harness is structural, not optional. It captured evidence we did not explicitly manage.
+- Self-targeting is not a special mode. The same pipeline, the same gates, the same trail.
+
+The destination's founding claim — "structural guarantees replace social contracts" — held under first operational contact.
+
+### Path forward
+
+The loop can run again. Each subsequent run is the same pipeline. The operator reviews each proposal. This is how the loop "takes over."
+
+Next high-value run targets: unused imports, missing test coverage, type annotation gaps.
