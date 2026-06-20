@@ -4,6 +4,105 @@
 
 ---
 
+## Current State (consolidated 2026-06-20)
+
+### What ai-steward is
+
+An autonomous software improvement engine that:
+1. **Reads** the operator's destination (what + why)
+2. **Proposes** one improvement per cycle
+3. **Applies** the change
+4. **Verifies** tests still pass
+5. **Stages** the result for human review
+
+The operator commits or discards. Trust is earned one accepted proposal at a time.
+
+### Dual purpose
+
+**Purpose 1 — Proof:** ai-steward is a reference implementation of the Principles of Earned Autonomy. It demonstrates that autonomous delegation can be structurally trustworthy — not through promises, but through Observable Autonomy (harness-captured evidence), Commander's Intent (operator-written destination), and Convergence Is Silence (stop when done, not when tired).
+
+**Purpose 2 — Tool:** ai-steward must be genuinely useful and widely adoptable. The workflow is simple: write a destination → run the loop → review staged changes → commit. It works on any codebase. Adoption depends on cost-efficiency being *provable* — not claimed, measured.
+
+Both purposes are essential. A proof that nobody uses proves nothing. A tool that violates the principles is just another black box.
+
+### The architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  OPERATOR                                               │
+│  - Writes .trail/destination.md (Commander's Intent)    │
+│  - Reviews staged diffs                                 │
+│  - Commits or discards                                  │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  PIPELINE (ai-steward)                                  │
+│  PRE-FLIGHT → SCAN → IMPLEMENT → VERIFY → RECORD        │
+│  - Tier 0: structural checks (zero tokens)              │
+│  - Tier 1: cheap models (haiku) for routine work        │
+│  - Tier 2+: deferred until V1 proves the baseline       │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  HARNESS (localhost:8474)                               │
+│  - Intercepts all LLM API calls                         │
+│  - Writes .trail/sessions/*.jsonl BEFORE response       │
+│  - Hash-chained, tamper-evident                         │
+│  - The agent cannot fabricate evidence                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Cost model
+
+V1 target: **~$0.002 per improvement cycle** (haiku, 2 LLM calls).
+
+Every trail entry records:
+- SCAN tokens (input/output)
+- IMPLEMENT tokens (input/output)
+- Estimated cycle cost in USD
+- Link to harness session (independent evidence)
+
+Efficiency is measured, not claimed. Improvements are evaluated against cost-per-accepted-proposal.
+
+### V1 milestone
+
+V1 is done when ai-steward successfully runs the loop against **its own repository**:
+1. `ai-steward run c:\git\ai-steward` executes
+2. The loop proposes one improvement, applies it, verifies it, records the trail
+3. The operator reviews and commits
+
+Self-targeting is the validation gate. If it can improve itself under its own discipline, the proof holds.
+
+### Development principles
+
+- **KISS:** Each phase does exactly one thing.
+- **YAGNI:** V2 features ship after V1 data proves they're needed.
+- **DRY:** Shared logic extracted (e.g., `_load_destination()`).
+- **Solve by design:** Structure prevents misbehavior; tests verify behavior.
+
+### What remains for V1
+
+1. **P1 compliance:** SCAN must produce trail entries with visible reasoning (lenses, predictions, `[!DECISION]`). This is a `record.py` change.
+2. **Self-targeting gate:** Both P1 (reasoning quality) and P2 (harness capture) must be structurally complete before self-targeting runs are merged to main.
+
+### Post-V1 direction
+
+- Retrospect (arc-level orientation from harness ledger)
+- ARF probe (operator-triggered reasoning fidelity check)
+- Tier escalation (when cheap models can't decide)
+- Multi-family verification (proposer ≠ judge)
+- Push/release autonomy (earned after N accepted proposals)
+
+---
+
+# Historical Record
+
+*The sections below preserve the evolution of this destination. Newest entries win on conflicts.*
+
+---
+
 ## 2026-05-14 — First articulation
 
 ### What this is
