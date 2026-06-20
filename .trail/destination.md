@@ -700,10 +700,40 @@ The skill suite trail format (lenses, predictions, `[!DECISION]`, `[!REALIZATION
 - A pre-commit prediction of what the change will achieve
 - A named blind spot this run did not examine
 - `[!DECISION]` marker on the chosen finding
-- `[!REVERSAL]` if the prediction was wrong (captured in the next run when VERIFY data is available)
+- `[!REVERSAL]` if the prediction was wrong — added by the operator in a subsequent run when VERIFY evidence is available. **Never a placeholder. Never emitted by the pipeline.**
 
-This is a significant expansion of SCAN's responsibilities. Currently SCAN returns a JSON blob; to meet this requirement it must return (or the trail entry must synthesize) structured reasoning in the same format as an improve skill entry.
+**[DONE — 2026-06-20]** `record.py` now produces entries with this structure from the Finding + context already available. No new LLM calls required. The format is stable. Do not refactor `_build_entry` — it is intentional.
 
-**What this does NOT mean:** The prompt sent to the model need not change. The *capture* of the reasoning must change. The model's raw output (JSON finding) plus the context (destination, files examined, lenses applied) must be recorded in the trail entry with the same structure as improve skill entries. This is a record.py change, not a scan.py change — the reasoning is already implicit in what was examined and what was proposed; the change is making it explicit in the trail.
+### Canonical trail entry format (authoritative)
 
-**Next step:** Refactor `record.py` to produce improve-skill-style trail entries from the Finding + context already available. No new LLM calls required; this is structural capture of reasoning that is already happening.
+Each pipeline-generated entry contains exactly these sections, in this order:
+
+```
+## YYYY-MM-DD — ai-steward: <description>
+
+**[!DECISION]** Proposed: <description>
+*Rationale:* <rationale>
+*Risk:* <risk>
+
+**Prediction:** <proposed_change>
+*Expected outcome:* <rationale>
+
+**Lenses applied:**
+- *Commander's Intent:* ...
+- *Code examination:* ...
+
+**Blind spot:** <blind_spot or 'Not identified for this run.'>
+
+**File:** `<file>`
+**Tokens:** SCAN in/out — IMPL in/out — cycle est. $X.XXXXX USD
+**Harness session:** `<path>`
+
+**Diff:**
+` ` `diff
+...
+` ` `
+
+*Staged for operator review. Not committed.*
+```
+
+**`[!REVERSAL]` rule:** This marker appears in audit-trail.md only when a prediction was demonstrably wrong — appended by the operator after VERIFY evidence is available. It is never emitted by the pipeline as a structural placeholder. Any proposal that adds a `[!REVERSAL]` placeholder section to `_build_entry` violates this rule and must be rejected.

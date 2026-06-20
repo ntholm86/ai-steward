@@ -57,6 +57,21 @@ def record(
 
 
 def _build_entry(finding: Finding, diff: str, harness_session_path: str | None = None) -> str:
+    """Build a structured trail entry from a Finding.
+
+    The format is intentional and stable — do not refactor to add structural
+    placeholders. In particular:
+
+    - ``[!REVERSAL]`` must NEVER appear as a placeholder in this output.
+      It belongs in audit-trail.md only when an operator appends it after a
+      prediction is demonstrably wrong. The pipeline does not emit it.
+    - The sections (DECISION, Prediction, Lenses, Blind spot, Tokens, Diff)
+      are already the canonical improve-skill entry format. No restructuring
+      is needed.
+
+    See ``.trail/destination.md`` (Canonical trail entry format) for the
+    authoritative spec.
+    """
     today = date.today().isoformat()
     scan_cost = (
         finding.input_tokens * _INPUT_COST_PER_TOKEN
