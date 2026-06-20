@@ -2132,3 +2132,58 @@ index 71d7de2..9abc5ea 100644
 *Staged for operator review. Not committed.*
 
 **[!OPERATOR-GATE]** Proposal discarded by operator review. Grounds: (1) the [!REVERSAL] placeholder is explicitly prohibited by operational rules — it marks actual reversals, never reserved sections; (2) removes trailing newline at EOF (regression). The refactoring itself is cosmetic with no leverage. This is the attractor loop documented in retrospect.md firing and the operator gate holding. Evidence that the review-then-commit workflow functions correctly.
+
+## 2026-06-20 - fix-scan-false-positive-already-exists-check
+
+**Slug:** fix-scan-false-positive-already-exists-check
+**Files touched:** src/ai_steward/pipeline/scan.py, tests/test_scan.py
+
+### Interpretation of the ask
+
+Operator identified SCAN false-positives as the priority issue. In the prior live run (second self-targeting cycle), SCAN proposed `add blind_spot validation` to scan.py -- a feature that already existed. IMPLEMENT wrote redundant code, 66 tests broke, VERIFY rolled back. The structural gap: SCAN had no mechanism to verify its proposal wasn't already in the file.
+
+### Examination
+
+**Purpose lens:** _SYSTEM_PROMPT asks for 6 fields -- none require the model to check whether the change already exists. The model received full file content but was not asked to verify against it. scan() validates file existence, risk, and path safety -- but never checks for pre-existing implementation.
+
+**Inconsistency lens:** SCAN sends the complete file content to the model (so the model CAN see existing code) but does not instruct it to use that content as a verification source. The information is available; the task is absent.
+
+**Challenge:** Could a prompt instruction alone fix this? No -- in the failing run, the model had the code in context and still proposed a feature that existed. A structural code-side check is required.
+
+### Decision
+
+[!DECISION] Add `already_exists_check` as a required JSON field in the SCAN prompt. The model must quote the specific line(s) from the target file that prove the change is already implemented, or write `not found`. scan() then does a literal case-insensitive substring check: if the quoted text (10+ chars) is found in the target file, return None. The proposal is rejected before IMPLEMENT runs.
+
+Rejected: prompt instruction alone (model ignored existing code in the failing run). Rejected: second LLM verification call (doubles cost, still probabilistic).
+
+**Pre-commit prediction:** 70 tests pass (68 + 2 new). Existing tests unaffected -- they omit `already_exists_check`, which defaults to `not found` via data.get(). No regressions.
+
+### Action
+
+- _SYSTEM_PROMPT: added `already_exists_check` field to JSON schema + explicit rule: verify before proposing.
+- scan(): added guard after target.is_file() check -- reads quoted text from already_exists_check, rejects if found in target file.
+- test_scan.py: added test_scan_returns_none_when_change_already_exists (quoted text found in file -> None) and test_scan_proceeds_when_already_exists_check_is_not_found (not found -> Finding returned).
+
+### Verification
+
+70 passed (was 68). Prediction held exactly.
+
+### Reflection
+
+*Current model of target:* The SCAN false-positive guard is now structural, not instructional. A model that hallucinates `already_exists_check: not found` still bypasses the guard -- but that is the model lying explicitly rather than just failing to check. The guard catches the more common case: model correctly identifies an existing implementation but proposes it anyway.
+
+*Blind spot:* The check is substring-only. A model that paraphrases rather than quotes (e.g. `guard for None input` instead of the actual line `if x is None:`) will not be caught. A fuzzy-match approach would improve recall but adds complexity not warranted at V1 cost discipline.
+
+*Imagined-reader pushback:* `What if the already_exists_check field is absent entirely?` -- data.get defaults to `not found`, guard is skipped, no regression. Backward-compatible.
+
+*Across-trail reflection triggers:*
+- Recurring finding-class: not fired -- this is the first explicit SCAN quality fix.
+- About to declare silence: not fired -- change made.
+- Contradicts prior [!REALIZATION]: not fired.
+- Operator explicitly asked: fired -- `scan first, use the improve skill`.
+
+### Candidate Next Moves
+
+1. UX friction: four manual pre-conditions before ai-steward can run (proxy, API key, two config files). A single entry-point script or `ai-steward init` command would lower the barrier to first use.
+2. External repo targeting: run against a small well-tested Python project to prove generalisation beyond self-targeting.
+3. Multi-cycle convergence: run the loop until SCAN returns nothing_found -- verify the loop stops when it should.
