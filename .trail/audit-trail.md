@@ -2187,3 +2187,57 @@ Rejected: prompt instruction alone (model ignored existing code in the failing r
 1. UX friction: four manual pre-conditions before ai-steward can run (proxy, API key, two config files). A single entry-point script or `ai-steward init` command would lower the barrier to first use.
 2. External repo targeting: run against a small well-tested Python project to prove generalisation beyond self-targeting.
 3. Multi-cycle convergence: run the loop until SCAN returns nothing_found -- verify the loop stops when it should.
+
+## 2026-06-20 - feat-ai-steward-init-command
+
+**Slug:** feat-ai-steward-init-command
+**Files touched:** src/ai_steward/cli.py, tests/test_cli.py (new)
+
+### Interpretation of the ask
+
+Operator said `proceed` without specifying target -- underspecified intent per improve skill. Ranked candidates from prior entry: #1 UX friction. Operator had already flagged `is it user-friendly?` earlier. Sourced hunch: highest-leverage UX change is an init command that collapses `getting started` from hand-crafting two files to one command.
+
+### Examination
+
+**Purpose lens:** Current UX requires 4 manual steps before ai-steward runs: proxy, API key, .ai-steward.yaml, .trail/destination.md. The yaml error message tells you what to create but not how. destination.md absence is silently ignored (SCAN runs without direction). No `init` command exists.
+
+**Inconsistency lens:** The `run` command has a clear error for missing .ai-steward.yaml (shows exact YAML to create) but does nothing for missing destination.md. Asymmetric handling of the two required files.
+
+**Waste lens:** No test_cli.py existed -- the CLI entry point was entirely untested.
+
+### Decision
+
+[!DECISION] Add `ai-steward init [REPO]` subcommand. Creates .ai-steward.yaml with working defaults (all phases: claude-haiku-4-5) and scaffolds .trail/destination.md with fill-in-the-blank sections. Skips destination if it already exists. Prints explicit next-steps: edit destination, set API key, start proxy, run.
+
+Rejected: prompt instruction for missing destination.md (smaller, doesn't help new users). Rejected: proxy auto-start (out of scope -- proxy is a separate binary).
+
+**Pre-commit prediction:** 72 tests (70 + 2 new). No regressions.
+
+### Action
+
+- cli.py: added _CONFIG_TEMPLATE, _DESTINATION_TEMPLATE, and @main.command() `init` with full logic.
+- test_cli.py: created with 3 tests (init creates both files; aborts if config exists; skips destination if it exists).
+
+### Verification
+
+73 passed (was 70). Prediction was 72 -- off by one because the `skip existing destination` path warranted its own test (added after initial 2). Outcome better than predicted, no regressions.
+
+### Reflection
+
+*Current model of target:* Getting started now has a clear on-ramp. The four friction points are down to two that cannot be automated (API key, proxy binary). With init + clear next-steps output, the first run is achievable from the README without tribal knowledge.
+
+*Blind spot:* init does not validate that the repo is a git repo. A user who runs `ai-steward init` in a non-git directory will successfully create the files, then hit a PRE-FLIGHT FAILED on `run`. Adding a warning (not an error) when no git repo is detected would close this gap.
+
+*Imagined-reader pushback:* `The proxy startup step is still manual and the error message still doesn't tell you where to get it.` Fair -- the proxy error says `harness proxy unreachable at http://localhost:8474` without linking to the binary. A follow-up could add the GitHub URL to that error message.
+
+*Across-trail reflection triggers:*
+- Recurring finding-class: not fired -- this is the first UX improvement entry.
+- About to declare silence: not fired -- change made.
+- Contradicts prior [!REALIZATION]: not fired.
+- Operator explicitly asked: fired -- `proceed, understand my intent, use improve`.
+
+### Candidate Next Moves
+
+1. Better proxy error: when harness is unreachable, print the GitHub URL for llm-harness-proxy. Small, targeted, closes the last opaque failure mode.
+2. External repo targeting: run ai-steward against a small well-tested Python project to prove generalisation beyond self-targeting.
+3. Multi-cycle convergence: `ai-steward run` in a loop until SCAN returns nothing_found -- verify it stops cleanly.
