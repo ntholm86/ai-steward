@@ -1948,3 +1948,41 @@ Alternatives: Add a return dataclass (over-engineered for V1; the 5-tuple is alr
 2. Multi-cycle convergence
 3. Harness ledger integrity (hash-chain replay)
 4. Accept or spec the trail format (breaks attractor loop permanently)
+
+---
+
+## 2026-06-20 — First external-repo run: vectorium (TypeScript) — VERIFY gap discovered
+
+**Trigger:** First run of ai-steward against an external repo (c:\git\vectorium). Retrospect had just declared self-targeting convergence; external targeting was the top next move.
+
+**Setup required:**
+- .ai-steward.yaml created with scope.allowed: ["src/**/*.ts"], llow_dirty: true
+- 	est_stub.py created (one passing pytest test) — ai-steward PRE-FLIGHT runs python -m pytest, which exits 5 (no tests collected) on a TypeScript repo without this stub
+
+**SCAN result:** Good. Correctly read destination.md ("WASM physics not integrated into the main path"), identified src/vectorium/core/Engine.ts, proposed: "Remove the unintegrated WASM physics module from the initialization path."
+
+**IMPLEMENT result:** Over-deletion. Model removed the 7-line WASM init block as proposed, then continued deleting ~175 lines of production API: destroy(), onClick(), getRenderer(), createFullscreenCanvas(), exposeGlobals(), and more. File ended mid-line (no closing backtick). Change was rejected with git restore --staged && git checkout.
+
+**[!REALIZATION] VERIFY has no meaningful guards for non-Python repos.**
+
+The three VERIFY gates are all Python-specific:
+1. *Syntax check* — only runs for .py files. Skipped for .ts.
+2. *Size 2x guard* — catches growth only. File shrank (deletion), so passes.
+3. *Test suite* — 	est_stub.py always passes regardless of TypeScript correctness.
+
+All three gates passed on a severely broken change. This is a V1 structural gap: the VERIFY phase provides zero code integrity guarantee for any language other than Python.
+
+**[!REALIZATION] SCAN and IMPLEMENT have different failure modes on large files.**
+
+SCAN correctly read the destination and identified a genuine, scoped improvement. IMPLEMENT received the entire large file as context and lost scope — instead of a surgical 7-line removal, it rewrote the file wholesale. The gap is not SCAN quality; it is IMPLEMENT's tendency to over-write when given a large file and a vague "return complete new contents" instruction.
+
+**What is needed for safe non-Python targeting:**
+- A language-aware syntax/compile check in VERIFY (e.g. 	sc --noEmit for TypeScript)
+- Or a diff-size guard on *removal* as well as growth (current guard: new_size > original_size * 2; missing: new_size < original_size * 0.5)
+- Or a scope-limiting instruction in the IMPLEMENT prompt: "modify only the lines related to the described change, preserve all other code verbatim"
+
+**Candidate Next Moves:**
+
+1. Add a deletion guard to VERIFY: reject changes where new_size < original_size * 0.5 (file lost more than half its content). Low-risk, language-agnostic, catches the exact failure mode observed.
+2. Add language-aware compile check to VERIFY config (e.g. erify_command in .ai-steward.yaml). More powerful, operator-configurable.
+3. Constrain IMPLEMENT prompt to prohibit wholesale rewrites — add explicit instruction: "preserve all code not directly related to the described change."
