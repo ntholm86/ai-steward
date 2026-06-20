@@ -72,3 +72,73 @@ def run(repo: str) -> None:
     elif result.status == "implement_failed":
         click.echo(f"IMPLEMENT FAILED: {result.trail_entry}", err=True)
         sys.exit(1)
+
+
+_CONFIG_TEMPLATE = """\
+models:
+  analyze: claude-haiku-4-5
+  propose: claude-haiku-4-5
+  implement: claude-haiku-4-5
+  verify: claude-haiku-4-5
+  judge: claude-haiku-4-5
+"""
+
+_DESTINATION_TEMPLATE = """\
+# Destination — {repo_name}
+
+*Write what you want this codebase to become and why.
+The agent reads this before every improvement cycle.*
+
+## What this is for
+
+<!-- Describe the purpose of this codebase in 1-3 sentences. -->
+
+## What a good improvement looks like
+
+<!-- What kinds of changes advance the goal? Name at least one quality bar. -->
+
+## Constraints
+
+<!-- Anything the agent must not touch or trade off against. -->
+"""
+
+
+@main.command()
+@click.argument("repo", type=click.Path(), default=".")
+def init(repo: str) -> None:
+    """Scaffold .ai-steward.yaml and .trail/destination.md in REPO."""
+    repo_path = Path(repo).resolve()
+    config_file = repo_path / ".ai-steward.yaml"
+    trail_dir = repo_path / ".trail"
+    destination_file = trail_dir / "destination.md"
+
+    if config_file.exists():
+        click.echo(
+            f".ai-steward.yaml already exists in {repo_path}. "
+            "Remove it to re-initialize.",
+            err=True,
+        )
+        sys.exit(1)
+
+    config_file.write_text(_CONFIG_TEMPLATE, encoding="utf-8")
+
+    trail_dir.mkdir(parents=True, exist_ok=True)
+    destination_created = not destination_file.exists()
+    if destination_created:
+        destination_file.write_text(
+            _DESTINATION_TEMPLATE.format(repo_name=repo_path.name),
+            encoding="utf-8",
+        )
+
+    click.echo(f"Initialized ai-steward in {repo_path}")
+    click.echo(f"  Created  .ai-steward.yaml      (model configuration)")
+    if destination_created:
+        click.echo(f"  Created  .trail/destination.md (edit this — it guides every cycle)")
+    else:
+        click.echo(f"  Skipped  .trail/destination.md (already exists)")
+    click.echo("")
+    click.echo("Next steps:")
+    click.echo("  1. Edit .trail/destination.md — describe what you want the codebase to become")
+    click.echo("  2. Set ANTHROPIC_API_KEY")
+    click.echo("  3. Start llm-harness-proxy on localhost:8474")
+    click.echo(f"  4. Run: ai-steward run {repo_path}")
