@@ -963,3 +963,56 @@ SCAN (guided by work queue top item)
 - RECORD always runs when a proposal is staged.
 - The target is still unbounded — anything the LLM can read.
 - The trail anchor is always the git root.
+
+---
+
+## 2026-06-20 — V2 architecture: simplified (supersedes verbose flowchart above)
+
+*KISS / DRY / YAGNI / Solve by design. Newest section wins on conflicts.*
+
+### Three rules
+
+```
+1. No destination  →  define destination. Nothing else runs.
+2. No todos        →  run retrospect (destination required). Nothing else runs.
+3. Todos exist     →  run improve loop. One item per cycle.
+```
+
+That is the complete pipeline logic. The structure enforces the behaviour.
+
+### Destination derivation (Rule 1)
+
+If `.trail/destination.md` is absent or thin:
+- Read all raw context the operator dropped into `.trail/` (docs, notes, specs, anything)
+- Form sourced inferences
+- Ask the minimum questions needed to produce an accurate destination
+- Write destination.md. Only then proceed.
+
+The operator never needs to write destination.md manually.
+Dropping context and answering questions is the full onboarding path.
+
+### Retrospect as work queue (Rule 2)
+
+Retrospect runs only when the work queue is invalid:
+- Cold start (never run)
+- Queue exhausted (all items done)
+- Destination changed
+
+It produces a ranked list of next-highest-leverage items.
+SCAN executes the top item. The queue persists between cycles.
+
+### Convergence check
+
+When retrospect finds nothing → run once more with Opus before declaring silence.
+Cheap models may declare convergence too early. One expensive verification is worth it.
+After Opus confirms nothing remains: loop stops. This is a success state.
+
+### Model cost strategy
+
+| Phase | Model | Rationale |
+|-------|-------|-----------|
+| Destination derivation | Sonnet | Reasoning quality needed |
+| Retrospect (work queue) | Sonnet | Arc-read quality matters |
+| SCAN + IMPLEMENT | Sonnet | Good quality, reasonable cost |
+| Convergence verification | Opus | Rare, high-stakes, worth paying |
+| Structural gates (VERIFY) | Haiku / none | No LLM needed for syntax/tests |
