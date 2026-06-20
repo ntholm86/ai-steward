@@ -561,3 +561,50 @@ This applies on two axes simultaneously:
 **How to find the frontier:** Run baseline N cycles at current settings. Measure cost-per-accepted-improvement. Then vary one parameter (model, context window, prompt design) and measure the delta. The frontier is where the delta in quality matches the delta in cost. This requires the cost measurement infrastructure already in place.
 
 **The operating principle:** Start cheap (V1 is haiku, 2 calls, ~.002/cycle). Move toward the frontier as data accumulates. Never move away from it on instinct alone.
+
+
+---
+
+## 2026-06-20 -- Development principle: Solve by design
+
+The best design makes the bug impossible. Catching errors at runtime is defense in depth; preventing them by construction is defense in kind.
+
+**What this means for ai-steward:**
+
+- Path validation in SCAN rejects `..` and absolute paths by structure — the code cannot construct an out-of-scope path, not merely refuses to when asked.
+- The harness writes evidence before releasing the response — the response cannot reach the caller without the ledger entry existing. Observable Autonomy is structural, not behavioral.
+- Token cost is captured from the API response, not self-reported — the agent cannot misstate its own cost.
+- Session path is discovered by before/after directory scan, not passed from the LLM call — the agent cannot fabricate a session reference.
+
+If a bug requires the system to be "working correctly" to prevent it, the design is not defensive enough. The question to ask: *can this fail silently?* If yes, add a structural constraint that makes silent failure impossible.
+
+This principle supersedes "add a test." Tests verify behavior; structure prevents misbehavior. Both are needed, but structure comes first.
+
+---
+
+## 2026-06-20 -- Decision: Reasoning layer structural equivalence
+
+*Closes the open question from the self-targeting gate section.*
+
+**Question:** "Reasoning layer as good as the skillset" — does this mean SCAN should produce a trail entry that looks like an improve skill entry (lenses, predictions, `[!DECISION]` markers), or does it mean the *outcomes* are equivalently sound?
+
+**Decision from destination:** Structural equivalence. The destination says:
+
+- "every decision is reasoned, and the reasoning is independently verified"
+- "Trail: decisions and reasoning recorded as they happen"
+- "The separation of action integrity (what was done) from reasoning integrity (why, and whether the reasoning was genuine)"
+
+The skill suite trail format (lenses, predictions, `[!DECISION]`, `[!REALIZATION]`, `[!REVERSAL]`) is the established pattern for visible reasoning. If ai-steward is the PEA exemplar, and P2 requires the reasoning to be visible, then the trail entries must show the reasoning structure — not just the outcomes.
+
+**Implication:** SCAN must produce trail entries that include:
+- Which lenses were applied and what each revealed
+- A pre-commit prediction of what the change will achieve
+- A named blind spot this run did not examine
+- `[!DECISION]` marker on the chosen finding
+- `[!REVERSAL]` if the prediction was wrong (captured in the next run when VERIFY data is available)
+
+This is a significant expansion of SCAN's responsibilities. Currently SCAN returns a JSON blob; to meet this requirement it must return (or the trail entry must synthesize) structured reasoning in the same format as an improve skill entry.
+
+**What this does NOT mean:** The prompt sent to the model need not change. The *capture* of the reasoning must change. The model's raw output (JSON finding) plus the context (destination, files examined, lenses applied) must be recorded in the trail entry with the same structure as improve skill entries. This is a record.py change, not a scan.py change — the reasoning is already implicit in what was examined and what was proposed; the change is making it explicit in the trail.
+
+**Next step:** Refactor `record.py` to produce improve-skill-style trail entries from the Finding + context already available. No new LLM calls required; this is structural capture of reasoning that is already happening.
