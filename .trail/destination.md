@@ -737,3 +737,86 @@ Each pipeline-generated entry contains exactly these sections, in this order:
 ```
 
 **`[!REVERSAL]` rule:** This marker appears in audit-trail.md only when a prediction was demonstrably wrong — appended by the operator after VERIFY evidence is available. It is never emitted by the pipeline as a structural placeholder. Any proposal that adds a `[!REVERSAL]` placeholder section to `_build_entry` violates this rule and must be rejected.
+
+
+---
+
+## 2026-06-20 — Expanded destination: universal autonomous improvement engine
+
+### The identity correction
+
+ai-steward is not a code improvement tool.
+
+It is a **universal autonomous improvement engine**. The target is anything an LLM can read and
+reason about: a Python codebase, a Rust library, a Node.js project, a book manuscript, a research
+paper, a song, a legal document, a product strategy. Code projects are the most obvious initial
+use case — not the boundary.
+
+This matters for positioning: ai-steward's proof is not "we can autonomously improve Python code."
+It is "any artifact that can be expressed as text can be autonomously improved under Observable
+Autonomy discipline." That proof is much stronger.
+
+### The minimal assumption set
+
+The only things ai-steward truly requires:
+
+1. **A readable artifact** — something the LLM can examine (files, text, any content)
+2. **A way to apply a change** — write back to a file, patch a document, modify any artifact
+3. **A way to review the change** — the operator sees what changed and accepts or rejects it
+4. **A trail** — RECORD always runs; the harness always captures; the ledger always appends
+
+Everything else is operator-declared:
+- **Test runner:** erify_command in .ai-steward.yaml — or empty for no verification
+- **File scope:** scope.allowed glob patterns — **/*.py, **/*.md, **/*.ts, **/*
+- **LLM:** configurable per phase, swappable per purpose
+- **Version control:** git if present, file-backup diff if not, operator review either way
+
+### Git is a capability, not a requirement
+
+Git provides diff, rollback, and staging. These are valuable but not structurally required.
+For non-git targets:
+- Diff = compare the file before and after IMPLEMENT
+- Rollback = restore from the pre-IMPLEMENT backup copy
+- Staging = show the operator the before/after and let them decide
+
+The trail recording (RECORD phase, harness sessions) requires no git at all.
+
+PRE-FLIGHT's "git clean" gate becomes optional — it applies when git is present, is bypassed when
+it is not.
+
+### The LLM is configurable per purpose
+
+Different domains benefit from different models:
+- Code: a cheap fast coding-optimised model
+- Creative writing, songs: a model strong on language and creativity
+- Legal/compliance: a model trained on legal reasoning
+- Music notation: a model that understands music theory
+
+The pipeline does not know or care which model handles which phase. The operator declares it.
+The harness captures it regardless.
+
+### Open questions for V2 architecture
+
+These are deliberately unresolved — they shape whether the next iteration is incremental or
+architectural:
+
+1. **Review mechanism abstraction.** Git staging is one review path. A "show before/after diff"
+   in a terminal is another. A web UI diff is a third. Should the review mechanism be a pluggable
+   backend, or is git-or-nothing the V2 scope?
+
+2. **Non-file targets.** "Create a song from scratch" is a generation task, not an improvement
+   task. Does ai-steward expand to cover generation (start from nothing) or stay focused on
+   iterative improvement of existing artifacts?
+
+3. **Verification for non-code targets.** For a book manuscript, what does VERIFY mean?
+   Word-count bounds (already structural)? Readability score? Grammar check? Or just: operator
+   sees the diff and decides? The operator-review-as-verification model may be sufficient for V2.
+
+### Quality bar (2026-06-20)
+
+The question ai-steward must be able to answer yes to:
+
+> "Can I point this at a song manuscript, write a destination, and get a disciplined,
+> traceable improvement cycle with a tamper-evident trail — without touching Python or git?"
+
+If the answer is no, the universal claim is not yet true.
