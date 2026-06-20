@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ai_steward.config import AiStewardConfig
-from ai_steward.harness import anthropic_base_url
+from ai_steward.harness import anthropic_client
 from ai_steward.pipeline.loop import Finding
 
 if TYPE_CHECKING:
@@ -69,11 +69,7 @@ def implement(
         return False, f"file is not UTF-8: {finding.file}", 0
 
     if client is None:
-        import anthropic as _anthropic
-
-        client = _anthropic.Anthropic(
-            base_url=anthropic_base_url(config.harness),
-        )
+        client = anthropic_client(config.harness)
 
     user_message = (
         f"File: {finding.file}\n\n"

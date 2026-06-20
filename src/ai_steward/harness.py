@@ -53,6 +53,28 @@ def anthropic_base_url(config: HarnessConfig) -> str:
     return config.endpoint
 
 
+def anthropic_client(config: HarnessConfig) -> "anthropic.Anthropic":
+    """Anthropic SDK client pre-configured for the harness proxy.
+
+    The harness proxy compresses responses with gzip but omits the
+    Content-Encoding header, so the SDK's httpx transport cannot
+    auto-decompress them. Setting Accept-Encoding: identity in the
+    request prevents compression and allows the SDK to parse responses
+    correctly.
+
+    Usage:
+        client = anthropic_client(config.harness)
+        message = client.messages.create(...)
+    """
+    import anthropic as _anthropic
+    import httpx as _httpx
+
+    return _anthropic.Anthropic(
+        base_url=config.endpoint,
+        http_client=_httpx.Client(headers={"Accept-Encoding": "identity"}),
+    )
+
+
 @contextmanager
 def harness_session(target_repo: Path, config: HarnessConfig):
     """Context manager that sets HARNESS_ROOT for one pipeline run.

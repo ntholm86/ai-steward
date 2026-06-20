@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ai_steward.config import AiStewardConfig
-from ai_steward.harness import anthropic_base_url
+from ai_steward.harness import anthropic_client
 from ai_steward.pipeline.loop import Finding
 
 if TYPE_CHECKING:
@@ -89,11 +89,7 @@ def scan(
         A Finding if one actionable improvement was identified, None otherwise.
     """
     if client is None:
-        import anthropic as _anthropic
-
-        client = _anthropic.Anthropic(
-            base_url=anthropic_base_url(config.harness),
-        )
+        client = anthropic_client(config.harness)
 
     files = _collect_files(repo, config)
     if not files:
