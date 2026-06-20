@@ -1337,3 +1337,42 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 3. **Section-boundary truncation** -- deferred 4 times, still valid.
 4. **Harness session discovery test** -- no test coverage for before/after scanning.
 
+
+---
+
+## 2026-06-20 -- Improve: P1 reasoning visibility -- improve-skill-style trail entries
+
+**Skill:** Improve v3.10.0
+**Trigger:** Operator asked to run improve with cross-repo scope enabled. Retrospect ranked P1 reasoning visibility as the highest-priority gap.
+
+**Interpretation of the ask:** "Run improve" after destination consolidation (dual purpose: proof + tool). Retrospect says self-targeting gate is closed until P1 reasoning visibility is done. This is the blocking candidate.
+
+**Lenses applied:**
+
+- *Purpose:* record.py produced a flat status report. An operator reading a pipeline-generated trail entry could see WHAT changed but could not verify WHY the reasoning was sound. P1 says every decision is reasoned and reasoning is independently verified. The harness proves it happened; the trail entry must show the structure.
+- *Inconsistency:* Improve-skill trail entries (every human-run session) carry [!DECISION], Prediction, lenses, blind spot. Pipeline-generated entries had none of these. If ai-steward is the PEA exemplar, its automated entries must meet the same standard as the manual ones.
+- *Waste:* finding.proposed_change and finding.rationale were already the raw material for a Prediction section. They were buried under a flat Proposed change header. Restructuring costs zero new LLM tokens.
+
+**[!DECISION]** Refactor _build_entry in record.py only. Use existing Finding fields to produce improve-skill-style entries: [!DECISION] marker, Prediction (proposed_change + expected outcome from rationale), structural lens declarations (Commander's Intent + Code examination), honest blind_spot placeholder. _types.py and scan.py unchanged -- blind_spot is a follow-on candidate.
+
+**Prediction:** 1 file changed. 61/61 tests pass. Existing tests check finding.description, finding.risk, finding.rationale, finding.file, diff are present in entry -- all remain true with new format.
+
+**Verification:** python -m pytest tests/ -q -> 61/61. Prediction held exactly. No reversals.
+
+**Reflection:**
+
+- *Model-claim:* Every pipeline-generated trail entry now carries the structural markers of visible reasoning. An operator reviewing a future self-targeting run can verify the reasoning structure, not just the outcome.
+- *Blind spot:* The blind_spot field is honest placeholder text ("Not captured in V1"). The model knows what it did NOT examine; that insight is lost today. Adding blind_spot to the SCAN JSON schema would close this without adding LLM calls.
+- *Imagined-reader pushback:* "The lenses are static boilerplate -- Commander's Intent lens always says the same thing." Fair for V1. The lenses become dynamic when blind_spot and files_examined are added to Finding. The static version is honest: it declares the structure of what SCAN does, even if V1 can't report the specifics.
+
+**Across-trail triggers:**
+- *Recurring finding-class:* not fired.
+- *About to declare silence:* not fired -- change made.
+- *Contradicts prior [!REALIZATION]:* not fired -- this resolves the P1 gap identified in retrospect.
+- *Operator explicitly asked:* fired -- operator invoked improve with explicit cross-repo scope permission.
+
+### Candidate Next Moves
+
+1. **Add blind_spot to SCAN** -- add blind_spot: str = "" to Finding (_types.py), add blind_spot field to SCAN system prompt JSON schema (scan.py), record.py uses it. Completes the trail entry reasoning structure. Single-field addition; same 1 LLM call.
+2. **Section-boundary truncation for _load_destination** -- find last full ## YYYY-MM-DD section before 3000-char cutoff. Deferred 4 times.
+3. **Harness session discovery test** -- harness_session() before/after scanning has no test coverage.
