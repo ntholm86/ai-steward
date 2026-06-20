@@ -4,6 +4,7 @@ All gates are tier-0 (no LLM calls). Tests run without a live harness
 proxy by using monkeypatch for is_reachable and _baseline_tests.
 """
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -71,9 +72,27 @@ def test_is_git_clean_empty_repo(tmp_path: Path) -> None:
     assert _is_git_clean(tmp_path) is True
 
 
-def test_is_git_clean_false_with_untracked(tmp_path: Path) -> None:
+def test_is_git_clean_ignores_untracked(tmp_path: Path) -> None:
     _git_init(tmp_path)
-    (tmp_path / "dirty.py").write_text("x = 1")
+    (tmp_path / "untracked.py").write_text("x = 1")
+    # Untracked files are not committed changes — must not block the pipeline.
+    assert _is_git_clean(tmp_path) is True
+
+
+def test_is_git_clean_false_with_modified_tracked(tmp_path: Path) -> None:
+    _git_init(tmp_path)
+    f = tmp_path / "tracked.py"
+    f.write_bytes(b"x = 1\n")
+    subprocess.run(["git", "add", "tracked.py"], cwd=tmp_path, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "init"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        env={**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+             "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"},
+    )
+    f.write_bytes(b"x = 2\n")
     assert _is_git_clean(tmp_path) is False
 
 
@@ -101,7 +120,19 @@ def test_preflight_fails_not_git_repo(tmp_path: Path) -> None:
 
 def test_preflight_fails_dirty_tree(tmp_path: Path) -> None:
     _git_init(tmp_path)
-    (tmp_path / "dirty.py").write_text("x = 1")
+    # A tracked file with uncommitted modifications makes the tree dirty.
+    f = tmp_path / "tracked.py"
+    f.write_bytes(b"x = 1\n")
+    subprocess.run(["git", "add", "tracked.py"], cwd=tmp_path, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "init"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        env={**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+             "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"},
+    )
+    f.write_bytes(b"x = 2\n")
     config = _reachable_config(tmp_path)
     passed, reason, count = preflight(tmp_path, config)
     assert not passed

@@ -56,7 +56,7 @@ def _is_git_repo(repo: Path) -> bool:
 
 def _is_git_clean(repo: Path) -> bool:
     result = subprocess.run(
-        ["git", "status", "--porcelain"],
+        ["git", "status", "--porcelain", "--untracked-files=no"],
         cwd=repo,
         capture_output=True,
         text=True,

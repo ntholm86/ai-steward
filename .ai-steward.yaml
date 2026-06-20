@@ -1,0 +1,30 @@
+# AI Steward V1 — self-targeting configuration
+#
+# This config is used when ai-steward runs against its own repository.
+# Self-targeting is the V1 milestone (destination 2026-06-20).
+#
+# repo: comes from the CLI argument, not this file.
+
+models:
+  analyze: claude-haiku-4-5
+  propose: claude-haiku-4-5
+  implement: claude-haiku-4-5
+  verify: claude-haiku-4-5
+  judge: claude-haiku-4-5
+
+harness:
+  endpoint: "http://localhost:8474"
+
+scope:
+  # Only Python source files in scope — tests and trail are off-limits for V1.
+  allowed:
+    - "src/**/*.py"
+  blocked:
+    - "tests/**"
+    - ".trail/**"
+
+sandbox: local
+
+max_iterations: 1
+budget_usd: 1.0
+allow_dirty: false
