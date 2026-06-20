@@ -14,6 +14,7 @@ full prompt rationale and gate conditions.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -46,6 +47,37 @@ Rules:
 - Be specific: "Remove unused import os from utils.py" not "clean up imports".
 - proposed_change must be the actual replacement content, ready to write.
 """
+
+def _extract_json(text: str) -> dict | None:
+    """Extract a JSON object from model output that may include prose or code fences.
+
+    Takes the last valid JSON object found — when a model revises its answer,
+    the final fence contains the intended response.
+    """
+    # Strategy 1: extract from the last markdown code fence
+    fence_matches = list(re.finditer(r"```(?:json)?\s*\n(.*?)\n```", text, re.DOTALL))
+    for m in reversed(fence_matches):
+        try:
+            return json.loads(m.group(1).strip())
+        except (json.JSONDecodeError, ValueError):
+            continue
+
+    # Strategy 2: direct parse (model returned raw JSON as instructed)
+    try:
+        return json.loads(text)
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Strategy 3: extract outermost { ... } (handles trailing prose)
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end > start:
+        try:
+            return json.loads(text[start : end + 1])
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    return None
 
 
 def _collect_files(repo: Path, config: AiStewardConfig) -> dict[str, str]:
@@ -118,9 +150,8 @@ def scan(
             text = block.text.strip()
             break
 
-    try:
-        data = json.loads(text)
-    except (json.JSONDecodeError, ValueError):
+    data = _extract_json(text)
+    if data is None:
         return None
 
     if data.get("nothing"):
