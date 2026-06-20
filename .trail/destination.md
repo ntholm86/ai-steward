@@ -165,3 +165,47 @@ Only after that foundation exists do we add the expensive reasoning machinery â€
 - What's the token budget per pipeline cycle that keeps continuous operation viable? This needs real numbers from Evo's operational history.
 - How do we measure "reasoning quality per token" to know if we're trading off correctly?
 
+
+---
+
+## 2026-06-20 -- V1 milestone clarification: self-targeting
+
+### Correction to the June 19 V1 definition
+
+The June 19 entry listed "Self-targeting" under **What v1 defers**. This is wrong.
+
+Self-targeting is not a V2 feature -- it is the V1 milestone. The destination has always said: *"AI Steward can target any repository, including its own. Self-targeting is not a special mode -- it is the same pipeline pointed at a different directory."* V1 is not complete until this is demonstrated, not just true in principle.
+
+### What V1 done actually means
+
+V1 is done when ai-steward successfully runs the loop against its own repository:
+
+1. i-steward run c:\git\ai-steward executes
+2. The loop reads its own code, proposes one improvement, applies it, verifies it, writes the trail entry, and leaves the change staged
+3. The operator reviews the staged diff and decides
+
+That first successful self-targeting cycle is the milestone. Not "57 tests pass." Not "all phases exist."
+
+### What happens after
+
+Once the loop runs on itself once, there is no handoff. The loop continues -- each run proposes the next improvement. The operator reviews and accepts or discards each staged proposal. This is the "taking over" moment: ai-steward improving ai-steward, with the operator as reviewer rather than author.
+
+No special treatment for self-targeting. The same pipeline, the same gates, the same trail. The loop does not know or care that it is modifying its own source code.
+
+### What this means for the remaining work
+
+The gap between "structurally complete" and "V1 done" is operational:
+
+1. pyyaml installed in the ai-steward environment
+2. .ai-steward.yaml present in c:\git\ai-steward
+3. Harness proxy running at localhost:8474
+4. First i-steward run c:\git\ai-steward produces a staged proposal
+
+These are not code problems. They are first-run prerequisites.
+
+### What does NOT change
+
+- V1 still stops before release -- operator reviews every staged change
+- V1 still uses tier 0/1 reasoning only
+- V1 still uses single-model operation
+- Harness-protocol remains outside autonomous scope
