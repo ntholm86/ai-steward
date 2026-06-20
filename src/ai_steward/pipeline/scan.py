@@ -109,13 +109,38 @@ def _load_destination(repo: Path) -> str | None:
     return text
 
 
+_BINARY_HEURISTIC_BYTES = 8192
+
+# Directories excluded when using the default scope (**/*).
+# Operators who set scope.allowed explicitly are fully in control.
+_DEFAULT_SKIP_DIRS = frozenset({
+    ".trail", ".git", ".harness",
+    "__pycache__", ".mypy_cache", ".pytest_cache",
+    "node_modules", ".venv", "venv", ".tox",
+})
+
+
+def _is_binary(path: Path) -> bool:
+    """Return True if path appears to be a binary file.
+
+    Uses the NUL-byte heuristic (same as git): if the first 8 KB contains
+    a NUL byte the file is treated as binary and excluded from SCAN context.
+    """
+    try:
+        chunk = path.read_bytes()[:_BINARY_HEURISTIC_BYTES]
+        return b"\x00" in chunk
+    except OSError:
+        return True  # unreadable — treat as binary
+
+
 def _collect_files(repo: Path, config: AiStewardConfig) -> dict[str, str]:
     """Read files within scope for the SCAN context window.
 
     Returns {relative_path: content}. Respects scope.allowed and
-    scope.blocked glob patterns. Defaults to **/*.py if allowed is empty.
+    scope.blocked glob patterns. Defaults to **/* (all text files) if
+    allowed is empty; binary files are excluded via NUL-byte heuristic.
     """
-    patterns = config.scope.allowed if config.scope.allowed else ["**/*.py"]
+    patterns = config.scope.allowed if config.scope.allowed else ["**/*"]
     blocked = config.scope.blocked
 
     files: dict[str, str] = {}
@@ -125,6 +150,13 @@ def _collect_files(repo: Path, config: AiStewardConfig) -> dict[str, str]:
                 continue
             rel = str(path.relative_to(repo))
             if any(path.match(b) for b in blocked):
+                continue
+            if not config.scope.allowed and _is_binary(path):
+                continue
+            if not config.scope.allowed and any(
+                part in _DEFAULT_SKIP_DIRS
+                for part in path.relative_to(repo).parts
+            ):
                 continue
             try:
                 files[rel] = path.read_text(encoding="utf-8", errors="ignore")

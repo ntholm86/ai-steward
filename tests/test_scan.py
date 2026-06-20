@@ -306,3 +306,32 @@ def test_scan_proceeds_when_already_exists_check_is_not_found(tmp_path: Path) ->
     result = scan(tmp_path, config, client=client)
 
     assert isinstance(result, Finding)
+
+
+# ---------------------------------------------------------------------------
+# _collect_files — default scope (technology-agnostic)
+# ---------------------------------------------------------------------------
+
+
+def test_collect_files_default_scope_includes_non_python_text_files(tmp_path: Path) -> None:
+    """Default scope **/* collects any text file, not just .py."""
+    (tmp_path / "README.md").write_text("# Hello\n")
+    (tmp_path / "package.json").write_text('{"name": "x"}\n')
+    config = _make_config(tmp_path)  # no explicit scope
+
+    files = _collect_files(tmp_path, config)
+
+    assert "README.md" in files
+    assert "package.json" in files
+
+
+def test_collect_files_default_scope_excludes_binary_files(tmp_path: Path) -> None:
+    """Default scope skips binary files (NUL-byte heuristic)."""
+    (tmp_path / "image.png").write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00")
+    (tmp_path / "notes.txt").write_text("plain text\n")
+    config = _make_config(tmp_path)  # no explicit scope
+
+    files = _collect_files(tmp_path, config)
+
+    assert "image.png" not in files
+    assert "notes.txt" in files
