@@ -2313,3 +2313,44 @@ Replace un_tests(repo) with un_verify_command(cmd: str, repo: Path) throughout
 1. **Git auto-init in PRE-FLIGHT** — if the target dir is not a git repo, run `git init` instead of failing. Last remaining prerequisite preventing zero-setup adoption.
 2. **Run ai-steward against itself** — both P1 and P2 complete, verify_command configurable, scope now technology-agnostic. Self-targeting gate is fully open. This is the V1 milestone.
 3. **`_DEFAULT_SKIP_DIRS` as a configurable default** — currently hardcoded. A config field `scope.default_skip_dirs` would let advanced operators adjust it without forfeiting the convenience of default mode.
+
+---
+
+## 2026-06-20 -- Improve: git auto-init in PRE-FLIGHT — zero-setup adoption
+
+**Skill:** Improve v3.10.0
+**Trigger:** Operator asked "continue." Sourced highest-confidence hunch from destination + prior trail.
+
+**Hunch (sourced):** The last hard prerequisite for zero-setup adoption is the git requirement. The destination says "easy workflow: write a destination, let it do its thing." A fresh directory without git fails immediately in PRE-FLIGHT. The previous iteration removed the Python-only SCAN default; this removes the git prerequisite.
+
+**Falsifiable question:** Does PRE-FLIGHT failing on non-git directories prevent adoption for new projects? Answer: Yes — a user running `ai-steward run ./my-new-project` on a bare directory gets a "not a git repository" error and must manually run `git init`. This contradicts the "easy workflow" destination.
+
+**[!DECISION]** Replace `_is_git_repo → fail` gate with `_is_git_repo → auto-init` in PRE-FLIGHT. Add `_git_auto_init(repo)`: runs `git init`, `git add -A`, `git commit --allow-empty`. Sets minimal git identity (ai-steward@local) so it works in any environment, including CI with no global git config. Only fails if git binary itself is unavailable.
+
+**Lenses:**
+
+- *Purpose:* Destination says "zero-setup, any codebase." The git prerequisite was the last manual step between "bare directory" and "running pipeline."
+- *Inconsistency:* The `init` command was added to scaffold `.ai-steward.yaml` and `destination.md`, but didn't provision git. The init experience was incomplete.
+- *Waste:* Requiring operators to run `git init` manually is friction the pipeline can remove for free (one subprocess call).
+
+**Prediction:** 76 tests — test count unchanged (replaced `test_preflight_fails_not_git_repo` with `test_preflight_auto_inits_git_if_not_repo`). All pass.
+
+**Verification:** python -m pytest tests/ -q -> 76/76. Prediction held. Commit ff26bb6 pushed.
+
+**Reflection:**
+
+- *Model-claim:* ai-steward now has zero hard prerequisites for a new target. A bare directory + `ai-steward init` + `ai-steward run` is a complete workflow. The "easy workflow" destination claim is now structurally true, not aspirational.
+- *Blind spot:* `git add -A` on a directory with secrets (API keys, `.env` files) would commit them into the initial commit. The operator is responsible for `.gitignore` before running. V1 does not warn about this.
+- *Imagined-reader pushback:* "Auto-provisioning git silently might surprise operators who don't want ai-steward managing their version control." Fair — but the alternative (failing with "please run git init") is worse for adoption. The commit message "provisioned by ai-steward" makes the auto-init visible in the git log.
+
+**Across-trail triggers:**
+- *Recurring finding-class:* not fired.
+- *About to declare silence:* evaluating. The three technology-agnostic changes are complete: verify_command configurable, scope default **/* with filters, git auto-init. Structural code work for the adoption milestone is done.
+- *Contradicts prior [!REALIZATION]:* not fired.
+- *Operator explicitly asked:* fired (continue).
+
+### Candidate Next Moves
+
+1. **Run ai-steward against itself** — V1 milestone. All three adoption prerequisites removed. P1+P2 complete. Self-targeting is the validation gate. This is the highest-value next action.
+2. **Warn on potential secrets in auto-init** — check for common secret files (`.env`, `*.key`, `*.pem`) before `git add -A` and log a warning. Safety improvement.
+3. **Retrospect update** — current retrospect predates all three technology-agnostic changes. Arc-claims 4 and 6 are stale (P1 complete, self-targeting gate fully open with zero prerequisites).
