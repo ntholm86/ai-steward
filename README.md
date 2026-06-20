@@ -1,49 +1,112 @@
 # ai-steward
 
-Autonomous software evolution engine with structurally separated execution and reasoning layers.
+An autonomous code improvement loop with structural accountability.
 
-## Architecture
+**Purpose 1 — Proof:** A reference implementation of [Principles of Earned Autonomy](https://github.com/ntholm86/manifesto). Demonstrates that autonomous delegation can be structurally trustworthy — not through promises, but through Observable Autonomy (harness-captured LLM evidence), Commander's Intent (operator-written destination), and Convergence Is Silence (stop when done, not when tired).
 
-```
-Reasoning layer  (Skills: Vision, Trail, Improve, Retrospect, Probe)
-      │
-      ▼
-Execution layer  (pipeline phases: ANALYZE → PROPOSE → IMPLEMENT → VERIFY → DECIDE → RELEASE)
-      │
-      ▼
-Structural integrity layer  (harness-protocol — standalone, outside autonomous scope)
-```
+**Purpose 2 — Tool:** Genuinely useful. Write a destination → run the loop → review the staged diff → commit or discard. Works on any codebase. Cost is measured, not claimed (~$0.018/cycle on claude-haiku-4-5).
 
-The execution layer is deliberately dumb: it collects metrics, runs commands, tracks state. It does not reason. All reasoning is the Skills suite's domain.
-
-## Pipeline
-
-| Phase | What it does |
-|-------|-------------|
-| DETECT | Infer language profile (cached) |
-| ANALYZE | Collect baseline metrics, find weaknesses (evidence collection only) |
-| PROPOSE | Reasoning layer selects a targeted improvement |
-| IMPLEMENT | Apply file changes in a feature branch |
-| VERIFY | Re-run all metrics |
-| DECIDE | Reasoning layer gates the merge (soft evidence, not hard Pareto rule) |
-| RELEASE | Merge, tag, record in harness-protocol ledger |
-
-## Key design principles
-
-- **Model-family independence**: PROPOSE, VERIFY, and JUDGE use different LLM families. This is an integrity mechanism, not a performance optimization.
-- **All LLM calls through harness-protocol**: The proxy handles session/ledger recording. The execution layer never calls LLM APIs directly.
-- **harness-protocol is outside the autonomous scope**: ai-steward may not modify harness-protocol during a self-targeting run.
-
-## Setup
+## How it works
 
 ```
+┌──────────────────────────────────┐
+│  OPERATOR                        │
+│  .trail/destination.md           │  ← Commander's Intent: what + why
+│  Reviews staged diffs            │
+│  Commits or discards             │
+└──────────────┬───────────────────┘
+               │
+               ▼
+┌──────────────────────────────────┐
+│  PIPELINE                        │
+│  PRE-FLIGHT → SCAN → IMPLEMENT   │
+│           → VERIFY → RECORD      │
+│                                  │
+│  • PRE-FLIGHT: git clean, tests  │  ← zero LLM tokens
+│  • SCAN: read files + dest → LLM │  ← one cheap model call
+│  • IMPLEMENT: apply change → LLM │  ← one cheap model call
+│  • VERIFY: syntax, size, tests   │  ← zero LLM tokens
+│  • RECORD: append trail entry    │  ← zero LLM tokens
+└──────────────┬───────────────────┘
+               │
+               ▼
+┌──────────────────────────────────┐
+│  HARNESS (localhost:8474)        │
+│  Intercepts all LLM API calls    │
+│  Writes .trail/sessions/*.jsonl  │  ← BEFORE response is processed
+│  Hash-chained, tamper-evident    │  ← agent cannot fabricate evidence
+└──────────────────────────────────┘
+```
+
+Every cycle produces two records in the target repo's `.trail/` directory:
+- `audit-trail.md` — the agent's reasoning (what it proposed and why)
+- `sessions/<ulid>.jsonl` — the harness-captured LLM evidence (independent, unmodifiable)
+
+The agent cannot claim it did something it did not do.
+
+## Quickstart
+
+**Prerequisites:** Python 3.12+, [harness-protocol](https://github.com/ntholm86/harness-protocol) proxy running on `localhost:8474`, `ANTHROPIC_API_KEY` set.
+
+```bash
 pip install -e ".[dev]"
 ```
 
-## Usage
+**In your target repo**, create `.ai-steward.yaml`:
+
+```yaml
+models:
+  analyze: claude-haiku-4-5
+  propose: claude-haiku-4-5
+  implement: claude-haiku-4-5
+  verify: claude-haiku-4-5
+  judge: claude-haiku-4-5
+```
+
+And `.trail/destination.md` — write what you want the codebase to become and why:
+
+```markdown
+# Destination — my-project
+
+What this is for and what a good improvement looks like.
+The agent reads this before every SCAN. Be honest about trade-offs.
+```
+
+**Run:**
+
+```bash
+ai-steward run /path/to/your/repo
+```
+
+The loop proposes one change, applies it, verifies tests pass, and stages the diff. You inspect and commit or discard.
+
+## V1 status
+
+- Self-targeting proven: ai-steward runs against its own repository
+- Observable Autonomy structural: harness sessions co-located with trail in `.trail/`
+- Commander's Intent structural: SCAN reads `.trail/destination.md` before every proposal
+- 66 tests, mypy-clean, CI on GitHub Actions
+- Cost baseline: ~$0.018/cycle (SCAN + IMPLEMENT, claude-haiku-4-5)
+
+**V2 (not yet implemented):** model-family independence (proposer and verifier from different families), configurable verify commands (for non-Python repos), multi-cycle convergence tracking.
+
+## Observable Autonomy
+
+The harness proxy writes the session ledger **before** the LLM response is processed. The agent cannot selectively omit calls, retroactively modify evidence, or claim a reasoning path it did not take. The trail entry (agent-authored) and the JSONL session (harness-captured) are co-located but distinct — two trust levels, one directory.
 
 ```
-ai-steward run /path/to/target/repo
+.trail/
+  audit-trail.md          ← agent's claim about what happened
+  sessions/
+    01KV....jsonl         ← independent proof of what the LLM was asked and answered
 ```
 
-Requires `.ai-steward.yaml` in the target repo (see `src/ai_steward/config.py` for schema).
+## Development
+
+```bash
+pip install -e ".[dev]"
+pytest          # 66 tests
+mypy src/       # type-check
+```
+
+CI runs both on push via `.github/workflows/ci.yml`.
