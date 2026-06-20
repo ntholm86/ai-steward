@@ -152,11 +152,11 @@ def test_preflight_fails_harness_unreachable(tmp_path: Path) -> None:
 def test_preflight_fails_baseline_tests(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _git_init(tmp_path)
     monkeypatch.setattr("ai_steward.pipeline.loop.is_reachable", lambda _: True)
-    monkeypatch.setattr("ai_steward.pipeline.loop.run_tests", lambda _: (False, 0))
+    monkeypatch.setattr("ai_steward.pipeline.loop.run_verify_command", lambda cmd, repo: (False, 0))
     config = _reachable_config(tmp_path)
     passed, reason, count = preflight(tmp_path, config)
     assert not passed
-    assert "test" in reason.lower()
+    assert "verify" in reason.lower() or "green" in reason.lower()
     assert count == 0
 
 
@@ -168,7 +168,7 @@ def test_preflight_fails_baseline_tests(tmp_path: Path, monkeypatch: pytest.Monk
 def test_preflight_passes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _git_init(tmp_path)
     monkeypatch.setattr("ai_steward.pipeline.loop.is_reachable", lambda _: True)
-    monkeypatch.setattr("ai_steward.pipeline.loop.run_tests", lambda _: (True, 13))
+    monkeypatch.setattr("ai_steward.pipeline.loop.run_verify_command", lambda cmd, repo: (True, 13))
     config = _reachable_config(tmp_path)
     passed, reason, count = preflight(tmp_path, config)
     assert passed
@@ -188,7 +188,7 @@ def test_preflight_dirty_tree_passes_when_allow_dirty(
         allow_dirty=True,
     )
     monkeypatch.setattr("ai_steward.pipeline.loop.is_reachable", lambda _: True)
-    monkeypatch.setattr("ai_steward.pipeline.loop.run_tests", lambda _: (True, 5))
+    monkeypatch.setattr("ai_steward.pipeline.loop.run_verify_command", lambda cmd, repo: (True, 5))
 
     passed, reason, count = preflight(tmp_path, config)
 
@@ -217,7 +217,7 @@ _FINDING = Finding(
 def _pass_preflight(monkeypatch: pytest.MonkeyPatch, baseline: int = 5) -> None:
     monkeypatch.setattr("ai_steward.pipeline.loop._is_git_repo", lambda _r: True)
     monkeypatch.setattr("ai_steward.pipeline.loop._is_git_clean", lambda _r: True)
-    monkeypatch.setattr("ai_steward.pipeline.loop.run_tests", lambda _r: (True, baseline))
+    monkeypatch.setattr("ai_steward.pipeline.loop.run_verify_command", lambda cmd, repo: (True, baseline))
     monkeypatch.setattr("ai_steward.pipeline.loop.is_reachable", lambda _c: True)
     monkeypatch.setattr(ai_steward.harness, "harness_session", lambda *_a: contextlib.nullcontext())
 

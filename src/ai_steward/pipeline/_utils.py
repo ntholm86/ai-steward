@@ -5,18 +5,24 @@ Functions here are tier-0 (no LLM calls) and used by multiple phases.
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 from pathlib import Path
 
 
-def run_tests(repo: Path) -> tuple[bool, int]:
-    """Run the test suite. Returns (all_passed, pass_count).
+def run_verify_command(cmd: str, repo: Path) -> tuple[bool, int]:
+    """Run a configurable verify command. Returns (passed, count).
+
+    If cmd is empty: returns (True, 0) — test gate is disabled.
+    count is parsed from pytest-style output when available; 0 otherwise.
 
     Used by PRE-FLIGHT (baseline) and VERIFY (regression check).
     Tier-0: pure subprocess call, no LLM tokens.
     """
+    if not cmd:
+        return True, 0
     result = subprocess.run(
-        ["python", "-m", "pytest", "--tb=no", "-q"],
+        shlex.split(cmd),
         cwd=repo,
         capture_output=True,
         text=True,

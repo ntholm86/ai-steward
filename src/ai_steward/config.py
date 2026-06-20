@@ -74,6 +74,7 @@ class AiStewardConfig(BaseModel):
     budget_usd: float = 5.0
     sandbox: str = "docker"  # "docker" | "local"
     allow_dirty: bool = False  # skip the clean-tree gate (operator opt-in)
+    verify_command: str = "python -m pytest --tb=no -q"  # empty string disables the test gate
 
     @field_validator("repo")
     @classmethod

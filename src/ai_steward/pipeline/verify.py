@@ -18,7 +18,7 @@ import subprocess
 from pathlib import Path
 
 from ai_steward.config import AiStewardConfig
-from ai_steward.pipeline._utils import run_tests
+from ai_steward.pipeline._utils import run_verify_command
 from ai_steward.rollback import rollback_file
 
 
@@ -72,13 +72,15 @@ def verify(
             f"(below 50 % of original — likely bulk deletion)",
         )
 
-    # Gate 3: Test suite
-    passed, count = run_tests(repo)
-    if not passed or count < baseline_count:
-        rollback_file(repo, changed_file)
-        return (
-            False,
-            f"tests failed after change (baseline: {baseline_count}, now: {count})",
-        )
+    # Gate 3: Verify command (skipped when verify_command is empty)
+    if config.verify_command:
+        passed, count = run_verify_command(config.verify_command, repo)
+        if not passed or count < baseline_count:
+            rollback_file(repo, changed_file)
+            return (
+                False,
+                f"verify command failed or test count dropped "
+                f"(baseline {baseline_count}, now {count})",
+            )
 
     return True, ""

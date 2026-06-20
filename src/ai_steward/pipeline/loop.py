@@ -15,7 +15,7 @@ from pathlib import Path
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import harness_session, is_reachable
 from ai_steward.pipeline._types import Finding, LoopResult
-from ai_steward.pipeline._utils import run_tests
+from ai_steward.pipeline._utils import run_verify_command
 from ai_steward.pipeline.implement import implement
 from ai_steward.pipeline.record import record
 from ai_steward.pipeline.scan import scan
@@ -83,9 +83,9 @@ def preflight(repo: Path, config: AiStewardConfig) -> tuple[bool, str, int]:
     if not is_reachable(config.harness):
         return False, f"harness proxy unreachable at {config.harness.endpoint}", 0
 
-    passed, count = run_tests(repo)
+    passed, count = run_verify_command(config.verify_command, repo)
     if not passed:
-        return False, "baseline tests failed — repo must be green before evolution", 0
+        return False, "baseline verify command failed — repo must be green before evolution", 0
 
     return True, "", count
 

@@ -1,4 +1,4 @@
-"""Tests for VERIFY phase and rollback utility."""
+﻿"""Tests for VERIFY phase and rollback utility."""
 
 import subprocess
 from pathlib import Path
@@ -59,7 +59,7 @@ def test_rollback_works_with_relative_path(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# verify — failure paths (all should rollback the file)
+# verify â€” failure paths (all should rollback the file)
 # ---------------------------------------------------------------------------
 
 
@@ -69,7 +69,7 @@ def test_verify_fails_syntax_error_and_rolls_back(
     f = _git_repo_with_file(tmp_path, "mod.py", "x = 1\n")
     original_size = f.stat().st_size
     f.write_text("def broken(\n", encoding="utf-8")  # syntax error
-    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 5))
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_verify_command", lambda cmd, repo: (True, 5))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, 5)
@@ -84,14 +84,14 @@ def test_verify_fails_file_too_large_and_rolls_back(
 ) -> None:
     f = _git_repo_with_file(tmp_path, "mod.py", "x = 1\n")
     original_size = f.stat().st_size
-    f.write_text("x = 1\n" * 1000, encoding="utf-8")  # way bigger than 2×
-    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 5))
+    f.write_text("x = 1\n" * 1000, encoding="utf-8")  # way bigger than 2Ã—
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_verify_command", lambda cmd, repo: (True, 5))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, 5)
 
     assert not passed
-    assert "2×" in reason or "limit" in reason
+    assert "2Ã—" in reason or "limit" in reason
     assert f.read_text() == "x = 1\n"  # rolled back
 
 
@@ -101,8 +101,8 @@ def test_verify_fails_bulk_deletion_and_rolls_back(
     original = "x = 1\n" * 40  # ~240 bytes
     f = _git_repo_with_file(tmp_path, "mod.py", original)
     original_size = f.stat().st_size
-    f.write_bytes(b"x = 1\n" * 2)  # ~12 bytes — ~5% of original, far below 50%
-    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 5))
+    f.write_bytes(b"x = 1\n" * 2)  # ~12 bytes â€” ~5% of original, far below 50%
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_verify_command", lambda cmd, repo: (True, 5))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, 5)
@@ -118,8 +118,8 @@ def test_verify_passes_modest_shrink(
     original = "x = 1\n" * 10  # 60 bytes
     f = _git_repo_with_file(tmp_path, "mod.py", original)
     original_size = f.stat().st_size
-    f.write_text("x = 1\n" * 7, encoding="utf-8")  # 42 bytes — 70% of original, above 50%
-    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 5))
+    f.write_text("x = 1\n" * 7, encoding="utf-8")  # 42 bytes â€” 70% of original, above 50%
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_verify_command", lambda cmd, repo: (True, 5))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, 5)
@@ -134,7 +134,7 @@ def test_verify_fails_tests_fail_and_rolls_back(
     f = _git_repo_with_file(tmp_path, "mod.py", "x = 1\n")
     original_size = f.stat().st_size
     f.write_text("x = 2\n", encoding="utf-8")
-    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (False, 0))
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_verify_command", lambda cmd, repo: (False, 0))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, 5)
@@ -151,7 +151,7 @@ def test_verify_fails_when_test_count_drops(
     original_size = f.stat().st_size
     f.write_text("x = 2\n", encoding="utf-8")
     # pytest exits 0 but fewer tests pass (some were deleted)
-    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 3))
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_verify_command", lambda cmd, repo: (True, 3))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, baseline_count=5)
@@ -161,15 +161,15 @@ def test_verify_fails_when_test_count_drops(
 
 
 # ---------------------------------------------------------------------------
-# verify — pass
+# verify â€” pass
 # ---------------------------------------------------------------------------
 
 
 def test_verify_passes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     f = _git_repo_with_file(tmp_path, "mod.py", "x = 1\n")
     original_size = f.stat().st_size
-    f.write_text("x = 2\n", encoding="utf-8")  # same size — stays within 2× guard
-    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 7))
+    f.write_text("x = 2\n", encoding="utf-8")  # same size â€” stays within 2Ã— guard
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_verify_command", lambda cmd, repo: (True, 7))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, baseline_count=7)
@@ -184,10 +184,23 @@ def test_verify_skips_syntax_check_for_non_python(
 ) -> None:
     f = _git_repo_with_file(tmp_path, "notes.md", "# hello\n")
     original_size = f.stat().st_size
-    f.write_text("# world\n", encoding="utf-8")  # same size — no syntax gate for .md
-    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 3))
+    f.write_text("# world\n", encoding="utf-8")  # same size â€” no syntax gate for .md
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_verify_command", lambda cmd, repo: (True, 3))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, baseline_count=3)
 
     assert passed  # no syntax check for .md
+
+
+def test_verify_skips_test_gate_when_verify_command_empty(tmp_path: Path) -> None:
+    """verify_command='' disables Gate 3 entirely — passes even with baseline_count > 0."""
+    f = _git_repo_with_file(tmp_path, "mod.py", "x = 1\n")
+    original_size = f.stat().st_size
+    f.write_text("x = 2\n", encoding="utf-8")
+    config = AiStewardConfig(repo=tmp_path, models=_V1_MODELS, verify_command="")
+
+    passed, reason = verify(tmp_path, config, f, original_size, baseline_count=5)
+
+    assert passed  # Gate 3 skipped; size guard passes
+
