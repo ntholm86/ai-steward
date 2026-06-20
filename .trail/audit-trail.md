@@ -1875,3 +1875,29 @@ Alternatives: Add a return dataclass (over-engineered for V1; the 5-tuple is alr
 1. Add GitHub Actions CI running mypy src/ && pytest on push -- the natural next layer above the config change.
 2. External repo targeting -- retrospect's structural top candidate; proves generalisation beyond self-targeting.
 3. Harness ledger hash-chain replay -- structural mechanism exists, integrity never exercised.
+
+---
+
+## 2026-06-20 - Add GitHub Actions CI
+
+**Trigger:** Operator invoked improve skill (fifth iteration), said "let's finish this". Top candidate from prior iteration: wire mypy + pytest into CI enforcement.
+
+**[!DECISION]** Create .github/workflows/ci.yml running mypy src/ then pytest on push and PR to main. Uses pip install -e ".[dev]" -- pulls the dev extras already declared in pyproject.toml. No API keys needed: all tests mock the harness proxy.
+
+**Prediction:** Both gates pass locally (same steps as CI). 66/66 tests. mypy clean.
+
+**Verification:** 66 passed. Success: no issues found in 13 source files. Prediction held.
+
+**Model-claim:** The annotation discipline and DRY work from this session's four prior iterations is now structurally enforced. A contributor cannot merge a PR that breaks types or tests. The process gap (rapid P2 landing without a gate) is closed.
+
+**Blind spot:** CI was not actually run on GitHub -- the workflow is correct by construction but has not been triggered. Green badge is pending the first push to a remote.
+
+**Imagined-reader pushback:** "Still no ANTHROPIC_API_KEY in CI secrets, so integration tests would fail." -- True, but all 66 tests are unit tests with mocked clients. Integration tests don't exist yet. This is appropriate for V1.
+
+**Across-trail macro-reflection:** not fired -- this is infrastructure closure, not a new finding class.
+
+### Candidate Next Moves
+
+1. **Run retrospect** -- five commits since the last retrospect; the arc has moved meaningfully (mypy-clean, CI added). Time to update the orientation.
+2. **External repo targeting** -- structurally ready; CI would catch any regression the loop introduces in an external repo.
+3. **Harness ledger hash-chain replay** -- integrity mechanism never exercised end-to-end.
