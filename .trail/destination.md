@@ -209,3 +209,66 @@ These are not code problems. They are first-run prerequisites.
 - V1 still uses tier 0/1 reasoning only
 - V1 still uses single-model operation
 - Harness-protocol remains outside autonomous scope
+
+---
+
+## 2026-06-20 -- Post-V1: ai-steward as PEA reference implementation
+
+### Confirmed direction
+
+**ai-steward is a proof, not just a tool.** If it works well as a tool but cannot serve as a PEA reference implementation -- because the reasoning layer is opaque or the principles are not demonstrably upheld -- that is a failure, even if developers find it useful. The tool is the proof.
+
+**The three principles are architectural constraints.** An undirected SCAN violates Principle 1 (Commander's Intent). V1 achieved operational self-targeting, but is incomplete against the principles. Principle 1 compliance -- directed SCAN that reads the operator's destination -- is the real next milestone.
+
+**ARF probe is operator-triggered.** `ai-steward probe` when the operator wants to verify reasoning quality. Not automatic, not every-N-cycles.
+
+### The cost-efficient memory model
+
+The skill suite memory model (destination.md, retrospect.md, audit-trail.md as unbounded prose) was designed during the token bonanza. It is not cost-efficient enough to become the standard.
+
+ai-steward will define the new standard. The skill suite will align to it later.
+
+**Design principles:**
+
+1. **Structured over prose.** YAML/JSONL with defined schema, not free-form markdown. Structured data can be selectively loaded and validated.
+
+2. **Hard token budgets per artifact.** Enforced at write time. An artifact that exceeds its budget is invalid.
+
+3. **Separation of working memory from audit memory.** The full trail exists for retrospect and external audit, but is NOT loaded into SCAN context.
+
+4. **Sliding window for recent context.** Last N entries, not the full history.
+
+**Proposed structure:**
+
+::
+
+  .ai-steward/
+      destination.yaml      # Operator's WHAT and WHY. Max ~200 tokens.
+      orientation.yaml      # Current arc orientation (retrospect output). Max ~150 tokens.
+      recent.jsonl          # Sliding window of last N trail entries. Max ~300 tokens.
+      trail.jsonl           # Full audit trail. Append-only. NOT loaded into SCAN.
+
+SCAN loads destination + orientation + recent = ~650 tokens of memory context.
+The full trail is for retrospect and audit, not for every cycle.
+
+**Compatibility path:**
+
+ai-steward defines forward compatibility. The skill suite adopts the new standard when it is proven. Verbose markdown becomes a generated view or is deprecated. ai-steward does not implement backward compatibility to the old format.
+
+### The git gate stays
+
+The loop does not push. It does not release. It cannot act on its own judgment past the staged diff. Every proposal requires the operator's hand on the commit.
+
+This is not a temporary safety measure. It is permanent trust infrastructure. One proposal, one diff, one decision. Trust is earned incrementally. The ledger of accepted proposals IS the evidence that the AI's judgment is reliable.
+
+### What this means for the next work
+
+1. **Design the memory schema** -- YAML/JSONL structure for destination, orientation, recent. Define fields, constraints, token budgets.
+
+2. **Implement directed SCAN** -- SCAN reads destination and orientation, proposes improvements that advance the operator's stated direction.
+
+3. **Implement retrospect** -- Reads full trail, produces orientation.yaml summary. Runs on operator trigger or after N accepted commits.
+
+4. **Implement probe** -- ARF probe per ARF-SPEC.md. Operator-triggered. Reports pass/fail with evidence.
+
+The ordering is: (1) schema, (2) directed SCAN, (3) retrospect, (4) probe. Each builds on the previous.
