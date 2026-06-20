@@ -28,6 +28,15 @@ from ai_steward.pipeline.verify import verify
 # ---------------------------------------------------------------------------
 
 
+def _is_git_installed() -> bool:
+    """Check if git is available on the system."""
+    result = subprocess.run(
+        ["git", "--version"],
+        capture_output=True,
+    )
+    return result.returncode == 0
+
+
 def _is_git_repo(repo: Path) -> bool:
     result = subprocess.run(
         ["git", "rev-parse", "--git-dir"],
@@ -97,6 +106,9 @@ def preflight(repo: Path, config: AiStewardConfig) -> tuple[bool, str, int]:
     Returns (passed, failure_reason, baseline_test_count).
     baseline_test_count is 0 when any gate fails before the test run.
     """
+    if not _is_git_installed():
+        return False, "git is not installed — install git to proceed", 0
+
     if not repo.exists():
         return False, f"repo path does not exist: {repo}", 0
 
