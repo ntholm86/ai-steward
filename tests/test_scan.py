@@ -35,12 +35,14 @@ def _make_config(tmp_path: Path, scope: ScopeConfig | None = None) -> AiStewardC
     )
 
 
-def _mock_client(response: dict) -> MagicMock:
+def _mock_client(response: dict, input_tokens: int = 0, output_tokens: int = 0) -> MagicMock:
     """Mock Anthropic client that returns a fixed JSON response."""
     block = MagicMock()
     block.text = json.dumps(response)
     message = MagicMock()
     message.content = [block]
+    message.usage.input_tokens = input_tokens
+    message.usage.output_tokens = output_tokens
     client = MagicMock()
     client.messages.create.return_value = message
     return client

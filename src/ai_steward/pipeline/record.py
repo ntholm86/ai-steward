@@ -19,6 +19,10 @@ from pathlib import Path
 from ai_steward.config import AiStewardConfig
 from ai_steward.pipeline._types import Finding
 
+# claude-haiku-4-5 pricing (V1 model — update if model changes)
+_INPUT_COST_PER_TOKEN = 0.80 / 1_000_000   # $0.80 / MTok
+_OUTPUT_COST_PER_TOKEN = 4.00 / 1_000_000  # $4.00 / MTok
+
 
 def record(
     repo: Path,
@@ -50,12 +54,18 @@ def record(
 
 def _build_entry(finding: Finding, diff: str) -> str:
     today = date.today().isoformat()
+    cost_usd = (
+        finding.input_tokens * _INPUT_COST_PER_TOKEN
+        + finding.output_tokens * _OUTPUT_COST_PER_TOKEN
+    )
     return (
         f"\n---\n\n"
         f"## {today} \u2014 ai-steward: {finding.description}\n\n"
         f"**File:** {finding.file}  \n"
         f"**Risk:** {finding.risk}  \n"
         f"**Rationale:** {finding.rationale}\n\n"
+        f"**Tokens (SCAN):** {finding.input_tokens} in / {finding.output_tokens} out "
+        f"\u2014 est. ${cost_usd:.5f} USD  \n\n"
         f"**Proposed change:**\n```\n{finding.proposed_change}\n```\n\n"
         f"**Diff:**\n```diff\n{diff}\n```\n\n"
         f"*Staged for operator review. Not committed.*\n"

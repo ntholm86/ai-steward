@@ -20,6 +20,8 @@ class Finding:
     proposed_change: str
     rationale: str
     risk: Literal["low", "medium", "high"]
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 @dataclass

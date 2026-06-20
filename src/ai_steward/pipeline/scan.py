@@ -172,6 +172,14 @@ def scan(
         ],
     )
 
+    # Capture token usage before extracting text
+    try:
+        _in_tok = int(message.usage.input_tokens)
+        _out_tok = int(message.usage.output_tokens)
+    except (AttributeError, TypeError, ValueError):
+        _in_tok = 0
+        _out_tok = 0
+
     # Extract text from response
     text = ""
     for block in message.content:
@@ -211,4 +219,6 @@ def scan(
         proposed_change=data["proposed_change"],
         rationale=data["rationale"],
         risk=data["risk"],
+        input_tokens=_in_tok,
+        output_tokens=_out_tok,
     )

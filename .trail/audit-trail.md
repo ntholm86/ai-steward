@@ -1160,3 +1160,43 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 1. **Run ai-steward against itself with directed SCAN** — first empirical test of Principle 1 enforcement. Does SCAN propose destination-aligned improvements?
 2. **Section-boundary truncation** — cleaner truncation at last full ## YYYY-MM-DD section.
 3. **Configure harness-protocol for .trail/sessions/** — producer alignment to the standard.
+
+
+---
+
+## 2026-06-20 -- Improve: SCAN token cost captured in trail entries
+
+**Skill:** Improve v3.10.0
+**Trigger:** Operator invoked improve. Destination just added cost-efficiency as a first-class measurement goal (commit 995fc1a).
+
+**Interpretation:** The destination says "record cost in trail entries" and "harness ledger already captures token counts — no new data needed." The gap is that `message.usage` is available on every Anthropic response but discarded silently. The minimum viable change: add token fields to Finding, extract usage in scan.py, include a cost line in record.py trail entries.
+
+**Lenses applied:**
+
+- *Purpose:* Destination says cost is a first-class measurement axis alongside improvement quality. Current trail entries have zero cost information — claims about cost-efficiency would be unverifiable. The fix closes the gap at the source.
+- *Waste:* `message.usage.input_tokens` and `message.usage.output_tokens` are free data on every API response. Throwing them away and then lamenting lack of cost visibility is pure waste.
+- *Inconsistency:* Finding carries the proposal but not the cost of finding it. Adding token fields makes Finding a complete record of the SCAN phase output.
+
+**[!DECISION]** Add `input_tokens: int = 0` and `output_tokens: int = 0` to Finding. Extract usage in scan.py with safe fallback (AttributeError/TypeError/ValueError). Add haiku pricing constants to record.py (`.80/MTok` input, `.00/MTok` output). Include `Tokens (SCAN): N in / M out — est. .XXXXX USD` in trail entries. Update `_mock_client` to set integer usage on the mock message.
+
+**Prediction:** 4 files changed, 61/61 tests pass. No existing test format assertions break (record tests check field presence, not exact line format). Trail entries gain a cost line. implement.py usage is deferred.
+
+**Verification:** python -m pytest tests/ -q -> 61/61. Prediction held exactly.
+
+**Reflection:**
+
+- *Model-claim:* SCAN phase token cost is now a structural property of every trail entry. The baseline for cost measurement is the first real run. Future architectural changes (model downgrade, prompt compression, context window reduction) can be evaluated against it.
+- *Blind spot:* Only SCAN tokens are captured. IMPLEMENT also makes an LLM call (same model). The complete cycle cost = SCAN + IMPLEMENT. A reader comparing trail entries to the harness ledger will see a discrepancy — ledger shows two calls, trail shows one. Surfaced as candidate next move.
+- *Imagined-reader pushback:* "Haiku pricing is hardcoded. If the model changes, the numbers are silently wrong." Fair. A `model` field on Finding would make this safe. Deferred — V1 uses only haiku, a comment names the assumption explicitly.
+
+**Across-trail triggers:**
+- *Recurring finding-class:* not fired — first cost-related change.
+- *About to declare silence:* not fired — change made.
+- *Contradicts prior [!REALIZATION]:* not fired.
+- *Operator explicitly asked:* fired — operator directed "use the improve skill" immediately after adding cost-efficiency destination section. This iteration is directly destination-driven.
+
+### Candidate Next Moves
+
+1. **Capture IMPLEMENT phase token cost** — implement.py also calls the LLM; add the same usage extraction and accumulate onto Finding (or a separate CycleStats). Complete cycle cost = SCAN + IMPLEMENT.
+2. **Section-boundary truncation for _load_destination** — find the last full `## YYYY-MM-DD` section before the 3000-char cutoff. Cleaner than a raw character slice, avoids mid-sentence truncation.
+3. **Run ai-steward against itself with directed SCAN** — first empirical test of Principle 1 enforcement and first real cost data point.
