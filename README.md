@@ -46,7 +46,7 @@ The agent cannot claim it did something it did not do.
 
 ## Quickstart
 
-**Prerequisites:** Python 3.12+, [harness-protocol](https://github.com/ntholm86/harness-protocol) proxy running on `localhost:8474`, `ANTHROPIC_API_KEY` set.
+**Prerequisites:** Python 3.12+, [harness-proxy](https://github.com/ntholm86/harness-proxy) running on `localhost:8474`, `ANTHROPIC_API_KEY` set.
 
 ```bash
 pip install -e ".[dev]"

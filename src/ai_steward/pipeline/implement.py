@@ -5,7 +5,7 @@ The model receives the current file contents and the Finding, and returns
 the replacement file contents verbatim.
 
 Token tier: 1 (cheap model — claude-haiku-4-5 or equivalent).
-All calls route through harness-protocol. Never call the Anthropic API directly.
+All calls route through harness-proxy. Never call the Anthropic API directly.
 
 See .trail/audit-trail.md (2026-06-19 V1 Pipeline Design) for the
 full spec and rationale.
