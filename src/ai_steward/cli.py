@@ -51,6 +51,7 @@ def run(repo: str) -> None:
     result = pipeline_run(repo_path, config)
 
     if result.status == "proposed":
+        assert result.finding is not None
         f = result.finding
         click.echo(
             f"PROPOSED\n"

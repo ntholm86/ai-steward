@@ -16,9 +16,13 @@ import os
 import socket
 from contextlib import contextmanager
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from ai_steward.config import HarnessConfig
+
+if TYPE_CHECKING:
+    import anthropic
 
 
 def is_reachable(config: HarnessConfig) -> bool:

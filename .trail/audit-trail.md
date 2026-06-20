@@ -1815,3 +1815,35 @@ Alternatives: Add a return dataclass (over-engineered for V1; the 5-tuple is alr
 1. Run mypy over the codebase — this finding suggests annotation drift; a full pass would enumerate remaining gaps with no guesswork.
 2. External repo targeting — retrospect's highest-ranked structural next step; proves generalisation beyond self-targeting.
 3. Harness ledger hash-chain replay — structural mechanism exists but has never been exercised; integrity is untested.
+
+---
+
+## 2026-06-20 - Make codebase mypy-clean
+
+**Trigger:** Operator invoked improve skill (third iteration). Candidate next move #1 from prior iteration: run mypy.
+
+**Examination:** python -m mypy src/ --ignore-missing-imports reported 4 errors:
+- harness.py:59 - Name "anthropic" is not defined (missing TYPE_CHECKING guard)
+- cli.py:57-59 - Item "None" of "Finding | None" has no attribute ... (null not narrowed)
+
+**[!REALIZATION]** harness.py had the same missing TYPE_CHECKING/anthropic guard that scan.py and implement.py already have. cli.py accessed esult.finding (typed Finding | None) inside a status == "proposed" branch without asserting non-None -- the invariant holds at runtime but is invisible to the type system and would crash with AttributeError if LoopResult were ever mis-constructed.
+
+**[!DECISION]** Fix all 4 errors as one coherent action ("make codebase mypy-clean"):
+- harness.py: add rom typing import TYPE_CHECKING + if TYPE_CHECKING: import anthropic (matching scan.py/implement.py pattern)
+- cli.py: add ssert result.finding is not None before  = result.finding (documents invariant, satisfies type narrowing)
+
+**Prediction:** mypy exits 0. 66/66 tests pass. No functional change.
+
+**Verification:** Success: no issues found in 13 source files. 66/66 tests. Prediction held.
+
+**[!REALIZATION] (macro -- recurring-class trigger FIRED):** Last three iterations were all annotation/type discipline fixes (DRY test-runner, wrong 3->5-tuple annotation, missing TYPE_CHECKING + null guard). All root-caused to the P2 token-tracking implementation pass landing quickly without a type-check gate. The code is now clean; the structural fix is adding mypy to CI so the next rapid implementation pass cannot leave the same gap silently.
+
+**Blind spot:** mypy ran with --ignore-missing-imports -- strict mode (untyped third-party stubs) was not tested. Whether strict is the right bar for V1 is an operator decision.
+
+**Imagined-reader pushback:** "Why not wire mypy into CI now?" -- Fair; deferred as top candidate next move.
+
+### Candidate Next Moves
+
+1. Add mypy to CI / pyproject.toml [tool.mypy] -- prevents the annotation-debt pattern from recurring; closes the process gap the recurring-class finding exposed.
+2. External repo targeting -- retrospect's structural next step; proves generalisation beyond self-targeting.
+3. Harness ledger hash-chain replay -- untested structural mechanism; integrity unverified.
