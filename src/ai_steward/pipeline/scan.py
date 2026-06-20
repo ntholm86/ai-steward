@@ -1,11 +1,11 @@
-"""SCAN phase — one Anthropic LLM call via harness.
+﻿"""SCAN phase — one Anthropic LLM call via harness.
 
 Combines ANALYZE and PROPOSE: asks the model to identify one improvement
 AND describe the specific change in a single prompt. Returns a Finding,
 or None if nothing actionable was found.
 
 Token tier: 1 (cheap model — claude-haiku-4-5 or equivalent).
-All calls route through harness-proxy. Never call the Anthropic API directly.
+All calls route through llm-harness-proxy. Never call the Anthropic API directly.
 
 See .trail/audit-trail.md (2026-06-19 V1 Pipeline Design) for the
 full prompt rationale and gate conditions.

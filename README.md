@@ -1,4 +1,4 @@
-# ai-steward
+﻿# ai-steward
 
 An autonomous code improvement loop with structural accountability.
 
@@ -46,7 +46,7 @@ The agent cannot claim it did something it did not do.
 
 ## Quickstart
 
-**Prerequisites:** Python 3.12+, [harness-proxy](https://github.com/ntholm86/harness-proxy) running on `localhost:8474`, `ANTHROPIC_API_KEY` set.
+**Prerequisites:** Python 3.12+, [llm-harness-proxy](https://github.com/ntholm86/llm-harness-proxy) running on `localhost:8474`, `ANTHROPIC_API_KEY` set.
 
 ```bash
 pip install -e ".[dev]"

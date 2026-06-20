@@ -45,7 +45,7 @@ The destination says "improve-skill-style entries" without defining them. Either
 ## Active operational rules
 
 - **V1 stops before release.** Operator reviews every staged diff. Inviolable.
-- **harness-proxy is outside ai-steward's autonomous scope.** Structural exclusion — changes there require separate session.
+- **llm-harness-proxy is outside ai-steward's autonomous scope.** Structural exclusion — changes there require separate session.
 - **Token cost is a design constraint.** V1 uses 2 LLM calls per cycle (~$0.018 typical). Justified.
 - **Execution layer must remain separate from reasoning layer.** Phases execute; skills reason.
 - **Use `write_bytes(content.encode("utf-8"))` in byte-sensitive tests.** [CRLF hazard on Windows]
