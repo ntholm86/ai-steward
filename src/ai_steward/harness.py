@@ -80,21 +80,44 @@ def harness_session(target_repo: Path, config: HarnessConfig):
     """Context manager that sets HARNESS_ROOT for one pipeline run.
 
     The harness proxy uses HARNESS_ROOT to determine where to write its
-    ledger. Setting it to <target_repo>/.harness co-locates evidence with
-    the target being worked on. The previous value is restored on exit.
+    ledger. Setting it to <target_repo>/.trail co-locates the harness
+    evidence (JSONL) with the audit trail memory (audit-trail.md) in the
+    .trail/ directory standard — both layers of the two-tier trust model
+    are in the same directory tree.
 
-    Usage:
-        with harness_session(target_repo, config):
-            # All LLM calls made here write their ledger to target_repo/.harness
-            result = run_pipeline(...)
+    Yields a dict {"session_path": str | None}. After the context exits,
+    session_path is the repo-relative path to the harness session created
+    during this run, or None if no session was created (harness not
+    running, or no LLM calls were made).
+
+    The previous HARNESS_ROOT value is restored on exit.
     """
     key = "HARNESS_ROOT"
+    harness_root = target_repo / ".trail"
+    sessions_dir = harness_root / "sessions"
+
+    # Snapshot existing sessions before any calls — used to identify
+    # which session was created during this run.
+    before = (
+        {p.name for p in sessions_dir.iterdir() if p.is_dir()}
+        if sessions_dir.is_dir()
+        else set()
+    )
+
+    result: dict[str, str | None] = {"session_path": None}
     prev = os.environ.get(key)
-    os.environ[key] = str(target_repo / ".harness")
+    os.environ[key] = str(harness_root)
     try:
-        yield
+        yield result
     finally:
         if prev is None:
             os.environ.pop(key, None)
         else:
             os.environ[key] = prev
+        # Identify the session created during this run by diffing before/after.
+        # ULID names are time-ordered; the newest new entry is the one we want.
+        if sessions_dir.is_dir():
+            after = {p.name for p in sessions_dir.iterdir() if p.is_dir()}
+            new = sorted(after - before)
+            if new:
+                result["session_path"] = f".trail/sessions/{new[-1]}"

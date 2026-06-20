@@ -29,6 +29,7 @@ def record(
     config: AiStewardConfig,
     finding: Finding,
     diff: str,
+    harness_session_path: str | None = None,
 ) -> str:
     """Append a trail entry and stage the changed file.
 
@@ -37,11 +38,14 @@ def record(
         config: Pipeline configuration (reserved for future use in V2).
         finding: The change that was applied by IMPLEMENT.
         diff: Output of ``git diff HEAD -- <file>`` captured before staging.
+        harness_session_path: Repo-relative path to the harness session
+            directory (e.g. ``.trail/sessions/01J.../``), or None if the
+            harness session path could not be determined.
 
     Returns:
         The trail entry string that was appended.
     """
-    entry = _build_entry(finding, diff)
+    entry = _build_entry(finding, diff, harness_session_path)
     _append_to_trail(repo, entry)
     _stage_file(repo, finding.file)
     return entry
@@ -52,7 +56,7 @@ def record(
 # ---------------------------------------------------------------------------
 
 
-def _build_entry(finding: Finding, diff: str) -> str:
+def _build_entry(finding: Finding, diff: str, harness_session_path: str | None = None) -> str:
     today = date.today().isoformat()
     scan_cost = (
         finding.input_tokens * _INPUT_COST_PER_TOKEN
@@ -63,6 +67,11 @@ def _build_entry(finding: Finding, diff: str) -> str:
         + finding.impl_output_tokens * _OUTPUT_COST_PER_TOKEN
     )
     cycle_cost = scan_cost + impl_cost
+    session_line = (
+        f".trail/sessions/{harness_session_path.split('/')[-1]}/"
+        if harness_session_path
+        else "not captured (harness not running or no calls made)"
+    )
     return (
         f"\n---\n\n"
         f"## {today} \u2014 ai-steward: {finding.description}\n\n"
@@ -72,7 +81,8 @@ def _build_entry(finding: Finding, diff: str) -> str:
         f"**Tokens:** "
         f"SCAN {finding.input_tokens}/{finding.output_tokens} "
         f"\u2014 IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
-        f"\u2014 cycle est. ${cycle_cost:.5f} USD  \n\n"
+        f"\u2014 cycle est. ${cycle_cost:.5f} USD  \n"
+        f"**Harness session:** `{session_line}`  \n\n"
         f"**Proposed change:**\n```\n{finding.proposed_change}\n```\n\n"
         f"**Diff:**\n```diff\n{diff}\n```\n\n"
         f"*Staged for operator review. Not committed.*\n"

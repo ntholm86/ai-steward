@@ -34,7 +34,7 @@ def test_harness_session_sets_harness_root(tmp_path: Path) -> None:
     config = HarnessConfig()
     os.environ.pop("HARNESS_ROOT", None)
     with harness_session(tmp_path, config):
-        assert os.environ["HARNESS_ROOT"] == str(tmp_path / ".harness")
+        assert os.environ["HARNESS_ROOT"] == str(tmp_path / ".trail")
     assert "HARNESS_ROOT" not in os.environ
 
 
@@ -42,7 +42,7 @@ def test_harness_session_restores_previous_value(tmp_path: Path) -> None:
     config = HarnessConfig()
     os.environ["HARNESS_ROOT"] = "/previous/value"
     with harness_session(tmp_path, config):
-        assert os.environ["HARNESS_ROOT"] == str(tmp_path / ".harness")
+        assert os.environ["HARNESS_ROOT"] == str(tmp_path / ".trail")
     assert os.environ["HARNESS_ROOT"] == "/previous/value"
     del os.environ["HARNESS_ROOT"]
 

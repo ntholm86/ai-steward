@@ -125,7 +125,7 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
             preflight_failure=reason,
         )
 
-    with harness_session(repo, config.harness):
+    with harness_session(repo, config.harness) as harness_ctx:
         finding = scan(repo, config)
         if finding is None:
             return LoopResult(
@@ -146,6 +146,10 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
         finding.impl_input_tokens = impl_in_tok
         finding.impl_output_tokens = impl_out_tok
 
+    # Extract session path populated by harness_session's finally block.
+    # harness_ctx is None when the session is mocked (tests) — handled gracefully.
+    harness_session_path = harness_ctx["session_path"] if isinstance(harness_ctx, dict) else None
+
     # VERIFY and RECORD are tier-0 — outside the harness LLM context.
     diff = _get_diff(repo, finding.file)
     changed_file = repo / finding.file
@@ -158,11 +162,12 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
             trail_entry=f"VERIFY FAILED: {reason}",
         )
 
-    trail_entry = record(repo, config, finding, diff)
+    trail_entry = record(repo, config, finding, diff, harness_session_path=harness_session_path)
 
     return LoopResult(
         status="proposed",
         finding=finding,
         diff=diff,
         trail_entry=trail_entry,
+        harness_session_path=harness_session_path,
     )

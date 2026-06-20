@@ -35,3 +35,4 @@ class LoopResult:
     diff: str | None
     trail_entry: str
     preflight_failure: str | None = None
+    harness_session_path: str | None = None

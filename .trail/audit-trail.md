@@ -1239,3 +1239,47 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 1. **Run ai-steward against itself** — first empirical test with full cycle cost measurement. Establishes the baseline cost-per-accepted-improvement number.
 2. **Add model name to trail entry** — closes the silent-pricing-change blind spot surfaced above. One-line addition to `_build_entry`.
 3. **Section-boundary truncation for _load_destination** — find the last full `## YYYY-MM-DD` section before the 3000-char cutoff. Deferred twice; still valid.
+
+
+---
+
+## 2026-06-20 -- Improve: P2 structural fix -- HARNESS_ROOT to .trail, session linked in trail entry
+
+**Skill:** Improve v3.10.0
+**Trigger:** Operator blocked self-targeting. Stated precondition: "we cannot point ai-steward on itself before we are capturing the audit-trail correctly with the harness." Two-tier trust model (JSONL evidence + audit-trail.md memory) must be structurally linked before ai-steward can serve as a PEA exemplar.
+
+**Interpretation:** The gap is P2 (Observable Autonomy). The harness writes to `.harness/sessions/` but the standard is `.trail/`. Evidence and memory live in different directories with no structural link. An observer reading `audit-trail.md` cannot find the verifiable JSONL. This violates the destination's "Two trail types, two trust levels" model -- the link between them must be explicit, not implicit.
+
+**Lenses applied:**
+
+- *Purpose:* The destination states "Proxy-captured JSONL: evidence — raw, independent, the agent cannot modify it" and "audit-trail.md: memory — the agent's record of decisions and reasoning." For P2 to hold structurally, the memory entry must reference the evidence. Currently the audit-trail.md entry is self-reported claims with no pointer to the JSONL that would allow verification. This is the P2 gap.
+- *Inconsistency:* HARNESS_ROOT was set to `target_repo/.harness` but the `.trail/` standard was locked three commits ago. The harness and the trail were writing to different top-level directories for no reason other than the naming predating the `.trail/` decision.
+
+**[!DECISION]** Three coordinated changes:
+1. `harness_session()` sets `HARNESS_ROOT = target_repo/.trail` (sessions land in `.trail/sessions/` alongside `audit-trail.md`)
+2. `harness_session()` yields a result dict `{"session_path": None}` populated in the `finally` block via before/after snapshot of `sessions/`. ULID names are time-ordered; newest new entry = this run's session.
+3. `record.py` includes `**Harness session:** .trail/sessions/<id>/` in every trail entry -- the structural link from memory to evidence.
+
+**Prediction:** 5 files changed, 61/61 pass. test_harness.py has existing assertions on HARNESS_ROOT value that need updating -- I predicted these would be caught and fixed in the same iteration.
+
+**[!REVERSAL]** Prediction of 61/61 on first attempt failed: test_harness.py had two tests asserting `str(tmp_path / ".harness")` that needed updating to `str(tmp_path / ".trail")`. Caught immediately, fixed in same iteration. This is the same pattern as the previous implement-tuple reversal: tests that directly test the changed contract need updating; tests that mock out the whole function do not.
+
+**Verification:** python -m pytest tests/ -q -> 61/61 after fix.
+
+**Reflection:**
+
+- *Model-claim:* The two-tier trust model is now structurally represented in every trail entry. An operator can go from the audit-trail.md entry to the harness JSONL by following the session path. The link is explicit, not implicit.
+- *Blind spot:* The session path is discovered by before/after directory snapshot. If multiple sessions are created in rapid succession (e.g., two pipeline runs interleaved), the wrong session might be attributed. In single-run usage this is not a problem; in concurrent usage it is. V1 is single-run only.
+- *Imagined-reader pushback:* "The session path is included in the trail entry, but the trail entry is written by the agent. The agent could fabricate the session path." Correct -- the trail entry is still self-reported memory. The structural guarantee is that the JSONL at the referenced path exists independently and cannot be modified. The link direction matters: the memory references the evidence; the evidence does not reference the memory.
+
+**Across-trail triggers:**
+- *Recurring finding-class:* [!REVERSAL] fired for the second consecutive iteration (test assertions on changed return contracts). Pattern: when changing a contract that has direct test coverage, those tests need updating. Not a structural problem -- honest coverage catching real changes. Not fired as "recurring problem," fired as "pattern documented."
+- *About to declare silence:* not fired.
+- *Contradicts prior [!REALIZATION]:* not fired.
+- *Operator explicitly asked:* fired -- operator explicitly named the P2 gap before the improve run.
+
+### Candidate Next Moves
+
+1. **Reasoning layer depth (P1 + P1 quality)** -- SCAN produces a JSON blob, not structured reasoning. The improve skill applies lenses, makes predictions, documents blind spots. The pipeline's reasoning is opaque to the operator. Closing this gap is the remaining precondition before self-targeting is meaningful.
+2. **Add a test for session path discovery** -- `harness_session()` now does before/after scanning but has no test for the session discovery logic. The existing tests only verify HARNESS_ROOT value and restore behavior.
+3. **Section-boundary truncation for _load_destination** -- deferred three times. Still valid.
