@@ -68,7 +68,7 @@ def _build_entry(finding: Finding, diff: str, harness_session_path: str | None =
     )
     cycle_cost = scan_cost + impl_cost
     session_line = (
-        f".trail/sessions/{harness_session_path.split('/')[-1]}/"
+        harness_session_path
         if harness_session_path
         else "not captured (harness not running or no calls made)"
     )

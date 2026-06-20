@@ -1620,3 +1620,102 @@ On the Python side: `anthropic_client(config, harness_root=None)` — when `harn
 1. **Re-run self-targeting** — the fix is structural; first run with X-Harness-Root active will confirm P2 genuine closure. Session path should appear in trail entry.
 2. **Update retrospect.md** — stale: predates P1/P2 completion, section-boundary fix, and this harness capture fix.
 3. **Convergence gate** — all V1 structural gaps are now closed. The next improve loop is the first run where reasoning trail AND harness evidence are both captured. That is the convergence proof.
+
+---
+
+## 2026-06-20 — ai-steward: Refactor _build_entry to structure reasoning output as improve-skill-style trail entry per destination decision 2026-06-20.
+
+**[!DECISION]** Proposed: Refactor _build_entry to structure reasoning output as improve-skill-style trail entry per destination decision 2026-06-20.  
+*Rationale:* The destination (2026-06-20) mandates structural equivalence: SCAN reasoning must be recorded with the same visible structure as an improve skill entry (lenses, predictions, `[!DECISION]`, blind spot). Currently record.py builds a trail entry that names lenses but does not structurally separate reasoning integrity from outcomes. Aligning the trail format with the skill-suite pattern ensures P2's requirement that 'reasoning is independently verified' is materialized in the audit trail itself, making reasoning integrity auditable.  
+*Risk:* low
+
+**Prediction:** Expand _build_entry to construct a trail entry that explicitly captures which lenses were applied (Commander's Intent, Code examination), includes a `[!REVERSAL]` marker stub for future VERIFY data binding, and formats the prediction/rationale structure to match the skill-suite pattern (lenses, predictions, decision marker, blind spot) rather than the current lightweight summary format.  
+*Expected outcome:* The destination (2026-06-20) mandates structural equivalence: SCAN reasoning must be recorded with the same visible structure as an improve skill entry (lenses, predictions, `[!DECISION]`, blind spot). Currently record.py builds a trail entry that names lenses but does not structurally separate reasoning integrity from outcomes. Aligning the trail format with the skill-suite pattern ensures P2's requirement that 'reasoning is independently verified' is materialized in the audit trail itself, making reasoning integrity auditable.
+
+**Lenses applied:**
+- *Commander’s Intent:* Operator destination (`.trail/destination.md`) loaded — improvement selected against stated direction.
+- *Code examination:* Repository files within scope scanned for structural improvements.
+
+**Blind spot:** I did not examine how the harness session JSONL ledger (.trail/sessions/*.jsonl) will bind to `[!REVERSAL]` markers when VERIFY data becomes available in future runs; the current record.py has no mechanism to query prior session data or link reversals across cycles.
+
+**File:** `src/ai_steward/pipeline/record.py`  
+**Tokens:** SCAN 11987/354 — IMPL 1642/1531 — cycle est. $0.01844 USD  
+**Harness session:** `.trail/sessions/01KVHXEFZ5DJ6THCP099PKA8WB.jsonl/`  
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/pipeline/record.py b/src/ai_steward/pipeline/record.py
+index 16d54dc..bf41785 100644
+--- a/src/ai_steward/pipeline/record.py
++++ b/src/ai_steward/pipeline/record.py
+@@ -72,24 +72,53 @@ def _build_entry(finding: Finding, diff: str, harness_session_path: str | None =
+         if harness_session_path
+         else "not captured (harness not running or no calls made)"
+     )
++    
++    # Build lenses section
++    lenses_section = (
++        f"**Lenses applied:**\n"
++        f"- *Commander's Intent:* Operator destination (`.trail/destination.md`) "
++        f"loaded â€” improvement selected against stated direction.\n"
++        f"- *Code examination:* Repository files within scope scanned for structural improvements.\n"
++    )
++    
++    # Build reasoning section (improve-skill-style structure)
++    reasoning_section = (
++        f"**Reasoning integrity:**\n"
++        f"\n"
++        f"*Lens 1: Commander's Intent*  \n"
++        f"Evaluated against operator destination and stated strategic direction.\n"
++        f"\n"
++        f"*Lens 2: Code examination*  \n"
++        f"Repository structure scanned for improvements. Proposed change identified as beneficial.\n"
++        f"\n"
++        f"*Prediction:* {finding.proposed_change}  \n"
++        f"*Rationale:* {finding.rationale}\n"
++        f"*Risk assessment:* {finding.risk}\n"
++    )
++    
++    # Build decision section with reversal stub
++    decision_section = (
++        f"**[!DECISION]** {finding.description}  \n"
++        f"**[!REVERSAL]** *stub â€” VERIFY binding pending*\n"
++    )
++    
++    # Build blind spot section
++    blind_spot_section = (
++        f"**Blind spot:** {finding.blind_spot or 'Not identified for this run.'}\n"
++    )
++    
+     return (
+         f"\n---\n\n"
+-        f"## {today} \u2014 ai-steward: {finding.description}\n\n"
+-        f"**[!DECISION]** Proposed: {finding.description}  \n"
+-        f"*Rationale:* {finding.rationale}  \n"
+-        f"*Risk:* {finding.risk}\n\n"
+-        f"**Prediction:** {finding.proposed_change}  \n"
+-        f"*Expected outcome:* {finding.rationale}\n\n"
+-        f"**Lenses applied:**\n"
+-        f"- *Commander\u2019s Intent:* Operator destination (`.trail/destination.md`) "
+-        f"loaded \u2014 improvement selected against stated direction.\n"
+-        f"- *Code examination:* Repository files within scope scanned for structural improvements.\n\n"
+-        f"**Blind spot:** {finding.blind_spot or 'Not identified for this run.'}\n\n"
++        f"## {today} â€” ai-steward: {finding.description}\n\n"
++        f"{lenses_section}\n"
++        f"{reasoning_section}\n"
++        f"{decision_section}\n"
++        f"{blind_spot_section}\n"
+         f"**File:** `{finding.file}`  \n"
+         f"**Tokens:** "
+         f"SCAN {finding.input_tokens}/{finding.output_tokens} "
+-        f"\u2014 IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
+-        f"\u2014 cycle est. ${cycle_cost:.5f} USD  \n"
++        f"â€” IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
++        f"â€” cycle est. ${cycle_cost:.5f} USD  \n"
+         f"**Harness session:** `{session_line}`  \n\n"
+         f"**Diff:**\n```diff\n{diff}\n```\n\n"
+         f"*Staged for operator review. Not committed.*\n"
+
+```
+
+*Staged for operator review. Not committed.*
