@@ -1452,3 +1452,28 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 1. **Run ai-steward against itself** -- both P1 and P2 preconditions met, session discovery now tested. The first compliant self-targeting run is the highest-value next action.
 2. **Section-boundary truncation for _load_destination** -- find last full ## YYYY-MM-DD section before 3000-char cutoff. Deferred 5 times. Genuinely minor.
 3. **Update retrospect.md** -- current retrospect predates the P1/P2 completion. Claims 4 and 6 are stale.
+
+---
+
+## 2026-06-20 -- Destination: dual purpose clarification and consolidation
+
+**Skill:** Destination v2.1.0
+**Trigger:** Operator asked "if you read the complete destination.md -- does that make the overall goal clearer now? Perhaps use the destination skill to consolidate."
+
+**Inferences formed and questions asked:**
+
+*Hunch 1:* ai-steward's purpose is to prove the manifesto works; tool usefulness is secondary.
+*Question:* "Am I right that ai-steward's purpose is to prove the manifesto works, and tool usefulness is a secondary benefit?"
+*Operator response:* No -- both are essential. Another purpose is that it should be an actually extremely useful tool that people WILL adopt. It can work on anything. Easy workflow: set the destination, let it do its thing, review the git changes and commit yourself. One of the biggest adoption criteria is cost -- we need to be able to PROVE how efficient it is.
+
+*Hunch 2:* The geological record (dated sections) should be preserved but the destination needs a current-state summary.
+*Question:* "Should I consolidate into a single current-state document, or preserve the geological record?"
+*Operator response:* Geological record is useful but don't want to forget anything. Newest entries win if there are conflicts.
+
+**[!DECISION]** Add a "Current State" section at the top of destination.md synthesizing all dated sections. Preserve historical record below. Newest-wins on conflicts. Explicitly state dual purpose: (1) proof -- PEA reference implementation, (2) tool -- actually useful, cost-efficiency provable.
+
+**What was rejected:** "Tool usefulness is secondary to being a proof." Both purposes are essential. A proof that nobody uses proves nothing. A tool that violates the principles is just another black box.
+
+**What is still open (at time of consolidation):** Nothing -- the consolidation resolved the clarity gap. The destination is crisp.
+
+**Action:** Committed destination.md consolidation (commit 933d9a3).
