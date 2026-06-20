@@ -1763,3 +1763,23 @@ index 16d54dc..bf41785 100644
 2. **Run against external repos** — prove the mechanism generalizes.
 3. **Multi-cycle convergence** — test that the loop stops when done.
 4. **Harness ledger integrity audit** — verify hash-chain replay.
+
+---
+
+## 2026-06-20 — DRY extraction: run_tests to _utils.py
+
+**Trigger:** Operator invoked improve skill. Lenses applied to pipeline/ to find improvement outside the record.py attractor.
+
+**[!REALIZATION]** `loop.py` has `_baseline_tests()` and `verify.py` has `_run_tests()` — identical implementations with different names. Naming difference masked semantic identity during prior sessions. This is exactly the kind of duplication the destination calls out: "DRY: Shared logic extracted."
+
+**[!DECISION]** Extract `run_tests(repo: Path) -> tuple[bool, int]` to `_utils.py`. Both `loop.py` and `verify.py` import from it.
+Alternatives: Put in `_types.py` (rejected — that module is for data types, not utility functions); Have `verify.py` import from `loop.py` (rejected — creates tight coupling between verify and the orchestrator, circular import risk).
+
+**What changed:**
+- Created `src/ai_steward/pipeline/_utils.py` (shared tier-0 utilities)
+- Removed duplicates from `loop.py` and `verify.py` (~28 lines net)
+- Updated 10 monkeypatch calls in `test_loop.py` and `test_verify.py`
+
+**Verification:** 66/66 tests pass.
+
+**Blind spot surfaced:** Semantic identity was hidden by naming difference (`_baseline_tests` vs `_run_tests`). Function names should describe what they do, not when they're called.

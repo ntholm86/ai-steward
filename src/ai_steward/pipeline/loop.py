@@ -15,6 +15,7 @@ from pathlib import Path
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import harness_session, is_reachable
 from ai_steward.pipeline._types import Finding, LoopResult
+from ai_steward.pipeline._utils import run_tests
 from ai_steward.pipeline.implement import implement
 from ai_steward.pipeline.record import record
 from ai_steward.pipeline.scan import scan
@@ -45,22 +46,7 @@ def _is_git_clean(repo: Path) -> bool:
     return result.returncode == 0 and result.stdout.strip() == ""
 
 
-def _baseline_tests(repo: Path) -> tuple[bool, int]:
-    """Run the test suite. Returns (all_passed, pass_count)."""
-    result = subprocess.run(
-        ["python", "-m", "pytest", "--tb=no", "-q"],
-        cwd=repo,
-        capture_output=True,
-        text=True,
-    )
-    count = 0
-    for line in result.stdout.splitlines():
-        if " passed" in line:
-            for part in line.split():
-                if part.isdigit():
-                    count = int(part)
-                    break
-    return result.returncode == 0, count
+# Test-running logic extracted to _utils.py (DRY principle)
 
 
 def _get_diff(repo: Path, rel_path: str) -> str:
@@ -97,7 +83,7 @@ def preflight(repo: Path, config: AiStewardConfig) -> tuple[bool, str, int]:
     if not is_reachable(config.harness):
         return False, f"harness proxy unreachable at {config.harness.endpoint}", 0
 
-    passed, count = _baseline_tests(repo)
+    passed, count = run_tests(repo)
     if not passed:
         return False, "baseline tests failed — repo must be green before evolution", 0
 

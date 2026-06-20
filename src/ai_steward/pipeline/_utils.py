@@ -1,0 +1,31 @@
+"""Shared utilities for the ai-steward pipeline.
+
+Functions here are tier-0 (no LLM calls) and used by multiple phases.
+"""
+
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+
+
+def run_tests(repo: Path) -> tuple[bool, int]:
+    """Run the test suite. Returns (all_passed, pass_count).
+
+    Used by PRE-FLIGHT (baseline) and VERIFY (regression check).
+    Tier-0: pure subprocess call, no LLM tokens.
+    """
+    result = subprocess.run(
+        ["python", "-m", "pytest", "--tb=no", "-q"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+    )
+    count = 0
+    for line in result.stdout.splitlines():
+        if " passed" in line:
+            for part in line.split():
+                if part.isdigit():
+                    count = int(part)
+                    break
+    return result.returncode == 0, count

@@ -69,7 +69,7 @@ def test_verify_fails_syntax_error_and_rolls_back(
     f = _git_repo_with_file(tmp_path, "mod.py", "x = 1\n")
     original_size = f.stat().st_size
     f.write_text("def broken(\n", encoding="utf-8")  # syntax error
-    monkeypatch.setattr("ai_steward.pipeline.verify._run_tests", lambda _: (True, 5))
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 5))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, 5)
@@ -85,7 +85,7 @@ def test_verify_fails_file_too_large_and_rolls_back(
     f = _git_repo_with_file(tmp_path, "mod.py", "x = 1\n")
     original_size = f.stat().st_size
     f.write_text("x = 1\n" * 1000, encoding="utf-8")  # way bigger than 2×
-    monkeypatch.setattr("ai_steward.pipeline.verify._run_tests", lambda _: (True, 5))
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 5))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, 5)
@@ -101,7 +101,7 @@ def test_verify_fails_tests_fail_and_rolls_back(
     f = _git_repo_with_file(tmp_path, "mod.py", "x = 1\n")
     original_size = f.stat().st_size
     f.write_text("x = 2\n", encoding="utf-8")
-    monkeypatch.setattr("ai_steward.pipeline.verify._run_tests", lambda _: (False, 0))
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (False, 0))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, 5)
@@ -118,7 +118,7 @@ def test_verify_fails_when_test_count_drops(
     original_size = f.stat().st_size
     f.write_text("x = 2\n", encoding="utf-8")
     # pytest exits 0 but fewer tests pass (some were deleted)
-    monkeypatch.setattr("ai_steward.pipeline.verify._run_tests", lambda _: (True, 3))
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 3))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, baseline_count=5)
@@ -136,7 +136,7 @@ def test_verify_passes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     f = _git_repo_with_file(tmp_path, "mod.py", "x = 1\n")
     original_size = f.stat().st_size
     f.write_text("x = 2\n", encoding="utf-8")  # same size — stays within 2× guard
-    monkeypatch.setattr("ai_steward.pipeline.verify._run_tests", lambda _: (True, 7))
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 7))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, baseline_count=7)
@@ -152,7 +152,7 @@ def test_verify_skips_syntax_check_for_non_python(
     f = _git_repo_with_file(tmp_path, "notes.md", "# hello\n")
     original_size = f.stat().st_size
     f.write_text("# world\n", encoding="utf-8")  # same size — no syntax gate for .md
-    monkeypatch.setattr("ai_steward.pipeline.verify._run_tests", lambda _: (True, 3))
+    monkeypatch.setattr("ai_steward.pipeline.verify.run_tests", lambda _: (True, 3))
     config = _make_config(tmp_path)
 
     passed, reason = verify(tmp_path, config, f, original_size, baseline_count=3)

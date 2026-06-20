@@ -18,25 +18,11 @@ import subprocess
 from pathlib import Path
 
 from ai_steward.config import AiStewardConfig
+from ai_steward.pipeline._utils import run_tests
 from ai_steward.rollback import rollback_file
 
 
-def _run_tests(repo: Path) -> tuple[bool, int]:
-    """Run the test suite. Returns (all_passed, pass_count)."""
-    result = subprocess.run(
-        ["python", "-m", "pytest", "--tb=no", "-q"],
-        cwd=repo,
-        capture_output=True,
-        text=True,
-    )
-    count = 0
-    for line in result.stdout.splitlines():
-        if " passed" in line:
-            for part in line.split():
-                if part.isdigit():
-                    count = int(part)
-                    break
-    return result.returncode == 0, count
+# Test-running logic extracted to _utils.py (DRY principle)
 
 
 def verify(
@@ -79,7 +65,7 @@ def verify(
         )
 
     # Gate 3: Test suite
-    passed, count = _run_tests(repo)
+    passed, count = run_tests(repo)
     if not passed or count < baseline_count:
         rollback_file(repo, changed_file)
         return (
