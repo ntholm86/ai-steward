@@ -1,58 +1,50 @@
 ﻿# retrospect.md — ai-steward
 
-_Last updated: 2026-06-20 (run: post-V1-milestone-orientation)_
+_Last updated: 2026-06-20 (run: post-directed-SCAN-implementation)_
 
 ---
 
 ## Current claims
 
-**1. V1 milestone achieved: the founding hypothesis validated.**
-`ai-steward run c:\git\ai-steward` completed. Five blockers fell. The harness captured both LLM calls. VERIFY passed. The AI proposed a real security improvement to its own codebase. The destination's founding claim — "structural guarantees replace social contracts" — held under first operational contact. This is no longer untested.
+**1. V1 milestone achieved; directed SCAN added.**
+`ai-steward run c:\git\ai-steward` completed (first self-targeting). The founding hypothesis — "structural guarantees replace social contracts" — validated. Then three improve iterations added directed SCAN: the loop now reads `.trail/destination.md` from the target repo and injects the operator's Commander's Intent into the SCAN prompt. 61 tests pass.
 
-**2. Tier 1 reasoning is sufficient for routine improvements — empirically confirmed.**
-The June 19 retrospect named this as "V1's deepest open question." The first self-targeting run answered it: claude-haiku-4-5 found a path traversal vulnerability in scan.py that the human author missed. The token-efficiency constraint is viable. Tier 2/3 is for ambiguity and judgment, not routine scanning.
+**2. Tier 1 reasoning is sufficient for routine improvements.**
+Empirically confirmed twice: the first run (undirected) found a real path traversal vulnerability; subsequent directed runs will test whether SCAN proposes destination-aligned improvements. Token-efficiency constraint is viable.
 
-**3. Observable Autonomy held structurally.**
-The harness ledger at `C:\git\harness-protocol\.harness\sessions\` contains the SCAN and IMPLEMENT calls with full request/response. The agent could not have fabricated, omitted, or modified these entries. The trail entry in `audit-trail.md` matches the ledger but is secondary evidence — the ledger is ground truth. The structural integrity layer works.
+**3. Observable Autonomy continues to hold structurally.**
+The harness ledger captures all LLM calls. The agent cannot fabricate, omit, or modify entries. Trail entry in `audit-trail.md` is secondary evidence; the ledger is ground truth.
 
-**4. The execution layer is complete; the architectural gap is now Principle 1.**
-All five phases exist and work. 58 tests pass. But SCAN is undirected — it reads file contents but not the operator's destination. An undirected SCAN violates Commander's Intent (Principle 1). V1 proved the loop works. The next milestone is not more loop code — it is directed SCAN that reads destination.yaml.
+**4. Principle 1 (Commander's Intent) is now structurally enforced.**
+SCAN reads `.trail/destination.md` (capped at 3000 chars from the tail — most recent decisions). The prompt explicitly says "identify one improvement that advances the stated destination." The gap named in the prior retrospect is closed.
 
-**5. The next work is schema design, not implementation.**
-The destination expanded today to name .pea/ as the unified memory standard across ai-steward, harness-protocol, and the skill suite. The schema (destination.yaml, orientation.yaml, recent context derivation) must converge before implementation. The arc shows: schema design precedes implementation; code written before schema locks risks rework.
+**5. `.trail/` is the standard.**
+Naming discussion closed. The skill suite already uses `.trail/`. ai-steward uses it. harness-protocol will write to `.trail/sessions/`. No migration to a new directory name is needed.
 
-**6. Three projects are now in scope.**
-The memory model convergence affects:
-- ai-steward (consumer — reads .pea/)
-- harness-protocol (producer — writes .pea/sessions/)
-- skill suite (legacy — migrates from .trail/ to .pea/)
-
-ai-steward defines the standard. The others align. This is the first time this repo's arc has cross-project scope.
+**6. Structural debt cleared: `_types.py` refactor complete.**
+Finding and LoopResult live in `pipeline/_types.py`. Circular import eliminated. Lazy-import workaround in `run()` removed. V2 phases can be added cleanly.
 
 ---
 
 ## What the next runs should test
 
-**1. Define the .pea/ schema (highest priority)**
-destination.yaml: what fields? ~200 token budget.  
-orientation.yaml: what derivation strategy from sessions/? ~150 token budget.  
-recent context: what window into sessions/? ~300 token budget.  
-Write the schema as a design document before touching config.py or scan.py.
+**1. Run ai-steward against itself with directed SCAN**
+The first real directed SCAN run. Does SCAN propose an improvement that advances the destination, or does it still find the first arbitrary code-quality fix? This is the empirical test of Principle 1 enforcement.
 
-**2. Implement directed SCAN**
-After schema is locked: SCAN reads destination.yaml and orientation.yaml. The prompt includes Commander's Intent, not just file contents. Test: does SCAN propose improvements that advance the destination, or does it still find the first arbitrary fix?
+**2. Section-boundary truncation for _load_destination**
+Current truncation cuts mid-sentence at 3000 chars. Finding the last full `## YYYY-MM-DD` section boundary before the cutoff would be cleaner. Minor quality improvement.
 
-**3. Configure harness to write to .pea/sessions/**
-Currently writes to `.harness/`. The spec says `HARNESS_ROOT` controls this. Verify the harness respects it. This is harness-protocol work, not ai-steward work.
+**3. Configure harness to write to .trail/sessions/**
+The harness currently writes to `.harness/`. `HARNESS_ROOT` should point to `.trail/`. This is harness-protocol work, not ai-steward work.
 
-**4. Probe on demand**
-The destination says ARF probe is operator-triggered. Implement `ai-steward probe` — runs the ARF-SPEC.md novelty probe, returns pass/fail with evidence. Not every-N-cycles.
+**4. Implement `ai-steward probe`**
+ARF probe on demand. Runs the novelty probe from ARF-SPEC.md, returns pass/fail with evidence. Operator-triggered, not automatic.
 
 ---
 
 ## Active operational rules
 
-*Carried from previous retrospect + updates from V1 milestone arc.*
+*Updated after three improve iterations.*
 
 - **V1 stops before release.** Operator reviews every staged diff. Inviolable.
 - **harness-protocol is outside ai-steward's autonomous scope.** Structural exclusion.
@@ -60,23 +52,20 @@ The destination says ARF probe is operator-triggered. Implement `ai-steward prob
 - **Execution layer must remain separate from reasoning layer.** Phases execute; skills reason.
 - **Use `write_bytes(content.encode("utf-8"))` in byte-sensitive tests.** [CRLF hazard]
 - **Record design decisions before writing code.** Followed; carry forward.
-- **`_types.py` refactor before adding V2 phases.** Debt is real, deferred.
-- **LLM does NOT write the authoritative trail.** [NEW] The harness writes .pea/sessions/. The LLM reads but does not author evidence.
-- **Schema design precedes implementation.** [NEW] .pea/ schema must lock before directed SCAN code.
-- **ai-steward defines the standard; others align.** [NEW] The skill suite adopts .pea/ after ai-steward proves it.
+- **LLM does NOT write the authoritative trail.** The harness writes .trail/sessions/. The LLM reads but does not author evidence.
+- **Patch the consuming module's namespace, not the source module.** [NEW] When monkeypatching with top-level imports, `ai_steward.pipeline.loop.scan` not `scan_mod.scan`. The lazy-import coincidence that made the old pattern work is gone.
 
 ---
 
 ## Loop-effectiveness notes
 
-**Bar this retrospect tested:** V1 operational correctness (first run succeeded), token-tier sufficiency (tier 1 worked), arc consistency, cross-project scope clarity.
+**Bar this retrospect tested:** Implementation velocity (3 iterations completed cleanly), reversal handling (one [!REVERSAL] in _types.py, resolved same iteration), debt clearance (_types.py resolved the prior [!REALIZATION]).
 
-**Finding:** The loop is examining the right thing. V1 proved the execution layer. The destination evolved during the arc — not drift, but operator-directed expansion. The loop correctly identified Principle 1 (Commander's Intent) as the next gap, not more execution code.
+**Finding:** The loop is efficient. Candidate next moves from each iteration were actionable and correctly prioritized. The [!REVERSAL] was caught, documented, and fixed within the same iteration — honest reasoning, not confabulation.
 
-**Silence on:** Internal code quality (58 tests pass; structural correctness confirmed). Execution-layer completeness.
+**Silence on:** Directed SCAN effectiveness (not yet run against a real target). Proposal quality under sustained operation (only one real run so far).
 
 **Bars not tested:**
-- Directed SCAN effectiveness (requires schema + implementation)
-- Proposal quality over multiple cycles (only one cycle run)
-- Harness ledger integrity over sustained operation
-- Cross-project coordination (work not yet begun)
+- Does directed SCAN actually produce destination-aligned proposals? (Requires real run)
+- Harness ledger integrity over multiple cycles
+- Cross-project coordination (harness and skill suite alignment to .trail/)

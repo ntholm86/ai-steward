@@ -1133,3 +1133,30 @@ Next high-value run targets: unused imports, missing test coverage, type annotat
 1. **Update retrospect.md** — stale throughout: .pea/ references, directed SCAN not reflected, _types.py debt marked as outstanding when it is now resolved. Retrospect run is warranted.
 2. **Section-boundary truncation for _load_destination** — find the last full section heading before the 3000-char cutoff instead of raw character slice. Minor quality improvement.
 3. **Run ai-steward against itself** — V1 self-targeting loop now has directed SCAN. The next run will see the post-V1 operator decisions in the prompt. Empirically verify SCAN proposes something destination-aligned.
+
+
+---
+
+## 2026-06-20 -- Retrospect: post-directed-SCAN-implementation
+
+**Skill:** Retrospect
+**Trigger:** Operator requested retrospect run after three improve iterations.
+
+**Arc examined:** Three iterations since post-V1-milestone-orientation:
+1. directed SCAN (Commander's Intent injection)
+2. truncation direction fix
+3. _types.py refactor
+
+**Claims updated:**
+- Claim 4: Principle 1 gap is now CLOSED (directed SCAN implemented)
+- Claim 5: .trail/ is the standard (naming discussion resolved, .pea/ references stale)
+- Claim 6: _types.py debt RESOLVED (no longer deferred)
+- NEW operational rule: monkeypatch the consuming module's namespace
+
+**[!REALIZATION] (arc-level):** The retrospect.md was materially stale. .pea/ references throughout; _types.py marked as outstanding debt; directed SCAN described as "not implemented." The prior retrospect was one day old but three commits behind. Retrospect runs after substantive implementation work should be mandatory, not optional.
+
+### Candidate Next Moves
+
+1. **Run ai-steward against itself with directed SCAN** — first empirical test of Principle 1 enforcement. Does SCAN propose destination-aligned improvements?
+2. **Section-boundary truncation** — cleaner truncation at last full ## YYYY-MM-DD section.
+3. **Configure harness-protocol for .trail/sessions/** — producer alignment to the standard.
