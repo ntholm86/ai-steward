@@ -34,7 +34,7 @@ Respond with a JSON object only — no prose, no markdown fences, no explanation
 {
   "file": "<repo-relative path to the file to change>",
   "description": "<what the improvement is, one sentence>",
-  "proposed_change": "<the new content or specific replacement — not a diff>",
+  "proposed_change": "<precise description of the exact change — what to add, remove, or replace and where, in one or two sentences. Do NOT include file contents.>",
   "rationale": "<why this change earns its maintenance cost>",
   "risk": "<low | medium | high>"
 }
@@ -45,7 +45,7 @@ Rules:
 - Only suggest low or medium risk changes.
 - The file must be in the provided file list.
 - Be specific: "Remove unused import os from utils.py" not "clean up imports".
-- proposed_change must be the actual replacement content, ready to write.
+- proposed_change must describe the change, not reproduce file contents.
 """
 
 def _extract_json(text: str) -> dict | None:
