@@ -6,11 +6,11 @@
 # repo: comes from the CLI argument, not this file.
 
 models:
-  analyze: claude-haiku-4-5
-  propose: claude-haiku-4-5
-  implement: claude-haiku-4-5
-  verify: claude-haiku-4-5
-  judge: claude-haiku-4-5
+  analyze: claude-sonnet-4-5   # SCAN reasoning — proposal quality determines acceptance rate
+  propose: claude-sonnet-4-5   # same SCAN call
+  implement: claude-sonnet-4-5 # code quality — better first-pass → fewer VERIFY failures
+  verify: claude-haiku-4-5     # tier-0 in V1 — no LLM call fires here; keep cheap
+  judge: claude-opus-4-5       # highest-stakes gate (sparingly used); worth paying for
 
 harness:
   endpoint: "http://localhost:8474"
