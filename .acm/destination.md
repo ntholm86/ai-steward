@@ -69,7 +69,7 @@ Efficiency is measured, not claimed. Improvements are evaluated against cost-per
 ### V1 milestone
 
 V1 is done when ai-steward successfully runs the loop against **its own repository**:
-1. `ai-steward run c:\git\ai-steward` executes
+1. `ai-steward run c:\git\pea\ai-steward` executes
 2. The loop proposes one improvement, applies it, verifies it, records the trail
 3. The operator reviews and commits
 
@@ -1016,3 +1016,144 @@ After Opus confirms nothing remains: loop stops. This is a success state.
 | SCAN + IMPLEMENT | Sonnet | Good quality, reasonable cost |
 | Convergence verification | Opus | Rare, high-stakes, worth paying |
 | Structural gates (VERIFY) | Haiku / none | No LLM needed for syntax/tests |
+
+---
+
+## Current State (updated 2026-06-21)
+
+### V1 is complete
+
+V1 was closed on 2026-06-20. Self-targeting proved the mechanism. CI enforces `mypy src/` and `pytest` on every push/PR. 66 tests pass. 13 source files are mypy-clean. P1 (Commander's Intent) and P2 (Observable Autonomy) are both structurally complete.
+
+Measured cost: **~$0.018/cycle** on claude-haiku-4-5 (2 LLM calls). Orders of magnitude cheaper than a Claude Sonnet conversation for code-level work.
+
+### The division of labour
+
+ai-steward and the skills suite serve different roles. They are complementary, not competing:
+
+| Work type | Tool | Why |
+|-----------|------|-----|
+| Code improvements to any repo | ai-steward | Cheap (~$0.018/cycle), harness-captured, structural guarantee |
+| Cross-repo architecture, vision | Skills (human conversation) | Requires judgment that cannot be delegated yet |
+| Publication review, theory | publication-rigour-review skill | Requires deep reasoning over literature |
+
+The key difference: the skills depend on the LLM following instructions correctly (behavioral). ai-steward's evidence is captured by the harness *before the agent can respond* -- structural, not behavioral. One is a trust claim; the other is a structural guarantee.
+
+### V2 direction -- external targeting and the pea workspace
+
+The next proof layer is generalisation. V1 proved the loop works on one repo (self-targeting). V2 proves it works on any repo.
+
+**Primary targets (in order):**
+1. `c:\git\pea\agent-context-memory` -- the ACM spec. Small, no tests yet, well-bounded destination.
+2. `c:\git\pea\manifesto` -- theory docs. Prose improvements, reference consistency.
+3. Any pea workspace repo with `.acm/destination.md` and `.ai-steward.yaml`.
+
+**Before running external targeting:**
+- Harness must be running from new location: `c:\git\pea\llm-harness-proxy\`
+- Target repo must have `.ai-steward.yaml` (run `ai-steward init <path>` if not)
+- Target repo must have `.acm/destination.md` authored by operator
+
+**What V2 must prove:**
+- `audit-trail.md` lands in the *target* repo's `.acm/`, not ai-steward's
+- Harness session lands in the *target* repo's `.acm/sessions/`
+- Loop stops (Convergence Is Silence) when there is genuinely nothing to improve
+- Actual cost per accepted proposal on a non-trivial external target
+
+### Infrastructure (updated 2026-06-21)
+
+- **Harness:** `c:\git\pea\llm-harness-proxy\` (moved from `c:\git\llm-harness-proxy\`)
+- **ai-steward:** `c:\git\pea\ai-steward\` (moved from `c:\git\ai-steward\`)
+- **Workspace ACM:** `c:\git\pea\.acm\` governs all pea workspace repos
+
+---
+
+## Current State (updated 2026-06-21)
+
+### V1 is complete
+
+V1 was closed on 2026-06-20. Self-targeting proved the mechanism. CI enforces mypy and pytest on every push/PR. 66 tests pass. 13 source files are mypy-clean. P1 (Commander's Intent) and P2 (Observable Autonomy) are both structurally complete.
+
+Measured cost: ~0.018 USD/cycle on claude-haiku-4-5 (2 LLM calls). Orders of magnitude cheaper than a Claude Sonnet conversation for code-level work.
+
+### The division of labour
+
+ai-steward and the skills suite serve different roles. They are complementary, not competing.
+
+Code improvements to any repo: ai-steward -- cheap, harness-captured, structural guarantee.
+Cross-repo architecture and vision: Skills (human conversation) -- requires judgment that cannot be delegated yet.
+Publication review and theory: publication-rigour-review skill -- requires deep reasoning over literature.
+
+The key difference: the skills depend on the LLM following instructions correctly (behavioral). ai-steward's evidence is captured by the harness before the agent can respond -- structural, not behavioral. One is a trust claim; the other is a structural guarantee.
+
+### V2 direction -- external targeting and the pea workspace
+
+The next proof layer is generalisation. V1 proved the loop works on one repo (self-targeting). V2 proves it works on any repo.
+
+Primary targets in order:
+1. c:\git\pea\agent-context-memory -- the ACM spec. Small, no tests yet, well-bounded destination.
+2. c:\git\pea\manifesto -- theory docs. Prose improvements, reference consistency.
+3. Any pea workspace repo with .acm/destination.md and .ai-steward.yaml.
+
+Before running external targeting:
+- Harness must be running from new location: c:\git\pea\llm-harness-proxy\
+- Target repo must have .ai-steward.yaml (run 'ai-steward init <path>' if not)
+- Target repo must have .acm/destination.md authored by operator
+
+What V2 must prove:
+- audit-trail.md lands in the target repo's .acm/, not ai-steward's
+- Harness session lands in the target repo's .acm/sessions/
+- Loop stops (Convergence Is Silence) when there is genuinely nothing to improve
+- Actual cost per accepted proposal on a non-trivial external target
+
+### Infrastructure (updated 2026-06-21)
+
+- Harness: c:\git\pea\llm-harness-proxy\ (moved from c:\git\llm-harness-proxy\)
+- ai-steward: c:\git\pea\ai-steward\ (moved from c:\git\ai-steward\)
+- Workspace ACM: c:\git\pea\.acm\ governs all pea workspace repos
+
+
+---
+
+## Current State (updated 2026-06-21)
+
+### V1 is complete
+
+V1 was closed on 2026-06-20. Self-targeting proved the mechanism. CI enforces mypy and pytest on every push/PR. 66 tests pass. 13 source files are mypy-clean. P1 (Commander's Intent) and P2 (Observable Autonomy) are both structurally complete.
+
+Measured cost: ~0.018 USD/cycle on claude-haiku-4-5 (2 LLM calls). Orders of magnitude cheaper than a Claude Sonnet conversation for code-level work.
+
+### The division of labour
+
+ai-steward and the skills suite serve different roles. They are complementary, not competing:
+
+- **Code improvements to any repo:** ai-steward -- cheap (~0.018 USD/cycle), harness-captured, structural guarantee
+- **Cross-repo architecture, vision:** Skills (human conversation) -- requires judgment that cannot be delegated yet
+- **Publication review, theory:** publication-rigour-review skill -- requires deep reasoning over literature
+
+The key difference: the skills depend on the LLM following instructions correctly (behavioral). ai-steward's evidence is captured by the harness before the agent can respond -- structural, not behavioral. One is a trust claim; the other is a structural guarantee.
+
+### V2 direction -- external targeting and the pea workspace
+
+The next proof layer is generalisation. V1 proved the loop works on one repo (self-targeting). V2 proves it works on any repo.
+
+**Primary targets (in order):**
+1. c:\git\pea\agent-context-memory -- the ACM spec. Small, no tests yet, well-bounded destination.
+2. c:\git\pea\manifesto -- theory docs. Prose improvements, reference consistency.
+3. Any pea workspace repo with .acm/destination.md and .ai-steward.yaml.
+
+**Before running external targeting:**
+- Harness must be running from new location: c:\git\pea\llm-harness-proxy\
+- Target repo must have .ai-steward.yaml (run ai-steward init <path> if not)
+- Target repo must have .acm/destination.md authored by operator
+
+**What V2 must prove:**
+- audit-trail.md lands in the target repo's .acm/, not ai-steward's
+- Harness session lands in the target repo's .acm/sessions/
+- Loop stops (Convergence Is Silence) when there is genuinely nothing to improve
+- Actual cost per accepted proposal on a non-trivial external target
+
+### Infrastructure (updated 2026-06-21)
+
+- **Harness:** c:\git\pea\llm-harness-proxy\ (moved from c:\git\llm-harness-proxy\)
+- **ai-steward:** c:\git\pea\ai-steward\ (moved from c:\git\ai-steward\)
+- **Workspace ACM:** c:\git\pea\.acm\ governs all pea workspace repos
