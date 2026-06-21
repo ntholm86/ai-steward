@@ -1205,3 +1205,130 @@ The $0.002 target was written when cost was the primary concern. It was too low 
 The correct constraint: each cycle may cost up to $1.00. Within that ceiling, use the cheapest model that reasons to the required quality standard. Measure and record actual cost per cycle. Optimise from data, not from aspirational targets.
 
 Cost is measured. Quality is the gate.
+
+---
+
+## 2026-06-21 — Cognitive architecture target: skillset parity
+
+*This section defines what ai-steward must become. It supersedes any prior framing where "reasoning quality" was treated as a prompt concern. This is an architectural target.*
+
+---
+
+### The gap
+
+The skillset (Improve + Retrospect + Trail) is a complete cognitive loop. ai-steward is currently half of it.
+
+ai-steward has: mandate gate, 5-step pre-proposal reasoning, harness capture, trail record.
+ai-steward is missing: memory reading, examination lenses, first-read challenge, reflection, autonomous retrospect, learning surface.
+
+Every SCAN run today starts cold — no memory of what prior cycles found, concluded, or reversed. The skillset never starts cold. This is the root quality gap.
+
+---
+
+### The target cognitive architecture
+
+Four phases must be built, matching the skillset's Improve → Retrospect → Trail loop:
+
+---
+
+**Phase 1 — ORIENT (before SCAN)**
+
+Before proposing anything, SCAN must read the memory layer in this order (ACM §4 scope traversal applies to all):
+
+1. `destination.md` — mandate. What the operator wants. Highest authority. (Already done.)
+2. `retrospect.md` — current orientation. What is true about this codebase right now. Arc-level claims from prior cycles.
+3. `learning.md` — compact learning surface. Every `[!REALIZATION]` and `[!REVERSAL]` across all history, chronological. Read this before the trail — it is what the loop has actually concluded.
+4. `audit-trail.md` — full history. Read only when a specific prior decision needs its context.
+
+SCAN without retrospect.md and learning.md is examination without memory. It will re-find the same things, propose what was already tried, and miss patterns only visible across the arc.
+
+*Implementation: extend `_load_scope_context()` to load retrospect.md and learning.md alongside destination.md. Inject as "Current orientation" and "Prior learnings" sections.*
+
+---
+
+**Phase 2 — SCAN with examination lenses (replaces flat "Step 2 — Examination")**
+
+The skillset's Improve skill uses four named lenses — not a checklist, but vocabulary for structured thinking. SCAN must use the same lenses:
+
+- **Purpose** — does the target do what the destination says it should? Gap between stated goal and actual behaviour? This lens runs first.
+- **Inconsistency** — where does the target contradict itself? Mixed conventions, asymmetric handling of similar cases.
+- **Overburden** — where is one component doing too much? The most overburdened file is the highest-risk change target.
+- **Waste** — what carries no value? Dead code, never-fired validation, abstractions with one consumer.
+
+Add lenses as the target warrants. Name every lens applied and what it revealed — including "nothing actionable."
+
+Then: **Challenge the first read.** Ask explicitly:
+- What am I not seeing?
+- Am I anchored to the obvious finding and missing a subtler, more important one?
+- Is the structure itself wrong, such that no incremental fix will help? (Kaikaku question — if yes, argue for redesign, do not propose incremental patches.)
+
+*Implementation: restructure the SCAN system prompt Steps 2–3 to use these lenses and the Kaikaku challenge.*
+
+---
+
+**Phase 3 — RECORD with Reflection**
+
+Currently RECORD writes what happened. It must also write what was learned.
+
+After VERIFY confirms the change, RECORD must add:
+
+- **Reflection** — updated model of the target as a falsifiable claim a future run could disagree with. Not "what I did" — "what I now believe is true about this codebase."
+- **Across-trail trigger evaluation** (mandatory, not skippable):
+  - Recurring finding-class: has this type of finding appeared before? If yes — [!REALIZATION].
+  - About to declare silence: is the loop reaching a natural end? Is the silence earned?
+  - Prior [!REALIZATION] contradicted: does this run's outcome change a prior conclusion?
+  - Operator explicitly asked: was there a direct operator question this run answers?
+- **[!REALIZATION]** when something discovered changes understanding.
+- **[!REVERSAL]** when a plan from this cycle or a prior cycle was changed — both kinds count.
+- **Candidate Next Moves** — ranked list of what the next run should look at, from this iteration's blind spots and open questions.
+
+*Implementation: pass VERIFY outcome back to RECORD; add a second LLM call in RECORD for reflection synthesis.*
+
+---
+
+**Phase 4 — Autonomous RETROSPECT**
+
+The skillset's Retrospect skill reads the full trail and synthesizes arc-level claims into `retrospect.md`. ai-steward must do this autonomously.
+
+Trigger conditions (any one fires it):
+- After every N accepted proposals (N=5 is a reasonable start)
+- When SCAN returns `{"nothing": true}` for two consecutive cycles (convergence signal)
+- On operator demand: `ai-steward retrospect <repo>`
+
+What it does:
+1. Regenerate `learning.md` and `history.md` from `audit-trail.md`
+2. Read the full arc
+3. Form falsifiable arc-level claims about the target
+4. Write updated `retrospect.md`
+5. Trail the retrospect run itself
+
+Once Retrospect runs, the next SCAN has a current orientation to read. The feedback loop is closed.
+
+*Implementation: new `retrospect.py` pipeline phase + `ai-steward retrospect` CLI command.*
+
+---
+
+### What "same caliber" means
+
+The skillset is caliber. ai-steward is the same caliber when:
+
+1. SCAN never starts cold — it always reads memory before reasoning
+2. Examination uses named lenses and challenges its first read
+3. RECORD produces Reflection + Candidate Next Moves + trigger evaluation
+4. Retrospect runs autonomously and keeps orientation current
+5. `learning.md` is regenerated after every accepted proposal
+6. The trail is readable at three resolutions: Digest (outcome/delta), Indexed ([!MARKERS]), Full (sessions/)
+
+This is not about prompt quality. It is the same cognitive loop — compressed to run autonomously within the $1.00/cycle ceiling, using the cheapest model that meets the reasoning standard.
+
+---
+
+### Build order
+
+1. **ORIENT** — feed retrospect.md + learning.md into SCAN. Highest leverage, ~20 lines. Immediate quality improvement.
+2. **SCAN lenses + Kaikaku** — restructure examination step with named lenses and first-read challenge. Prompt change only.
+3. **RECORD Reflection** — add reflection synthesis after VERIFY. Requires passing outcome back to RECORD.
+4. **Retrospect command** — `ai-steward retrospect`. Closes the feedback loop.
+5. **Auto-trigger Retrospect** — fire on convergence signal or after N accepted proposals.
+
+Each step is independent and shippable. Do not wait for all five before running.
