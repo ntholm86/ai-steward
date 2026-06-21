@@ -44,6 +44,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 37 | 2026-06-21 | feat: capture prediction field from SCAN JSON into Finding and trail entry |  |  |
 | â–¸ 38 | 2026-06-21 | Retrospect: post-prediction-field |  |  |
 | â–¸ 39 | 2026-06-21 | Retrospect: pre-orient-implementation |  |  |
+| â–¸ 40 | 2026-06-21 | feat(orient): inject retrospect.md and learning.md into SCAN context |  |  |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -251,4 +252,8 @@ Do not edit by hand â€” re-run the command to refresh.
 
 - **decided:** Add `prediction` as a required JSON field in the SCAN prompt schema, add `prediction: str = ""` to the `Finding` dataclass, extract it in `scan()`, and use `finding.prediction` in `_build_entry()` with `finding.proposed_change` as fallback.
 
-**39 runs total â€” 39 with changes, 0 silence**
+### Run 40 â€” 2026-06-21 â€” feat(orient): inject retrospect.md and learning.md into SCAN context
+
+- **decided:** Add `_load_orient_context()` helper that reads retrospect.md (first 1000 chars) and learning.md (last 500 chars) from repo `.acm/`, then restructure `scan()` to assemble user_content as a `parts` list joined by `---` separators.
+
+**40 runs total â€” 40 with changes, 0 silence**

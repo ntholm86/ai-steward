@@ -2831,3 +2831,64 @@ Added ORIENT implementation brief: precise spec for what to add to `_load_scope_
 ### [!REALIZATION]
 
 [!REALIZATION] A retrospect without a preceding improve iteration is not waste — it is the operator-gate making a deliberate choice to hold. When the gate holds twice, the correct response from the retrospect is not to repeat the same claims but to sharpen the brief so the implement step is unambiguous when the gate opens. The retrospect’s value in this run was converting "ORIENT is the next move" (direction) into a precise implementation spec (actionable).
+
+---
+
+## 2026-06-21 — feat(orient): inject retrospect.md and learning.md into SCAN context
+
+- target: ai-steward pipeline (scan.py, tests/test_scan.py)
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: improve v3.10.0
+
+### Interpretation
+
+The retrospect (entry 39) declared ORIENT the single highest-leverage next move and provided a precise implementation brief: extend `_load_scope_context()` to also load `retrospect.md` and `learning.md` from the repo root, inject them into the SCAN context between the destination block and the file list, budget 1000/500 chars respectively, skip gracefully if absent.
+
+### Examination
+
+**Purpose lens:** `_load_scope_context()` reads only `destination.md` at each scope level. `retrospect.md` (arc-claims + operational rules) and `learning.md` (recent [!REALIZATION]/[!REVERSAL] markers) were invisible to the autonomous SCAN context. Every retrospect we wrote was adding value the pipeline could not consume.
+
+**Code examination:** `scan()` assembled user_content with a single if/else block (destination present → one string, destination absent → another). Adding orient context would require a third branch. The parts-list pattern is cleaner: each context block is an independent entry, joined by `---` separators, regardless of which blocks are present.
+
+**Inconsistency lens:** retrospect.md claims at the top are most relevant (head truncation). learning.md recent markers are at the bottom (tail truncation). Two different truncation strategies for two files — made explicit in the function rather than using the existing `_truncate_destination()` which is purpose-built for destination.md's dated-section structure.
+
+### [!DECISION]
+
+[!DECISION] Add `_load_orient_context()` helper that reads retrospect.md (first 1000 chars) and learning.md (last 500 chars) from repo `.acm/`, then restructure `scan()` to assemble user_content as a `parts` list joined by `---` separators.
+
+Rationale: parts-list avoids nested branching as more context blocks are added; head/tail truncation is semantically correct for each file's layout.
+
+Alternative rejected: add to `_load_scope_context()` return value. Rejected because `_load_scope_context()` is specifically about ACM §4 multi-scope destination traversal; mixing in orient artifacts would conflate two distinct concerns.
+
+### Prediction
+
+After this change, a self-targeting SCAN run will receive the current arc-claims (claim 1: mandate gate works; claim 4: RECORD partially fixed; etc.) and the operational rules ("Test SCAN prompt changes with a live run before declaring them correct") in its context window. The 78 existing tests pass unchanged. Three new tests confirm content injection.
+
+### Action
+
+- `scan.py`: Added `_load_orient_context()` (37 lines). Restructured `scan()` user_content assembly to parts-list pattern (+17 lines, -6 lines).
+- `tests/test_scan.py`: Added 3 tests: `test_scan_includes_retrospect_in_context`, `test_scan_includes_learning_in_context`, `test_scan_skips_missing_orient_files`.
+
+81 tests pass (was 78 + 3 new). mypy clean (13 source files).
+
+One within-iteration correction: `test_scan_includes_learning_in_context` initially asserted `[!REALIZATION]` (plain text) but learning.md uses `**[!REALIZATION]**` (markdown bold). Fixed assertion before marking the test passing. [!REVERSAL] within-iteration.
+
+### Reflection
+
+Current model: ai-steward's SCAN context now has three layers — destination (operator intent), orient (arc-derived state), files (target). This is the same three-layer model that the improve skill reads before every iteration: destination → retrospect → learning. The autonomous pipeline now reads from the same evidence layer as the human-supervised sessions.
+
+Blind spot: did not examine whether 1000/500 char budgets are calibrated correctly. The current retrospect.md is ~6371 bytes; 1000 chars captures only the header and claims 1–2. The operational rules section (which carries the most immediately actionable context) falls outside the 1000-char window. This may need tuning after a live run confirms the truncation behavior.
+
+Imagined reader pushback: "The parts-list join produces `---` separators between sections, but the existing tests for `Commander's Intent` check for that specific label. Did restructuring break the existing scope-context tests?" Answer: checked — the label `Commander's Intent (operator destination — higher scope governs):` is preserved in the parts-list approach, just as the first part. Existing assertions pass.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* not fired — this is an additive feature, not a pattern of similar fixes.
+- *About to declare silence:* not fired — Expected outcome semantic error and Reflection remain.
+- *Contradicts prior [!REALIZATION]:* not fired — the claim that "retrospect.md is invisible to autonomous pipeline" is now resolved, consistent with prior arc.
+- *Operator explicitly asked:* not fired.
+
+### Candidate Next Moves
+
+1. **Tune orient context budget** — run a live self-targeting scan and inspect what appears in the context window. 1000 chars may be too small for retrospect.md; 1500 chars would include operational rules.
+2. **Fix `*Expected outcome:*` semantic error in `_build_entry()`** — 2-line fix, zero-risk. `finding.rationale` is the why; the Expected outcome line should describe the predicted state of the target after the change.
+3. **Cost model correction in destination** — update Current State from "$0.002 (haiku)" to ~$0.03/cycle.

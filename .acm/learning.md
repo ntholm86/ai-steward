@@ -405,6 +405,18 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** A retrospect without a preceding improve iteration is not waste — it is the operator-gate making a deliberate choice to hold. When the gate holds twice, the correct response from the retrospect is not to repeat the same claims but to sharpen the brief so the implement step is unambiguous when the gate opens. The retrospect’s value in this run was converting "ORIENT is the next move" (direction) into a precise implementation spec (actionable).
 
+## 2026-06-21 â€” feat(orient): inject retrospect.md and learning.md into SCAN context
+
+**[!REALIZATION]** /[!REVERSAL] markers) were invisible to the autonomous SCAN context. Every retrospect we wrote was adding value the pipeline could not consume.
+
+## 2026-06-21 â€” feat(orient): inject retrospect.md and learning.md into SCAN context
+
+**[!REALIZATION]** ` (plain text) but learning.md uses `**[!REALIZATION]**` (markdown bold). Fixed assertion before marking the test passing. [!REVERSAL] within-iteration.
+
+## 2026-06-21 â€” feat(orient): inject retrospect.md and learning.md into SCAN context
+
+**[!REALIZATION]** :* not fired — the claim that "retrospect.md is invisible to autonomous pipeline" is now resolved, consistent with prior arc.
+
 ---
 
-**100 markers â€” 71 realisations, 29 reversals**
+**103 markers â€” 74 realisations, 29 reversals**
