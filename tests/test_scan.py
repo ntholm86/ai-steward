@@ -186,10 +186,10 @@ def test_collect_files_respects_blocked(tmp_path: Path) -> None:
 
 
 def test_scan_includes_destination_when_present(tmp_path: Path) -> None:
-    """SCAN prompt must include destination content when .trail/destination.md exists."""
+    """SCAN prompt must include destination content when .acm/destination.md exists."""
     (tmp_path / "utils.py").write_text("import os\nx = 1\n")
-    (tmp_path / ".trail").mkdir()
-    (tmp_path / ".trail" / "destination.md").write_text(
+    (tmp_path / ".acm").mkdir()
+    (tmp_path / ".acm" / "destination.md").write_text(
         "# Destination\nBuild a fast reliable pipeline.", encoding="utf-8"
     )
     config = _make_config(tmp_path)
@@ -232,12 +232,12 @@ def test_scan_works_without_destination(tmp_path: Path) -> None:
 def test_scan_truncates_long_destination(tmp_path: Path) -> None:
     """Destination takes the tail when over budget — most recent content is preserved."""
     (tmp_path / "utils.py").write_text("x = 1\n")
-    (tmp_path / ".trail").mkdir()
+    (tmp_path / ".acm").mkdir()
     # Old content at start, new content at end — truncation must preserve the end.
     old_content = "OLD: " + "A" * 2000
     new_content = "NEW: latest operator decision"
     long_text = old_content + "B" * 1000 + new_content
-    (tmp_path / ".trail" / "destination.md").write_bytes(long_text.encode("utf-8"))
+    (tmp_path / ".acm" / "destination.md").write_bytes(long_text.encode("utf-8"))
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
 
@@ -253,12 +253,12 @@ def test_scan_truncates_long_destination(tmp_path: Path) -> None:
 def test_scan_truncation_starts_at_section_boundary(tmp_path: Path) -> None:
     """When destination has dated sections, truncation starts at the nearest heading."""
     (tmp_path / "utils.py").write_text("x = 1\n")
-    (tmp_path / ".trail").mkdir()
+    (tmp_path / ".acm").mkdir()
     # Old section must be long enough that total > 3000 and cutoff lands before new heading.
     old_section = "## 2026-05-14 — Old section\n\n" + "A" * 3500 + "\n\n"
     new_section = "## 2026-06-20 — New section\n\nLatest operator decision.\n"
     long_text = old_section + new_section
-    (tmp_path / ".trail" / "destination.md").write_bytes(long_text.encode("utf-8"))
+    (tmp_path / ".acm" / "destination.md").write_bytes(long_text.encode("utf-8"))
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
 

@@ -34,6 +34,6 @@ class LoopResult:
     status: Literal["proposed", "verify_failed", "nothing_found", "preflight_failed", "implement_failed"]
     finding: Finding | None
     diff: str | None
-    trail_entry: str
+    acm_entry: str
     preflight_failure: str | None = None
     harness_session_path: str | None = None

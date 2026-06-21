@@ -15,7 +15,7 @@ def test_init_creates_config_and_destination(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     config = tmp_path / ".ai-steward.yaml"
-    destination = tmp_path / ".trail" / "destination.md"
+    destination = tmp_path / ".acm" / "destination.md"
     assert config.exists()
     assert destination.exists()
     assert "claude-haiku-4-5" in config.read_text()
@@ -33,7 +33,7 @@ def test_init_aborts_if_config_already_exists(tmp_path: Path) -> None:
 
 
 def test_init_skips_destination_if_already_exists(tmp_path: Path) -> None:
-    trail_dir = tmp_path / ".trail"
+    trail_dir = tmp_path / ".acm"
     trail_dir.mkdir()
     existing = "# My existing destination\n"
     (trail_dir / "destination.md").write_text(existing, encoding="utf-8")
@@ -42,5 +42,5 @@ def test_init_skips_destination_if_already_exists(tmp_path: Path) -> None:
     result = runner.invoke(main, ["init", str(tmp_path)])
 
     assert result.exit_code == 0
-    assert "Skipped  .trail/destination.md" in result.output
+    assert "Skipped  .acm/destination.md" in result.output
     assert (trail_dir / "destination.md").read_text() == existing

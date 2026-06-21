@@ -11,7 +11,7 @@ An autonomous code improvement loop with structural accountability.
 ```
 ┌──────────────────────────────────┐
 │  OPERATOR                        │
-│  .trail/destination.md           │  ← Commander's Intent: what + why
+│  .acm/destination.md           │  ← Commander's Intent: what + why
 │  Reviews staged diffs            │
 │  Commits or discards             │
 └──────────────┬───────────────────┘
@@ -33,12 +33,12 @@ An autonomous code improvement loop with structural accountability.
 ┌──────────────────────────────────┐
 │  HARNESS (localhost:8474)        │
 │  Intercepts all LLM API calls    │
-│  Writes .trail/sessions/*.jsonl  │  ← BEFORE response is processed
+│  Writes .acm/sessions/*.jsonl  │  ← BEFORE response is processed
 │  Hash-chained, tamper-evident    │  ← agent cannot fabricate evidence
 └──────────────────────────────────┘
 ```
 
-Every cycle produces two records in the target repo's `.trail/` directory:
+Every cycle produces two records in the target repo's `.acm/` directory:
 - `audit-trail.md` — the agent's reasoning (what it proposed and why)
 - `sessions/<ulid>.jsonl` — the harness-captured LLM evidence (independent, unmodifiable)
 
@@ -63,7 +63,7 @@ models:
   judge: claude-haiku-4-5
 ```
 
-And `.trail/destination.md` — write what you want the codebase to become and why:
+And `.acm/destination.md` — write what you want the codebase to become and why:
 
 ```markdown
 # Destination — my-project
@@ -83,8 +83,8 @@ The loop proposes one change, applies it, verifies tests pass, and stages the di
 ## V1 status
 
 - Self-targeting proven: ai-steward runs against its own repository
-- Observable Autonomy structural: harness sessions co-located with trail in `.trail/`
-- Commander's Intent structural: SCAN reads `.trail/destination.md` before every proposal
+- Observable Autonomy structural: harness sessions co-located with trail in `.acm/`
+- Commander's Intent structural: SCAN reads `.acm/destination.md` before every proposal
 - 66 tests, mypy-clean, CI on GitHub Actions
 - Cost baseline: ~$0.018/cycle (SCAN + IMPLEMENT, claude-haiku-4-5)
 
@@ -95,7 +95,7 @@ The loop proposes one change, applies it, verifies tests pass, and stages the di
 The harness proxy writes the session ledger **before** the LLM response is processed. The agent cannot selectively omit calls, retroactively modify evidence, or claim a reasoning path it did not take. The trail entry (agent-authored) and the JSONL session (harness-captured) are co-located but distinct — two trust levels, one directory.
 
 ```
-.trail/
+.acm/
   audit-trail.md          ← agent's claim about what happened
   sessions/
     01KV....jsonl         ← independent proof of what the LLM was asked and answered

@@ -44,18 +44,18 @@ def _make_finding(file: str = "utils.py") -> Finding:
 
 
 def test_record_creates_trail_directory(tmp_path: Path) -> None:
-    assert not (tmp_path / ".trail").exists()
+    assert not (tmp_path / ".acm").exists()
     record(tmp_path, _make_config(tmp_path), _make_finding(), diff="")
-    assert (tmp_path / ".trail").is_dir()
+    assert (tmp_path / ".acm").is_dir()
 
 
 def test_record_creates_audit_trail_file(tmp_path: Path) -> None:
     record(tmp_path, _make_config(tmp_path), _make_finding(), diff="")
-    assert (tmp_path / ".trail" / "audit-trail.md").is_file()
+    assert (tmp_path / ".acm" / "audit-trail.md").is_file()
 
 
 def test_record_appends_not_overwrites(tmp_path: Path) -> None:
-    trail_dir = tmp_path / ".trail"
+    trail_dir = tmp_path / ".acm"
     trail_dir.mkdir()
     trail_file = trail_dir / "audit-trail.md"
     existing = "# Pre-existing trail\n\nOld entry here.\n"
@@ -92,7 +92,7 @@ def test_record_entry_contains_diff(tmp_path: Path) -> None:
 def test_record_returns_entry_string_matching_file(tmp_path: Path) -> None:
     entry = record(tmp_path, _make_config(tmp_path), _make_finding(), diff="test diff")
 
-    trail_content = (tmp_path / ".trail" / "audit-trail.md").read_text(encoding="utf-8")
+    trail_content = (tmp_path / ".acm" / "audit-trail.md").read_text(encoding="utf-8")
     assert entry in trail_content
 
 

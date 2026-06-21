@@ -7,7 +7,7 @@ the replacement file contents verbatim.
 Token tier: 1 (cheap model — claude-haiku-4-5 or equivalent).
 All calls route through llm-harness-proxy. Never call the Anthropic API directly.
 
-See .trail/audit-trail.md (2026-06-19 V1 Pipeline Design) for the
+See .acm/audit-trail.md (2026-06-19 V1 Pipeline Design) for the
 full spec and rationale.
 """
 
@@ -70,7 +70,7 @@ def implement(
         return False, f"file is not UTF-8: {finding.file}", 0, 0, 0
 
     if client is None:
-        client = anthropic_client(config.harness, harness_root=repo / ".trail")
+        client = anthropic_client(config.harness, harness_root=repo / ".acm")
 
     user_message = (
         f"File: {finding.file}\n\n"

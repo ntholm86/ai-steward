@@ -7,7 +7,7 @@ or None if nothing actionable was found.
 Token tier: 1 (cheap model — claude-haiku-4-5 or equivalent).
 All calls route through llm-harness-proxy. Never call the Anthropic API directly.
 
-See .trail/audit-trail.md (2026-06-19 V1 Pipeline Design) for the
+See .acm/audit-trail.md (2026-06-19 V1 Pipeline Design) for the
 full prompt rationale and gate conditions.
 """
 
@@ -85,7 +85,7 @@ def _extract_json(text: str) -> dict | None:
 
 
 def _load_destination(repo: Path) -> str | None:
-    """Load Commander's Intent from .trail/destination.md if present.
+    """Load Commander's Intent from .acm/destination.md if present.
 
     Caps at ~3000 chars (~750 tokens) to stay within cheap-model cost budget.
     When truncating, takes the TAIL of the file starting at the nearest
@@ -95,7 +95,7 @@ def _load_destination(repo: Path) -> str | None:
     Falls back to a raw tail slice if no section heading is found in the tail.
     Returns None if the file does not exist.
     """
-    dest = repo / ".trail" / "destination.md"
+    dest = repo / ".acm" / "destination.md"
     if not dest.is_file():
         return None
     text = dest.read_text(encoding="utf-8", errors="ignore")
@@ -114,7 +114,7 @@ _BINARY_HEURISTIC_BYTES = 8192
 # Directories excluded when using the default scope (**/*).
 # Operators who set scope.allowed explicitly are fully in control.
 _DEFAULT_SKIP_DIRS = frozenset({
-    ".trail", ".git", ".harness",
+    ".acm", ".git", ".harness",
     "__pycache__", ".mypy_cache", ".pytest_cache",
     "node_modules", ".venv", "venv", ".tox",
 })
@@ -182,7 +182,7 @@ def scan(
         A Finding if one actionable improvement was identified, None otherwise.
     """
     if client is None:
-        client = anthropic_client(config.harness, harness_root=repo / ".trail")
+        client = anthropic_client(config.harness, harness_root=repo / ".acm")
 
     files = _collect_files(repo, config)
     if not files:

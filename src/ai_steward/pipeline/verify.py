@@ -8,7 +8,7 @@ Runs after IMPLEMENT has applied a change. All checks are structural:
 On any failure: rolls back the file to HEAD and returns (False, reason).
 On pass: returns (True, "").
 
-See .trail/audit-trail.md (2026-06-19 V1 Pipeline Design) for the
+See .acm/audit-trail.md (2026-06-19 V1 Pipeline Design) for the
 full spec and rationale.
 """
 

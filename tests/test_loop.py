@@ -275,4 +275,4 @@ def test_run_proposed_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     assert result.status == "proposed"
     assert result.finding is _FINDING
     assert result.diff == "diff text"
-    assert result.trail_entry == "trail entry"
+    assert result.acm_entry == "trail entry"

@@ -73,10 +73,10 @@ def anthropic_client(
     proxy to write the session ledger to <harness_root>/sessions/<sid>.jsonl
     instead of the proxy's default root. This is the mechanism that makes
     Observable Autonomy structural: sessions land in the target repo's
-    .trail/ directory, co-located with audit-trail.md.
+    .acm/ directory, co-located with audit-trail.md.
 
     Usage:
-        client = anthropic_client(config.harness, harness_root=repo / ".trail")
+        client = anthropic_client(config.harness, harness_root=repo / ".acm")
         message = client.messages.create(...)
     """
     import anthropic as _anthropic
@@ -97,9 +97,9 @@ def harness_session(target_repo: Path, config: HarnessConfig):
     """Context manager that sets HARNESS_ROOT for one pipeline run.
 
     The harness proxy uses HARNESS_ROOT to determine where to write its
-    ledger. Setting it to <target_repo>/.trail co-locates the harness
+    ledger. Setting it to <target_repo>/.acm co-locates the harness
     evidence (JSONL) with the audit trail memory (audit-trail.md) in the
-    .trail/ directory standard — both layers of the two-tier trust model
+    .acm/ directory standard — both layers of the two-tier trust model
     are in the same directory tree.
 
     Yields a dict {"session_path": str | None}. After the context exits,
@@ -110,7 +110,7 @@ def harness_session(target_repo: Path, config: HarnessConfig):
     The previous HARNESS_ROOT value is restored on exit.
     """
     key = "HARNESS_ROOT"
-    harness_root = target_repo / ".trail"
+    harness_root = target_repo / ".acm"
     sessions_dir = harness_root / "sessions"
 
     # Snapshot existing sessions before any calls — used to identify
@@ -139,4 +139,4 @@ def harness_session(target_repo: Path, config: HarnessConfig):
             after = {p.name for p in sessions_dir.iterdir() if p.is_file() and p.suffix == ".jsonl"}
             new = sorted(after - before)
             if new:
-                result["session_path"] = f".trail/sessions/{new[-1]}"
+                result["session_path"] = f".acm/sessions/{new[-1]}"

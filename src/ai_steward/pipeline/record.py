@@ -1,12 +1,12 @@
 """RECORD phase — tier 0, no LLM call.
 
-Appends an audit trail entry to <target_repo>/.trail/audit-trail.md
+Appends an audit trail entry to <target_repo>/.acm/audit-trail.md
 and stages the changed file (git add) for operator review.
 
 Called after VERIFY has confirmed the change is safe to stage.
 The operator reviews the staged diff and commits or discards.
 
-See .trail/audit-trail.md (2026-06-19 V1 Pipeline Design) for the
+See .acm/audit-trail.md (2026-06-19 V1 Pipeline Design) for the
 full spec and rationale.
 """
 
@@ -39,7 +39,7 @@ def record(
         finding: The change that was applied by IMPLEMENT.
         diff: Output of ``git diff HEAD -- <file>`` captured before staging.
         harness_session_path: Repo-relative path to the harness session
-            directory (e.g. ``.trail/sessions/01J.../``), or None if the
+            directory (e.g. ``.acm/sessions/01J.../``), or None if the
             harness session path could not be determined.
 
     Returns:
@@ -69,7 +69,7 @@ def _build_entry(finding: Finding, diff: str, harness_session_path: str | None =
       are already the canonical improve-skill entry format. No restructuring
       is needed.
 
-    See ``.trail/destination.md`` (Canonical trail entry format) for the
+    See ``.acm/destination.md`` (Canonical trail entry format) for the
     authoritative spec.
     """
     today = date.today().isoformat()
@@ -96,7 +96,7 @@ def _build_entry(finding: Finding, diff: str, harness_session_path: str | None =
         f"**Prediction:** {finding.proposed_change}  \n"
         f"*Expected outcome:* {finding.rationale}\n\n"
         f"**Lenses applied:**\n"
-        f"- *Commander\u2019s Intent:* Operator destination (`.trail/destination.md`) "
+        f"- *Commander\u2019s Intent:* Operator destination (`.acm/destination.md`) "
         f"loaded \u2014 improvement selected against stated direction.\n"
         f"- *Code examination:* Repository files within scope scanned for structural improvements.\n\n"
         f"**Blind spot:** {finding.blind_spot or 'Not identified for this run.'}\n\n"
@@ -112,7 +112,7 @@ def _build_entry(finding: Finding, diff: str, harness_session_path: str | None =
 
 
 def _append_to_trail(repo: Path, entry: str) -> None:
-    trail_dir = repo / ".trail"
+    trail_dir = repo / ".acm"
     trail_dir.mkdir(exist_ok=True)
     trail_file = trail_dir / "audit-trail.md"
     with trail_file.open("a", encoding="utf-8", newline="\n") as fh:

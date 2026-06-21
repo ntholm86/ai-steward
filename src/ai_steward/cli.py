@@ -67,10 +67,10 @@ def run(repo: str) -> None:
         click.echo(f"PREFLIGHT FAILED: {result.preflight_failure}", err=True)
         sys.exit(1)
     elif result.status == "verify_failed":
-        click.echo(f"VERIFY FAILED: {result.trail_entry}", err=True)
+        click.echo(f"VERIFY FAILED: {result.acm_entry}", err=True)
         sys.exit(1)
     elif result.status == "implement_failed":
-        click.echo(f"IMPLEMENT FAILED: {result.trail_entry}", err=True)
+        click.echo(f"IMPLEMENT FAILED: {result.acm_entry}", err=True)
         sys.exit(1)
 
 
@@ -106,10 +106,10 @@ The agent reads this before every improvement cycle.*
 @main.command()
 @click.argument("repo", type=click.Path(), default=".")
 def init(repo: str) -> None:
-    """Scaffold .ai-steward.yaml and .trail/destination.md in REPO."""
+    """Scaffold .ai-steward.yaml and .acm/destination.md in REPO."""
     repo_path = Path(repo).resolve()
     config_file = repo_path / ".ai-steward.yaml"
-    trail_dir = repo_path / ".trail"
+    trail_dir = repo_path / ".acm"
     destination_file = trail_dir / "destination.md"
 
     if config_file.exists():
@@ -133,12 +133,12 @@ def init(repo: str) -> None:
     click.echo(f"Initialized ai-steward in {repo_path}")
     click.echo(f"  Created  .ai-steward.yaml      (model configuration)")
     if destination_created:
-        click.echo(f"  Created  .trail/destination.md (edit this — it guides every cycle)")
+        click.echo(f"  Created  .acm/destination.md (edit this — it guides every cycle)")
     else:
-        click.echo(f"  Skipped  .trail/destination.md (already exists)")
+        click.echo(f"  Skipped  .acm/destination.md (already exists)")
     click.echo("")
     click.echo("Next steps:")
-    click.echo("  1. Edit .trail/destination.md — describe what you want the codebase to become")
+    click.echo("  1. Edit .acm/destination.md — describe what you want the codebase to become")
     click.echo("  2. Set ANTHROPIC_API_KEY")
     click.echo("  3. Start llm-harness-proxy on localhost:8474")
     click.echo(f"  4. Run: ai-steward run {repo_path}")
