@@ -2804,3 +2804,30 @@ Imagined reader pushback: "The model's JSON prediction field is self-generated p
 [!REALIZATION] The improve–retrospect cycle is producing compounding orientation: each retrospect updates the arc-claims from the prior one, creating a narrowing funnel. After two iterations, the next move is unambiguous: ORIENT (retrospect.md + learning.md into SCAN context). Every other candidate depends on it or is lower-leverage. The loop is converging on a decision, not thrashing.
 
 [!REALIZATION] The two structural errors remaining in RECORD (_Expected outcome_ and the missing Reflection/trigger/CNM) are not equivalent in effort or value. The Expected outcome fix is 2-line, zero-risk. The Reflection/trigger/CNM fix requires a second LLM call and significant record.py refactoring. They should be sequenced, not bundled.
+
+---
+
+## 2026-06-21 — Retrospect: pre-orient-implementation
+
+- target: ai-steward
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: retrospect v1.9.0
+- scope: "Second consecutive retrospect on an unchanged arc (38 entries). Arc signal: the loop has pointed at ORIENT twice with no improve iteration between. Use this run to sharpen the ORIENT implementation brief so the next improve has a precise spec, not just a direction."
+
+### Freshness guard
+
+- `history --write` → 38 entries (no change from prior run)
+- `learning --write` → 99 markers (no change)
+- Gate: **PASS**
+
+### Arc-read
+
+Arc unchanged since entry 38. All prior claims hold. The new signal: two consecutive retrospects pointing at ORIENT with no improve in between. This is expected V1 operator-gate behavior, not a loop failure. But it means ORIENT has been declared top priority twice without implementation.
+
+### Change to retrospect.md
+
+Added ORIENT implementation brief: precise spec for what to add to `_load_scope_context()`, context budget (retrospect: 1000 chars, learning: 500 chars), labels for user_content, graceful skip if files absent, three specific tests to add. The brief is actionable — the next improve iteration can implement from it directly without re-examining the architecture.
+
+### [!REALIZATION]
+
+[!REALIZATION] A retrospect without a preceding improve iteration is not waste — it is the operator-gate making a deliberate choice to hold. When the gate holds twice, the correct response from the retrospect is not to repeat the same claims but to sharpen the brief so the implement step is unambiguous when the gate opens. The retrospect’s value in this run was converting "ORIENT is the next move" (direction) into a precise implementation spec (actionable).

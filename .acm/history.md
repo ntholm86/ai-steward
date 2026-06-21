@@ -43,6 +43,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 36 | 2026-06-21 | Retrospect: post-v1-milestone-config-surface |  |  |
 | â–¸ 37 | 2026-06-21 | feat: capture prediction field from SCAN JSON into Finding and trail entry |  |  |
 | â–¸ 38 | 2026-06-21 | Retrospect: post-prediction-field |  |  |
+| â–¸ 39 | 2026-06-21 | Retrospect: pre-orient-implementation |  |  |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -250,4 +251,4 @@ Do not edit by hand â€” re-run the command to refresh.
 
 - **decided:** Add `prediction` as a required JSON field in the SCAN prompt schema, add `prediction: str = ""` to the `Finding` dataclass, extract it in `scan()`, and use `finding.prediction` in `_build_entry()` with `finding.proposed_change` as fallback.
 
-**38 runs total â€” 38 with changes, 0 silence**
+**39 runs total â€” 39 with changes, 0 silence**

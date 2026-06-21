@@ -401,6 +401,10 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** The two structural errors remaining in RECORD (_Expected outcome_ and the missing Reflection/trigger/CNM) are not equivalent in effort or value. The Expected outcome fix is 2-line, zero-risk. The Reflection/trigger/CNM fix requires a second LLM call and significant record.py refactoring. They should be sequenced, not bundled.
 
+## 2026-06-21 â€” Retrospect: pre-orient-implementation
+
+**[!REALIZATION]** A retrospect without a preceding improve iteration is not waste — it is the operator-gate making a deliberate choice to hold. When the gate holds twice, the correct response from the retrospect is not to repeat the same claims but to sharpen the brief so the implement step is unambiguous when the gate opens. The retrospect’s value in this run was converting "ORIENT is the next move" (direction) into a precise implementation spec (actionable).
+
 ---
 
-**99 markers â€” 70 realisations, 29 reversals**
+**100 markers â€” 71 realisations, 29 reversals**

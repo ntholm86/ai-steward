@@ -1,6 +1,6 @@
 # retrospect.md — ai-steward
 
-_Last updated: 2026-06-21 (run: post-prediction-field)_
+_Last updated: 2026-06-21 (run: pre-orient-implementation)_
 
 ---
 
@@ -11,48 +11,78 @@ The 5-step SCAN protocol closes the off-mandate gap. One run proven; pattern not
 **Falsifiable by:** a SCAN run that produces an off-mandate proposal despite the 5-step prompt.
 
 **2. V1 proof is complete. Multi-cycle convergence is the critical untested claim.**
-External targeting (vectorium), self-targeting, and mandate-gated SCAN are all demonstrated.
-Multi-cycle convergence — does the loop stop cleanly when SCAN returns nothing_found N times? — has never been tested. More single cycles produce no new proof on this claim.
-**Falsifiable by:** a multi-cycle run that fails to stop, or stops before the mandate is satisfied.
+External targeting (vectorium), self-targeting, and mandate-gated SCAN demonstrated. Multi-cycle convergence has never been tested. More single cycles produce no new proof.
+**Falsifiable by:** a multi-cycle run that fails to stop cleanly.
 
 **3. The cost model in destination’s Current State section is obsolete.**
 "~$0.002 per cycle (haiku)" contradicts actual ~$0.03/cycle under claude-sonnet-4-5 + 5-step protocol.
 **Falsifiable by:** a cycle under the current prompt that consistently costs ≤$0.003.
 
 **4. RECORD’s structural errors are partially fixed; two remain.**
-The prediction field fix (improve iteration, entry 37) corrected the most visible error: `**Prediction:**` now carries the model’s Step 4 falsifiable statement instead of the proposed_change description. Two structural errors remain:
-- `*Expected outcome:* {finding.rationale}` still uses rationale (why we’re doing this) as an outcome statement (what will happen). These are semantically distinct; the current code conflates them.
-- No Reflection (second LLM call synthesizing VERIFY outcome against prediction), no trigger evaluation, no Candidate Next Moves in autonomous trail entries. Every autonomous cycle still produces a trail entry that does not meet the trail-skill standard.
-**Falsifiable by:** an autonomous trail entry that contains genuine Reflection, trigger evaluation, and Candidate Next Moves.
+Prediction field (entry 37) fixed the most visible error. Remaining:
+- `*Expected outcome:* {finding.rationale}` uses rationale, not an outcome — 2-line fix, zero-risk
+- No Reflection, no trigger evaluation, no Candidate Next Moves in autonomous trail entries — significant work (second LLM call + record.py refactoring)
+**Falsifiable by:** an autonomous trail entry containing genuine Reflection, trigger evaluation, and Candidate Next Moves.
 
-**5. The improve–retrospect cadence is steering correctly.**
-The retrospect (entry 36) identified RECORD as the largest gap. The improve iteration (entry 37) selected the prediction field fix — not ORIENT (top-ranked candidate) — because the incorrect Prediction section was a present structural harm vs. ORIENT’s future benefit. This judgment call is arc-visible and auditable: future Retrospect runs can check whether this prioritization held up.
-**Falsifiable by:** showing the prediction field fix produced no benefit, or that ORIENT would have been higher-leverage.
+**5. The improve–retrospect cadence is steering correctly but is stalled at the operator-gate.**
+Two consecutive retrospects (entries 36 and 38) have identified ORIENT as the next move with no improve iteration between them. The arc is not thrashing — the claims are stable. The loop is waiting at the gate. This is the expected V1 behavior (operator reviews before every action) but it means ORIENT has been declared the top priority twice without implementation.
+**Falsifiable by:** an ORIENT implementation (entry 39 or later) that proves the gate moved correctly.
 
-**6. A duplicate trail entry exists (entries 34–35).**
-"scan-reasoning-quality + V1-milestone-confirmed" appears twice. The trail-skill duplicate detection gap remains unaddressed. Not a blocking issue; a structural cleanliness gap.
+**6. A duplicate trail entry exists (entries 34–35). Still unaddressed.**
+Not blocking; a structural cleanliness gap.
 
-**7. The shared .acm/ evidence layer is an achieved structural fact; ORIENT is the remaining integration step.**
-Both skills and the autonomous pipeline write to the same trail. Until ORIENT is implemented, the retrospect.md and learning.md we write are invisible to the autonomous pipeline’s SCAN context.
+**7. The shared .acm/ evidence layer is a structural fact; ORIENT is the integration step.**
+Until ORIENT is implemented, retrospect.md and learning.md are invisible to the autonomous SCAN context. Every retrospect run adds value that the pipeline cannot yet consume.
 **Falsifiable by:** a SCAN run that receives retrospect.md content in its context window.
 
-**8. The config surface is defined before implementation. Risk: aspirational drift.**
-`max_cost_per_cycle_usd`, memory, retrospect, reasoning, escalation controls are captured in destination.md. None implemented. This is the third session where these are "defined but pending." The risk of aspirational drift increases with each session that passes without implementation.
-**Falsifiable by:** showing these fields in `config.py` and `.ai-steward.yaml`.
+**8. Config surface: aspirational drift risk increasing.**
+Three consecutive sessions where `max_cost_per_cycle_usd` and related fields are "defined but pending." Risk is low while ORIENT is the focus, but the window for clean design-in is finite.
+
+---
+
+## ORIENT implementation brief
+
+When the next improve iteration runs on ORIENT, this is the precise spec:
+
+**What:** Extend `_load_scope_context()` in `scan.py` to also load `.acm/retrospect.md` and `.acm/learning.md` from the repo being scanned, and inject them into the SCAN context window.
+
+**Where:** `scan.py` — `_load_scope_context()` currently reads only `destination.md` at each scope level. Add a second pass that reads `retrospect.md` and `learning.md` from the repo root (not parent scopes — these are repo-scoped artifacts).
+
+**How — context budget:**
+- Current total budget: ~3000 chars (1500 higher scopes + 1500 repo destination)
+- Add: retrospect up to 1000 chars (arc-claims + active operational rules — most relevant sections)
+- Add: learning up to 500 chars (most recent [!REALIZATION] and [!REVERSAL] markers)
+- Total new budget: ~4500 chars. Still well within typical context windows.
+
+**Label in user_content:** After the destination section, before the file list:
+```
+### Current orientation (retrospect):
+<truncated retrospect.md>
+
+### Learning surface (recent markers):
+<truncated learning.md>
+```
+
+**Gate:** If retrospect.md or learning.md does not exist, skip gracefully — not an error.
+
+**Tests to add:**
+- `test_scan_includes_retrospect_in_context`: create `.acm/retrospect.md` in tmp_path, verify the mock client receives it in user_content
+- `test_scan_includes_learning_in_context`: same for learning.md
+- `test_scan_skips_missing_orient_files`: no retrospect.md or learning.md — scan succeeds without them
+
+**Prediction:** After ORIENT, a self-targeting SCAN run will receive the arc-claims and operational rules from the retrospect we just wrote. The "test SCAN prompt changes live" rule and the "Expected outcome uses rationale" known gap will be in the model’s context. Proposals will be informed by the loop’s own history.
 
 ---
 
 ## What the next runs should test
 
-1. **ORIENT phase** — extend `_load_scope_context()` to also load `retrospect.md` and `learning.md`. Until this is done, the retrospect we just wrote is invisible to autonomous SCAN runs. This is the highest-leverage next move: it closes the loop between human-supervised retrospect and autonomous pipeline reasoning.
+1. **ORIENT implementation** — implement the brief above. This is the single highest-leverage next move; every retrospect since entry 36 has pointed here.
 
-2. **Fix `*Expected outcome:*` semantic error in `_build_entry()`** — replace `finding.rationale` (the why) with a distinct outcome description, or remove the redundant line now that `finding.prediction` carries the Step 4 statement. Small, surgical, closes the second RECORD structural error.
+2. **Fix `*Expected outcome:*` semantic error** — 2-line fix in `_build_entry()`. Can be bundled with ORIENT or done immediately after.
 
-3. **Cost model correction in destination** — update Current State from "$0.002 (haiku)" to actual ~$0.03/cycle. A destination that contradicts operation confuses future operators.
+3. **Multi-cycle convergence test** — run the loop until nothing_found fires twice. Demonstrates the principle rather than stating it.
 
-4. **Multi-cycle convergence test** — run ai-steward against an external repo in a loop until nothing_found fires twice consecutively. Until demonstrated, "Convergence Is Silence" is a principle, not a proven property.
-
-5. **Config surface: add `max_cost_per_cycle_usd` to `AiStewardConfig`** — first config field from the defined surface to be implemented. A useful forcing function: implementing one concrete field will expose whether the design decisions in the destination entry hold up.
+4. **Cost model correction in destination** — update Current State from "$0.002 (haiku)" to ~$0.03/cycle.
 
 ---
 
@@ -62,19 +92,9 @@ Both skills and the autonomous pipeline write to the same trail. Until ORIENT is
 - **llm-harness-proxy is outside ai-steward’s autonomous scope.** Structural exclusion.
 - **Execution layer must remain separate from reasoning layer.** Phases execute; skills reason.
 - **ACM §4.2 stop conditions govern scope traversal.** Filesystem root, `.acm-root` marker, 4-level cap.
-- **Trail entries are required for all `scan.py` changes.** No scan.py change without a trail entry in the same session.
-- **Test SCAN prompt changes with a live run before declaring them correct.** Live run is the gate for prompt changes.
-- **Before appending a trail entry, check if the most recent entry already covers the current session.** Entries 34–35 duplicate; this rule prevents recurrence.
-- **The cost model in destination must be updated when operating parameters change materially.** Current State "$0.002" is obsolete; update is pending.
-- **Use Python (not PowerShell) for all .acm/ file reads and writes.** PowerShell 5.1 silently mojibake-corrupts UTF-8 content and re-injects BOM.
-- **When two structural errors exist in the same function, fix the more visible one first, then record the second as a known gap.** The prediction fix was correct to precede the Expected outcome fix.
-
----
-
-## Loop-effectiveness notes
-
-The improve–retrospect–improve cycle is working as designed: retrospect surfaces arc-level gaps; improve selects one fix; retrospect updates orientation. The two-entry arc since the last retrospect is short but shows clean loop behavior.
-
-The loop’s attention distribution remains asymmetric: SCAN has received most autonomous improvement effort; RECORD has received one fix (prediction field) and still has two structural errors. ORIENT has received zero implementation work despite being the integration mechanism between the human-supervised and autonomous evidence layers.
-
-**Quality bars tested so far:** mandate alignment (SCAN), trail entry structural correctness (partially). **Bars not tested:** whether autonomous proposals are accepted by operators at a meaningful rate, whether the harness ledger is tamper-evident, whether multi-cycle runs converge.
+- **Trail entries required for all `scan.py` changes.** No scan.py change without a trail entry in the same session.
+- **Test SCAN prompt changes with a live run before declaring them correct.**
+- **Before appending a trail entry, check for duplicate.** Entries 34–35 show the cost of skipping this check.
+- **Update cost model in destination when operating parameters change materially.**
+- **Use Python (not PowerShell) for all .acm/ file reads and writes.** PowerShell 5.1 silently corrupts UTF-8.
+- **Sequence RECORD fixes by effort: 2-line fixes first, significant refactoring second.**
