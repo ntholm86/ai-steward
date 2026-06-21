@@ -40,6 +40,8 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 33 | 2026-06-21 | ai-steward: Add token budget constraint to SCAN prompt system message |  |  |
 | â–¸ 34 | 2026-06-21 | scan-reasoning-quality + V1-milestone-confirmed | SCAN reasoning raised to trail-skill standard; V1 self-targeting milestone confirmed | _SYSTEM_PROMPT rewritten — "JSON only, no prose" → 5-step reasoning protocol |
 | â–¸ 35 | 2026-06-21 | scan-reasoning-quality + V1-milestone-confirmed | SCAN reasoning raised to trail-skill standard; V1 self-targeting milestone confirmed | _SYSTEM_PROMPT rewritten — "JSON only, no prose" → 5-step reasoning protocol |
+| â–¸ 36 | 2026-06-21 | Retrospect: post-v1-milestone-config-surface |  |  |
+| â–¸ 37 | 2026-06-21 | feat: capture prediction field from SCAN JSON into Finding and trail entry |  |  |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -243,4 +245,8 @@ Do not edit by hand â€” re-run the command to refresh.
 - **decided:** : choice + rationale + at least one rejected alternative
 - **decided:** with rejected alternative (workspace config file — rejected as unnecessary complexity for V1)
 
-**35 runs total â€” 35 with changes, 0 silence**
+### Run 37 â€” 2026-06-21 â€” feat: capture prediction field from SCAN JSON into Finding and trail entry
+
+- **decided:** Add `prediction` as a required JSON field in the SCAN prompt schema, add `prediction: str = ""` to the `Finding` dataclass, extract it in `scan()`, and use `finding.prediction` in `_build_entry()` with `finding.proposed_change` as fallback.
+
+**37 runs total â€” 37 with changes, 0 silence**

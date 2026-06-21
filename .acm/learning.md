@@ -381,6 +381,18 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** contradicted: No.
 
+## 2026-06-21 â€” Retrospect: post-v1-milestone-config-surface
+
+**[!REALIZATION]** SCAN has received exclusive autonomous attention. RECORD has received zero. These phases are equally critical — SCAN generates the proposal, RECORD closes the feedback loop. The asymmetry means every cycle currently produces a trail entry that does not meet the trail skill standard. This is the loop's structural blind spot.
+
+## 2026-06-21 â€” Retrospect: post-v1-milestone-config-surface
+
+**[!REALIZATION]** "Convergence Is Silence" is named in every destination section but has never been demonstrated. A principle stated but untested is an aspiration, not a claim. The convergence test is the session that turns this into evidence.
+
+## 2026-06-21 â€” feat: capture prediction field from SCAN JSON into Finding and trail entry
+
+**[!REALIZATION]** :* not fired — the realization that RECORD is the largest gap is confirmed, not contradicted.
+
 ---
 
-**94 markers â€” 65 realisations, 29 reversals**
+**97 markers â€” 68 realisations, 29 reversals**

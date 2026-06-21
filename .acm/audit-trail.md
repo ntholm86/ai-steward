@@ -2696,3 +2696,78 @@ Across-trail trigger evaluation (mandatory):
 [!REALIZATION] SCAN has received exclusive autonomous attention. RECORD has received zero. These phases are equally critical — SCAN generates the proposal, RECORD closes the feedback loop. The asymmetry means every cycle currently produces a trail entry that does not meet the trail skill standard. This is the loop's structural blind spot.
 
 [!REALIZATION] "Convergence Is Silence" is named in every destination section but has never been demonstrated. A principle stated but untested is an aspiration, not a claim. The convergence test is the session that turns this into evidence.
+
+---
+
+## 2026-06-21 — feat: capture prediction field from SCAN JSON into Finding and trail entry
+
+- target: ai-steward pipeline (_types.py, scan.py, record.py)
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: improve v3.10.0
+
+### Interpretation
+
+Operator: "run the improve skill." Context: retrospect just completed, identified RECORD as the largest gap and pointed at cost model correction, RECORD reflection, and ORIENT as the next work. The most visible structural problem in RECORD's output is that `_build_entry()` emits `**Prediction:** {finding.proposed_change}` — the proposed change description, not a prediction.
+
+### Examination
+
+**Purpose lens:** `_build_entry()` in record.py produces trail entries that claim a "Prediction" section, but the content is `finding.proposed_change` — the description of what we intend to do. The trail skill defines Prediction as: "a falsifiable statement of what this change will achieve and what it will NOT change." These are different things.
+
+**Root cause:** The SCAN model already writes a genuine falsifiable prediction in its Step 4 prose response. But `_extract_json()` extracts only the final JSON object — the prose prediction is discarded. The `Finding` dataclass has no `prediction` field, so nothing carries it forward to RECORD.
+
+**Code examination:**
+
+record.py line 96:
+```
+f"**Prediction:** {finding.proposed_change}  \n"
+```
+
+_types.py Finding: no `prediction` field.
+
+scan.py JSON schema ends at `"already_exists_check"` — no `prediction` field required.
+
+### [!DECISION]
+
+[!DECISION] Add `prediction` as a required JSON field in the SCAN prompt schema, add `prediction: str = ""` to the `Finding` dataclass, extract it in `scan()`, and use `finding.prediction` in `_build_entry()` with `finding.proposed_change` as fallback.
+
+Rationale: the model already writes a Step 4 prediction in prose. Making it a JSON field promotes it to a first-class output, captured across the Finding lifecycle and written faithfully to the trail entry. The trail standard requires predictions; this makes them structurally enforced rather than aspirationally declared.
+
+Alternative rejected: ORIENT first (add retrospect.md + learning.md to SCAN context). Rejected because a broken trail is a present structural harm; ORIENT is a missing future benefit. A trail where `Prediction` does not contain a prediction is misleading to any future arc-reader.
+
+Alternative rejected: extract prediction from model prose via regex. Rejected because it is brittle; a JSON field is a stable contract.
+
+### Prediction
+
+Trail entries produced by future autonomous cycles will have `**Prediction:**` set to the model's Step 4 falsifiable statement, not a rephrased `proposed_change`. The `already_exists_check` fallback ensures no regression if a model omits the new field. No behavioral change to the pipeline flow — same phases, same gate conditions.
+
+### Action
+
+4 files touched (3 source, 0 tests needed — `prediction` defaults to `""` so existing `_make_finding()` calls are unaffected):
+
+```diff
+_types.py: prediction: str = ""  added to Finding
+scan.py:   "prediction": "<...>" added to JSON schema + data.get("prediction", "") in Finding constructor
+record.py: f"**Prediction:** {finding.prediction or finding.proposed_change}"
+```
+
+78 tests pass. mypy clean (13 source files).
+
+### Reflection
+
+Current model of the target: ai-steward's trail entries are the primary accountability mechanism, but they have been produced with structural errors since V1 was stood up. The Prediction section was mislabeled from day one — this is entry 36, and the error existed in all prior autonomous entries. The trail skill raised the quality bar; the autonomous pipeline was not held to the same standard. This fix begins closing that gap.
+
+Blind spot: `*Expected outcome:* {finding.rationale}` remains semantically incorrect — it uses the rationale (why we're doing this) as the expected outcome (what we expect to happen). The model's Step 4 prediction will now appear in the Prediction field; the Expected outcome line still points to `rationale`. A second pass could clean this up or remove the redundant line.
+
+Imagined reader pushback: "The model's JSON prediction field is self-generated prose. What stops the model from writing a vague non-prediction like 'This will improve the code'?" Answer: the prompt explicitly says "falsifiable statement... what this change will achieve and what it will NOT change." It's a prompt discipline issue, not a structural one. The Step 4 mandate check already demonstrates the model can comply with structured requirements.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* not fired — this is a structural correctness fix, not a pattern.
+- *About to declare silence:* not fired — ORIENT and cost model correction remain ahead.
+- *Contradicts prior [!REALIZATION]:* not fired — the realization that RECORD is the largest gap is confirmed, not contradicted.
+- *Operator explicitly asked:* not fired (operator asked for improve, not convergence review).
+
+### Candidate Next Moves
+
+1. **ORIENT phase** — extend `_load_scope_context()` to also load `retrospect.md` and `learning.md`. The retrospect we just wrote (7 arc-claims, 4 new operational rules) is invisible to the autonomous pipeline until ORIENT is implemented.
+2. **Fix `*Expected outcome:*` semantic error** — replace `finding.rationale` with a genuinely distinct outcome description, or remove the redundant line. The Prediction field now carries the model's Step 4 statement; the Expected outcome line duplicates rationale.
+3. **Cost model correction in destination** — update Current State section from "$0.002 (haiku)" to reflect actual ~$0.03/cycle under sonnet-4-5.
