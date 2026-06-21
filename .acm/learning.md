@@ -393,6 +393,14 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** :* not fired — the realization that RECORD is the largest gap is confirmed, not contradicted.
 
+## 2026-06-21 â€” Retrospect: post-prediction-field
+
+**[!REALIZATION]** The improve–retrospect cycle is producing compounding orientation: each retrospect updates the arc-claims from the prior one, creating a narrowing funnel. After two iterations, the next move is unambiguous: ORIENT (retrospect.md + learning.md into SCAN context). Every other candidate depends on it or is lower-leverage. The loop is converging on a decision, not thrashing.
+
+## 2026-06-21 â€” Retrospect: post-prediction-field
+
+**[!REALIZATION]** The two structural errors remaining in RECORD (_Expected outcome_ and the missing Reflection/trigger/CNM) are not equivalent in effort or value. The Expected outcome fix is 2-line, zero-risk. The Reflection/trigger/CNM fix requires a second LLM call and significant record.py refactoring. They should be sequenced, not bundled.
+
 ---
 
-**97 markers â€” 68 realisations, 29 reversals**
+**99 markers â€” 70 realisations, 29 reversals**

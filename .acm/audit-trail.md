@@ -2771,3 +2771,36 @@ Imagined reader pushback: "The model's JSON prediction field is self-generated p
 1. **ORIENT phase** — extend `_load_scope_context()` to also load `retrospect.md` and `learning.md`. The retrospect we just wrote (7 arc-claims, 4 new operational rules) is invisible to the autonomous pipeline until ORIENT is implemented.
 2. **Fix `*Expected outcome:*` semantic error** — replace `finding.rationale` with a genuinely distinct outcome description, or remove the redundant line. The Prediction field now carries the model's Step 4 statement; the Expected outcome line duplicates rationale.
 3. **Cost model correction in destination** — update Current State section from "$0.002 (haiku)" to reflect actual ~$0.03/cycle under sonnet-4-5.
+
+---
+
+## 2026-06-21 — Retrospect: post-prediction-field
+
+- target: ai-steward
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: retrospect v1.9.0
+- scope: "Read the two-entry arc since the last retrospect (entries 36–37: retrospect trail entry + prediction-field improve iteration). Determine: did the loop pick the right target, how does RECORD gap claim stand, what is the tightest next move?"
+
+### Freshness guard
+
+- `history --write` → 37 entries (no change)
+- `learning --write` → 97 markers (no change)
+- Gate: **PASS**
+
+### Arc-read (entries 36–37)
+
+**Entry 36 (retrospect):** Identified 7 arc-claims. RECORD declared the largest gap. Candidate next moves: convergence test, cost model correction, RECORD reflection, ORIENT, harness ledger, config surface, duplicate cleanup. New operational rules: test SCAN prompt changes live, check for duplicates before appending, update cost model when parameters change, use Python for .acm writes.
+
+**Entry 37 (improve — prediction field):** Selected "fix the incorrect Prediction section in _build_entry()" over ORIENT (top candidate). Rationale: present structural harm > missing future benefit. 3 files, 5 insertions. 78 tests pass. mypy clean. Candidate next moves: ORIENT, fix Expected outcome line, cost model correction.
+
+### Arc-claims updated
+
+- Claim 4 (RECORD largest gap) → PARTIALLY ADDRESSED. Prediction field done. Two structural errors remain: `*Expected outcome:*` uses `rationale`; no Reflection/trigger-evaluation/Candidate-Next-Moves in autonomous trail.
+- New claim 5 added: the improve–retrospect cadence is steering correctly. Auditable: the prioritization of prediction-fix over ORIENT is arc-visible.
+- Claims 1–3, 5–8 (renumbered) unchanged.
+
+### [!REALIZATION]
+
+[!REALIZATION] The improve–retrospect cycle is producing compounding orientation: each retrospect updates the arc-claims from the prior one, creating a narrowing funnel. After two iterations, the next move is unambiguous: ORIENT (retrospect.md + learning.md into SCAN context). Every other candidate depends on it or is lower-leverage. The loop is converging on a decision, not thrashing.
+
+[!REALIZATION] The two structural errors remaining in RECORD (_Expected outcome_ and the missing Reflection/trigger/CNM) are not equivalent in effort or value. The Expected outcome fix is 2-line, zero-risk. The Reflection/trigger/CNM fix requires a second LLM call and significant record.py refactoring. They should be sequenced, not bundled.
