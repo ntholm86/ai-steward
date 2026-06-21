@@ -1353,3 +1353,122 @@ There is no target cost. There is a cost constraint method:
 $1.00/cycle is a temporary operational upper bound — a circuit breaker to prevent runaway cost while the system is being built. It is not a quality signal, not a target, and not evidence of anything. It will be replaced by a data-derived figure once enough cycles have run.
 
 **Until then:** cost is measured and recorded. Quality is the gate. The model tier is the variable that gets optimised from evidence, not assumed from the start.
+
+---
+
+## 2026-06-21 — Configuration surface: operator controls that will emerge
+
+*The .ai-steward.yaml is the operator's governance interface. Model-per-phase was the first signal. More controls will surface as the cognitive architecture is built. This section defines them.*
+
+---
+
+### What already exists in config.py
+
+```yaml
+models:
+  analyze: claude-sonnet-4-5      # per-phase model assignment
+  propose: claude-sonnet-4-5
+  implement: claude-sonnet-4-5
+  verify: claude-haiku-4-5
+  judge: claude-opus-4-5
+
+harness:
+  endpoint: "http://localhost:8474"
+
+scope:
+  allowed: ["src/**/*.py"]        # file glob whitelist
+  blocked: ["tests/**", ".acm/**"]
+
+budget_usd: 5.0                   # total session budget (all cycles combined)
+max_iterations: 1                 # cycle cap per run
+sandbox: local                    # execution environment
+allow_dirty: false                # require clean working tree
+verify_command: "python -m pytest --tb=no -q"
+```
+
+**Note:** `budget_usd` is the total session budget. It is not a per-cycle ceiling. These are different controls.
+
+---
+
+### Controls that will surface
+
+**Cost controls (clarify and extend the existing budget_usd):**
+
+```yaml
+budget_usd: 5.0                   # total spend across all cycles in this session
+max_cost_per_cycle_usd: 1.0       # circuit breaker per individual cycle
+                                  # provisional; replace with data-derived figure
+```
+
+`max_cost_per_cycle_usd` is the per-cycle ceiling the user sets based on their budget and task size. $0.50 for a quick pass on a small repo, $2.00 for deep reasoning on a large one. The operator knows their budget; the system should respect it without assuming a universal number.
+
+---
+
+**Memory controls (from ORIENT phase):**
+
+```yaml
+memory:
+  read_retrospect: true           # load .acm/retrospect.md into SCAN context
+  read_learning: true             # load .acm/learning.md into SCAN context
+  context_chars: 3000             # total char budget for all memory sections
+  scope_levels: 4                 # how many parent directories to traverse (ACM §4.2)
+```
+
+Some operators target repos with no retrospect or learning history. Memory reading should default on but be disableable. Context budget controls token cost for memory injection.
+
+---
+
+**Retrospect controls (from autonomous Retrospect phase):**
+
+```yaml
+retrospect:
+  auto: true                      # run retrospect automatically when triggered
+  trigger_every_n_accepted: 5     # after N accepted proposals
+  trigger_on_convergence: true    # when SCAN returns nothing twice in a row
+```
+
+Operators running ai-steward in a tight loop may want frequent retrospects. Others running single cycles may want none. Both are valid.
+
+---
+
+**Reasoning controls (from SCAN lenses and RECORD Reflection):**
+
+```yaml
+reasoning:
+  lenses: [purpose, inconsistency, overburden, waste]   # active examination lenses
+  kaikaku_check: true             # include "is the structure itself wrong?" challenge
+  reflection: true                # RECORD writes a reflection after VERIFY
+  candidate_next_moves: true      # RECORD writes ranked next moves
+  trigger_evaluation: true        # RECORD runs across-trail trigger check
+```
+
+Different tasks warrant different lenses. A security audit might add `security` to the lens list. A performance pass might use `overburden` only. These should not be hardcoded.
+
+---
+
+**Tier escalation controls:**
+
+```yaml
+escalation:
+  enabled: false                  # V1: off. V2: enables automatic model promotion
+  on: [verify_fail, nothing_found_twice]
+  max_model: claude-opus-4-5      # ceiling model for escalation
+```
+
+When the cheap model fails verification or cannot find anything actionable, escalate to a stronger model before giving up. The ceiling prevents runaway cost.
+
+---
+
+### The pattern
+
+The .ai-steward.yaml config is the operator's governance interface. Every decision that depends on:
+- the operator's budget
+- the operator's risk tolerance
+- the size and type of the target repo
+- the operator's quality bar
+
+…should be a config parameter, not a hardcoded constant.
+
+Model-per-phase was the first signal of this pattern. `max_cost_per_cycle_usd` is the second. Memory, retrospect, reasoning depth, and escalation will follow as the cognitive architecture phases are implemented.
+
+**Design rule:** when implementing a new cognitive phase, identify its operator-facing controls first. Add them to `AiStewardConfig` and the YAML schema before writing the implementation. The config is the contract.
