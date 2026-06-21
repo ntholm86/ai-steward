@@ -2453,3 +2453,50 @@ ACM §4.2 formalized stop conditions: filesystem root, .acm-root marker (operato
 ### Result
 
 78 tests passed (was 76). Docstring updated to cite ACM §4.2 stop conditions.
+
+---
+
+## 2026-06-21 — ai-steward: Add token budget constraint to SCAN prompt system message
+
+**[!DECISION]** Proposed: Add token budget constraint to SCAN prompt system message  
+*Rationale:* The workspace destination mandates token-efficiency (tier 0/1 reasoning only) and shows an example SCAN prompt with an explicit token budget directive. The current _SYSTEM_PROMPT lacks this budget constraint, risking tier-2 reasoning overhead that contradicts the V1 design principle of cheap, fast cycles.  
+*Risk:* low
+
+**Prediction:** Insert a budget line '<budget:token_budget>200000</budget:token_budget>' after the opening system prompt paragraph in _SYSTEM_PROMPT, mirroring the exact format shown in the workspace destination.md example prompt.  
+*Expected outcome:* The workspace destination mandates token-efficiency (tier 0/1 reasoning only) and shows an example SCAN prompt with an explicit token budget directive. The current _SYSTEM_PROMPT lacks this budget constraint, risking tier-2 reasoning overhead that contradicts the V1 design principle of cheap, fast cycles.
+
+**Lenses applied:**
+- *Commander’s Intent:* Operator destination (`.acm/destination.md`) loaded — improvement selected against stated direction.
+- *Code examination:* Repository files within scope scanned for structural improvements.
+
+**Blind spot:** Did not examine src/ai_steward/pipeline/implement.py — the IMPLEMENT phase may also benefit from an explicit token budget in its system prompt, but SCAN is the higher-value target because it controls the input context size that affects all downstream phases.
+
+**File:** `src/ai_steward/pipeline/scan.py`  
+**Tokens:** SCAN 15142/264 — IMPL 3612/3393 — cycle est. $0.02963 USD  
+**Harness session:** `.acm/sessions/01KVNE7JDQR1Z3WPKFP7FPNEPN.jsonl`  
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/pipeline/scan.py b/src/ai_steward/pipeline/scan.py
+index a94dbea..5a2a248 100644
+--- a/src/ai_steward/pipeline/scan.py
++++ b/src/ai_steward/pipeline/scan.py
+@@ -1,4 +1,4 @@
+-ï»¿"""SCAN phase â€” one Anthropic LLM call via harness.
++"""SCAN phase â€” one Anthropic LLM call via harness.
+ 
+ Combines ANALYZE and PROPOSE: asks the model to identify one improvement
+ AND describe the specific change in a single prompt. Returns a Finding,
+@@ -30,6 +30,8 @@ _SYSTEM_PROMPT = """\
+ You are a software improvement assistant examining a repository.
+ Identify ONE high-value improvement and describe it precisely.
+ 
++<budget:token_budget>200000</budget:token_budget>
++
+ Respond with a JSON object only â€” no prose, no markdown fences, no explanation:
+ {
+   "file": "<repo-relative path to the file to change>",
+
+```
+
+*Staged for operator review. Not committed.*
