@@ -1191,3 +1191,17 @@ If a model cannot reason to this standard at haiku tier, that is a **tier escala
 - Measure the actual cost; use that data to improve model selection
 
 The `~$0.002` target was aspirational for haiku + routine changes. It is not a constraint on proposal acceptance. A well-reasoned proposal that costs $0.03 and gets accepted is better than a shallow one that costs $0.002 and gets discarded.
+
+---
+
+## 2026-06-21 — Cost ceiling raised to $1.00 per cycle
+
+*Supersedes the $0.002 target in the consolidated 2026-06-20 section and the $0.018 measured figure.*
+
+**Budget ceiling: $1.00 per improvement cycle.**
+
+The $0.002 target was written when cost was the primary concern. It was too low — it caused the model to treat cycle cost as a proposal filter, self-rejecting valid improvements on the grounds that they "didn't justify a cycle." That is the wrong behaviour.
+
+The correct constraint: each cycle may cost up to $1.00. Within that ceiling, use the cheapest model that reasons to the required quality standard. Measure and record actual cost per cycle. Optimise from data, not from aspirational targets.
+
+Cost is measured. Quality is the gate.
