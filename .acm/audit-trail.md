@@ -2419,3 +2419,37 @@ index 31e0351..ba5e00a 100644
 ```
 
 *Staged for operator review. Not committed.*
+
+---
+
+## 2026-06-21 -- feat-acm-scope-context-traversal
+
+- target: ai-steward scan.py
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- outcome: ACM §4 parent-scope traversal implemented in SCAN phase.
+
+### Change
+
+Replaced _load_destination() (single-scope) with _truncate_destination() + _load_scope_context() (multi-scope). _load_scope_context() traverses parent directories up to 4 levels, collecting every .acm/destination.md found. Higher scopes labeled (e.g., "Higher-scope mandate (workspace)") and listed first. Budget split: 1500 chars for higher scopes + 1500 chars for repo scope. SCAN prompt updated: "Commander's Intent (operator destination — higher scope governs)".
+
+### Result
+
+76 tests passed. mypy clean.
+
+---
+
+## 2026-06-21 -- feat-acm-root-marker-stop-condition
+
+- target: ai-steward scan.py + tests/test_scan.py
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- outcome: .acm-root marker support added; 2 new tests.
+
+### Change
+
+ACM §4.2 formalized stop conditions: filesystem root, .acm-root marker (operator-declared ceiling), 4-level cap. Added if (current / ".acm-root").exists(): break after reading each level's destination.md. Two new tests:
+- test_scan_includes_parent_scope_destination: verifies parent scope is included
+- test_scan_stops_at_acm_root_marker: verifies content above ceiling is NOT included
+
+### Result
+
+78 tests passed (was 76). Docstring updated to cite ACM §4.2 stop conditions.

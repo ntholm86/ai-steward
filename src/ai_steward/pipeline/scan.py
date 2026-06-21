@@ -84,29 +84,90 @@ def _extract_json(text: str) -> dict | None:
     return None
 
 
-def _load_destination(repo: Path) -> str | None:
-    """Load Commander's Intent from .acm/destination.md if present.
-
-    Caps at ~3000 chars (~750 tokens) to stay within cheap-model cost budget.
-    When truncating, takes the TAIL of the file starting at the nearest
-    ``## YYYY-MM-DD`` section heading — destination.md is append-only so the
-    most recent operator decisions are at the end, and starting at a section
-    boundary avoids feeding SCAN a mid-sentence fragment.
-    Falls back to a raw tail slice if no section heading is found in the tail.
-    Returns None if the file does not exist.
+def _truncate_destination(text: str, char_limit: int) -> str:
+    """Truncate a destination.md to char_limit, starting at the nearest section
+    heading boundary so SCAN receives a complete, labelled section rather than
+    a mid-sentence fragment.
     """
-    dest = repo / ".acm" / "destination.md"
-    if not dest.is_file():
+    if len(text) <= char_limit:
+        return text
+    cutoff = len(text) - char_limit
+    match = re.search(r"^## \d{4}-\d{2}-\d{2}", text[cutoff:], re.MULTILINE)
+    tail = text[cutoff + match.start() :] if match else text[-char_limit:]
+    return "[... destination.md truncated for token budget ...]\n\n" + tail
+
+
+def _load_scope_context(repo: Path) -> str | None:
+    """Load Commander's Intent from all applicable ACM scopes (ACM §4).
+
+    Traverses parent directories from repo upward, collecting every
+    .acm/destination.md found. Stop conditions (ACM §4.2):
+      1. Filesystem root reached (hard stop, always applies)
+      2. .acm-root marker file found in a directory: read that directory's
+         .acm/destination.md if present, then stop (operator-declared ceiling)
+      3. Implementation ceiling: 4 levels (session→repo→workspace→org)
+
+    Higher scopes are listed first and take precedence.
+
+    Total budget: ~3000 chars (~750 tokens). Split as:
+      - Higher scopes (workspace/org): up to 1500 chars total
+      - Repo scope: up to 1500 chars
+
+    Returns None if no destination.md exists at any scope.
+    """
+    # Collect all applicable destinations, outermost first
+    parents: list[tuple[str, str]] = []  # (label, text)
+    current = repo.parent
+    repo_root = Path(repo.anchor)
+    for _ in range(4):
+        if current == repo_root:
+            break
+        dest = current / ".acm" / "destination.md"
+        if dest.is_file():
+            try:
+                text = dest.read_text(encoding="utf-8", errors="ignore")
+                # Label by relative relationship to repo
+                try:
+                    rel = current.relative_to(repo.parent)
+                    label = str(rel) if str(rel) != "." else "workspace"
+                except ValueError:
+                    label = current.name or "parent"
+                parents.append((label, text))
+            except OSError:
+                pass
+        # Stop at operator-declared scope ceiling (.acm-root marker)
+        if (current / ".acm-root").exists():
+            break
+        current = current.parent
+
+    # Repo-level destination
+    repo_dest = repo / ".acm" / "destination.md"
+    repo_text: str | None = None
+    if repo_dest.is_file():
+        try:
+            repo_text = repo_dest.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            pass
+
+    if not parents and repo_text is None:
         return None
-    text = dest.read_text(encoding="utf-8", errors="ignore")
-    if len(text) > 3000:
-        cutoff = len(text) - 3000
-        # Find the first dated section heading at or after the cutoff so SCAN
-        # receives a complete, labelled section rather than a mid-sentence fragment.
-        match = re.search(r"^## \d{4}-\d{2}-\d{2}", text[cutoff:], re.MULTILINE)
-        tail = text[cutoff + match.start() :] if match else text[-3000:]
-        text = "[... destination.md truncated for token budget ...]\n\n" + tail
-    return text
+
+    sections: list[str] = []
+
+    # Higher scopes: allocate up to 1500 chars total, divided evenly
+    if parents:
+        per_scope = max(300, 1500 // len(parents))
+        # Reverse so outermost (highest authority) is first
+        for label, text in reversed(parents):
+            truncated = _truncate_destination(text, per_scope)
+            sections.append(f"### Higher-scope mandate ({label}):\n\n{truncated}")
+
+    # Repo scope: up to 1500 chars
+    if repo_text is not None:
+        truncated = _truncate_destination(repo_text, 1500)
+        sections.append(f"### Repo-scope mandate:\n\n{truncated}")
+
+    return "\n\n---\n\n".join(sections)
 
 
 _BINARY_HEURISTIC_BYTES = 8192
@@ -192,10 +253,10 @@ def scan(
         f"=== {rel} ===\n{content}" for rel, content in files.items()
     )
 
-    destination = _load_destination(repo)
+    destination = _load_scope_context(repo)
     if destination:
         user_content = (
-            f"Commander's Intent (operator destination):\n\n{destination}\n\n"
+            f"Commander's Intent (operator destination — higher scope governs):\n\n{destination}\n\n"
             f"---\n\nRepository files:\n\n{file_list}\n\n"
             "Identify one improvement that advances the stated destination."
         )

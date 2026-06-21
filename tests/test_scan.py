@@ -272,6 +272,78 @@ def test_scan_truncation_starts_at_section_boundary(tmp_path: Path) -> None:
     assert "## 2026-05-14 — Old section" not in user_content
 
 
+# ---------------------------------------------------------------------------
+# _load_scope_context — parent-scope traversal (ACM §4.2)
+# ---------------------------------------------------------------------------
+
+
+def test_scan_includes_parent_scope_destination(tmp_path: Path) -> None:
+    """Parent .acm/destination.md is included in the SCAN prompt as higher-scope mandate."""
+    repo = tmp_path / "myrepo"
+    repo.mkdir()
+    (repo / "utils.py").write_text("x = 1\n")
+    (repo / ".acm").mkdir()
+    (repo / ".acm" / "destination.md").write_text("# Repo dest\nRepo goal.", encoding="utf-8")
+    # Parent scope (workspace level)
+    (tmp_path / ".acm").mkdir()
+    (tmp_path / ".acm" / "destination.md").write_text(
+        "# Workspace dest\nWorkspace goal.", encoding="utf-8"
+    )
+    config = _make_config(repo)
+    client = _mock_client({
+        "file": "utils.py",
+        "description": "test",
+        "proposed_change": "x = 2",
+        "rationale": "test",
+        "risk": "low",
+    })
+
+    scan(repo, config, client=client)
+
+    user_content = client.messages.create.call_args[1]["messages"][0]["content"]
+    assert "Workspace goal." in user_content
+    assert "Repo goal." in user_content
+    assert "Higher-scope mandate" in user_content
+
+
+def test_scan_stops_at_acm_root_marker(tmp_path: Path) -> None:
+    """Traversal stops at .acm-root marker; destination above it is NOT included."""
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    repo = workspace / "myrepo"
+    repo.mkdir()
+    (repo / "utils.py").write_text("x = 1\n")
+    # Repo scope
+    (repo / ".acm").mkdir()
+    (repo / ".acm" / "destination.md").write_text("# Repo\nRepo goal.", encoding="utf-8")
+    # Workspace scope with .acm-root marker → ceiling here
+    (workspace / ".acm").mkdir()
+    (workspace / ".acm" / "destination.md").write_text(
+        "# Workspace\nWorkspace goal.", encoding="utf-8"
+    )
+    (workspace / ".acm-root").write_text("")  # ceiling marker
+    # Above the ceiling — must NOT be read
+    (tmp_path / ".acm").mkdir()
+    (tmp_path / ".acm" / "destination.md").write_text(
+        "# Org\nOrg goal MUST NOT APPEAR.", encoding="utf-8"
+    )
+    config = _make_config(repo)
+    client = _mock_client({
+        "file": "utils.py",
+        "description": "test",
+        "proposed_change": "x = 2",
+        "rationale": "test",
+        "risk": "low",
+    })
+
+    scan(repo, config, client=client)
+
+    user_content = client.messages.create.call_args[1]["messages"][0]["content"]
+    assert "Workspace goal." in user_content
+    assert "Repo goal." in user_content
+    assert "Org goal MUST NOT APPEAR." not in user_content
+
+
 def test_scan_returns_none_when_change_already_exists(tmp_path: Path) -> None:
     """already_exists_check quotes text found in the file → false-positive rejected."""
     (tmp_path / "utils.py").write_text("def handle(x):\n    if x is None:\n        return 0\n    return x\n")
