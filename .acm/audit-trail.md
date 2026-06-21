@@ -2500,3 +2500,155 @@ index a94dbea..5a2a248 100644
 ```
 
 *Staged for operator review. Not committed.*
+
+---
+
+## 2026-06-21 — scan-reasoning-quality + V1-milestone-confirmed
+
+- target: ai-steward scan.py, self-targeting pipeline
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: trail
+- outcome: SCAN reasoning raised to trail-skill standard; V1 self-targeting milestone confirmed
+- delta: _SYSTEM_PROMPT rewritten — "JSON only, no prose" → 5-step reasoning protocol
+
+### Interpretation of the ask
+
+Operator: "The reasoning logic should roughly follow that of the skillset, so the quality is its equal — with budget in mind. We need to raise the quality bar here — at the cost of budget."
+
+Understood as: the SCAN prompt's "JSON only, no prose" instruction was killing all visible reasoning. The trail skill demands Interpretation → Examination → [!DECISION] with rejected alternatives → Prediction → Blind spot before any conclusion. SCAN should enforce the same discipline, explicitly trading token budget for proposal quality.
+
+### Examination
+
+**Root cause of low-quality proposals identified.**
+The previous V1 run proposed `<budget:token_budget>200000</budget:token_budget>` — an internal Anthropic tag with no effect in standard API calls, unrelated to anything in the destination. The model produced it because the prompt said "no prose" and it jumped straight to the first code pattern it recognised.
+
+The `already_exists_check` field prevented duplicate implementation — but there was no equivalent filter for off-mandate proposals. The model had no instruction to evaluate whether a change served the destination before committing to it.
+
+Examined _extract_json() — it already extracts the last valid JSON from prose output. The architecture supported adding reasoning steps with no code changes beyond the prompt itself.
+
+Examined the trail skill (SKILL.md). The required structure: Interpretation, Examination, [!DECISION] with at least one rejected alternative, Prediction, Blind spot. None of these were present in the SCAN prompt.
+
+### Decision
+
+[!DECISION] Replace flat "JSON only" prompt with a 5-step reasoning protocol mirroring the trail skill standard:
+- Step 1 — Mandate check: must quote exact destination sentence; off-mandate → {"nothing": true}
+- Step 2 — Examination: read files, paste exact lines, confirm not already implemented
+- Step 3 — [!DECISION]: choice + rationale + at least one rejected alternative
+- Step 4 — Prediction: falsifiable outcome committed to before action
+- Step 5 — Blind spot: specific file/area not examined, with reason
+
+Rationale: proposals must be mandate-aligned by construction. The destination is now a hard gate, not background context.
+
+Alternative rejected: two-turn conversation (first turn = reasoning, second turn = JSON). Rejected because it doubles LLM calls and cost; _extract_json() achieves the same result in one call — reasoning in prose, JSON on the final line.
+
+### Prediction
+
+The model would stop producing off-mandate proposals. The first run under the new prompt would either propose something genuinely destination-aligned or return {"nothing": true} honestly. Both outcomes are correct.
+
+### Action
+
+Modified _SYSTEM_PROMPT in scan.py (47 insertions, 16 deletions). 78 tests still pass — prompt change touches no code paths.
+
+Ran ai-steward against itself. Result: NOTHING FOUND.
+
+Harness session 01KVNEZCE34079ENDHQDDKS5Z6 confirms the model executed all 5 steps:
+- Step 1: Quoted exact destination sentences about infrastructure update (2026-06-21)
+- Step 2: Read harness.py line 30 and config.py line 57, pasted exact code
+- Step 3: Proposed docstring for localhost:8474, declared [!DECISION] with rejected alternative (workspace config file — rejected as unnecessary complexity for V1)
+- Step 4–5: Continued reasoning, then self-rejected — concluded docstring comment doesn't justify a cycle
+
+**NOTHING FOUND is the correct outcome.** The model exercised judgment, reasoned visibly, and self-rejected an insufficiently valuable change. This is the behavior the trail skill demands.
+
+### Reflection
+
+[!REALIZATION] The first run under the improved prompt returning NOTHING FOUND is not a failure — it is a quality gate working. The previous run with the flat prompt produced a speculative off-mandate proposal in seconds. The new prompt produced genuine mandate-aligned examination followed by an honest rejection. The quality bar is structurally higher now.
+
+[!REALIZATION] The skills (GitHub Copilot, trail) and ai-steward both write to the same .acm/audit-trail.md. This is the shared evidence layer: human-supervised sessions write trail-skill-format entries; the autonomous pipeline writes RECORD-phase-format entries. Both are governed by the same destination.md and both read from the same .acm/ context. Unified governance, two classes of author.
+
+Across-trail trigger evaluation (mandatory):
+- Recurring finding-class: No — first run with new prompt; no pattern yet.
+- About to declare silence: No — V2 direction (external targeting, multi-cycle convergence) is ahead.
+- Prior [!REALIZATION] contradicted: No.
+- Operator explicitly asked to validate: Yes — "validate the outcome, check yourself."
+
+### Candidate Next Moves
+
+1. External repo targeting — run against a small well-tested Python project to prove generalisation beyond self-targeting.
+2. Multi-cycle convergence — run ai-steward in a loop until SCAN returns nothing_found; verify it stops cleanly.
+3. Regenerate history.md and learning.md from audit-trail.md (they are stale — last updated 2026-05-28).
+
+---
+
+## 2026-06-21 — scan-reasoning-quality + V1-milestone-confirmed
+
+- target: ai-steward scan.py, self-targeting pipeline
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: trail
+- outcome: SCAN reasoning raised to trail-skill standard; V1 self-targeting milestone confirmed
+- delta: _SYSTEM_PROMPT rewritten — "JSON only, no prose" → 5-step reasoning protocol
+
+### Interpretation of the ask
+
+Operator: "The reasoning logic should roughly follow that of the skillset, so the quality is its equal — with budget in mind. We need to raise the quality bar here — at the cost of budget."
+
+Understood as: the SCAN prompt's "JSON only, no prose" instruction was killing all visible reasoning. The trail skill demands Interpretation → Examination → [!DECISION] with rejected alternatives → Prediction → Blind spot before any conclusion. SCAN should enforce the same discipline, explicitly trading token budget for proposal quality.
+
+### Examination
+
+**Root cause of low-quality proposals identified.**
+The previous V1 run proposed `<budget:token_budget>200000</budget:token_budget>` — an internal Anthropic tag with no effect in standard API calls, unrelated to anything in the destination. The model produced it because the prompt said "no prose" and it jumped straight to the first code pattern it recognised.
+
+The `already_exists_check` field prevented duplicate implementation — but there was no equivalent filter for off-mandate proposals. The model had no instruction to evaluate whether a change served the destination before committing to it.
+
+Examined `_extract_json()` — it already extracts the last valid JSON from prose output. The architecture supported adding reasoning steps with no code changes beyond the prompt itself.
+
+Examined the trail skill (SKILL.md). Required structure: Interpretation, Examination, [!DECISION] with at least one rejected alternative, Prediction, Blind spot. None of these were present in the SCAN prompt.
+
+### Decision
+
+[!DECISION] Replace flat "JSON only" prompt with a 5-step reasoning protocol mirroring the trail skill standard:
+- Step 1 — Mandate check: must quote exact destination sentence; off-mandate → {"nothing": true}
+- Step 2 — Examination: read files, paste exact lines, confirm not already implemented
+- Step 3 — [!DECISION]: choice + rationale + at least one rejected alternative
+- Step 4 — Prediction: falsifiable outcome committed to before action
+- Step 5 — Blind spot: specific file/area not examined, with reason
+
+Rationale: proposals must be mandate-aligned by construction. The destination is now a hard gate, not background context.
+
+Alternative rejected: two-turn conversation (first turn = reasoning, second turn = JSON). Rejected because it doubles LLM calls and cost; `_extract_json()` achieves the same result in one call — reasoning in prose, JSON on the final line.
+
+### Prediction
+
+The model would stop producing off-mandate proposals. The first run under the new prompt would either propose something genuinely destination-aligned or return `{"nothing": true}` honestly. Both outcomes are correct.
+
+### Action
+
+Modified `_SYSTEM_PROMPT` in `scan.py` (47 insertions, 16 deletions). 78 tests still pass.
+
+Ran ai-steward against itself under the new prompt. Result: NOTHING FOUND.
+
+Harness session `01KVNEZCE34079ENDHQDDKS5Z6` confirms the model executed all 5 steps:
+- Step 1: Quoted exact destination sentences about infrastructure update (2026-06-21)
+- Step 2: Read `harness.py` line 30 and `config.py` line 57, pasted exact code
+- Step 3: Proposed docstring for `localhost:8474`, declared [!DECISION] with rejected alternative (workspace config file — rejected as unnecessary complexity for V1)
+- Steps 4–5: Continued reasoning, then self-rejected — concluded docstring comment doesn't justify a cycle
+
+**NOTHING FOUND is the correct outcome.** The model exercised judgment, reasoned visibly through all 5 steps, and self-rejected an insufficiently valuable change.
+
+### Reflection
+
+[!REALIZATION] The first run under the improved prompt returning NOTHING FOUND is not a failure — it is a quality gate working. The previous flat prompt produced a speculative off-mandate proposal instantly. The new prompt produced genuine mandate-aligned examination followed by an honest rejection.
+
+[!REALIZATION] The skills (GitHub Copilot, trail skill) and ai-steward both write to the same `.acm/audit-trail.md`. This is the shared evidence layer: human-supervised sessions write trail-skill-format entries; the autonomous pipeline writes RECORD-phase-format entries. Both are governed by the same `destination.md` and both read from the same `.acm/` context. Unified governance, two classes of author.
+
+Across-trail trigger evaluation (mandatory):
+- Recurring finding-class: No — first run with new prompt; no pattern yet.
+- About to declare silence: No — V2 direction (external targeting, multi-cycle convergence) is ahead.
+- Prior [!REALIZATION] contradicted: No.
+- Operator explicitly asked to validate: Yes — "validate the outcome, check yourself."
+
+### Candidate Next Moves
+
+1. External repo targeting — run against a small well-tested Python project to prove generalisation beyond self-targeting.
+2. Multi-cycle convergence — run ai-steward in a loop until SCAN returns nothing_found; verify it stops cleanly.
+3. Regenerate `history.md` and `learning.md` from `audit-trail.md` (stale — last updated 2026-05-28).
