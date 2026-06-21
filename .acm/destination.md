@@ -1157,3 +1157,37 @@ The next proof layer is generalisation. V1 proved the loop works on one repo (se
 - **Harness:** c:\git\pea\llm-harness-proxy\ (moved from c:\git\llm-harness-proxy\)
 - **ai-steward:** c:\git\pea\ai-steward\ (moved from c:\git\ai-steward\)
 - **Workspace ACM:** c:\git\pea\.acm\ governs all pea workspace repos
+
+---
+
+## 2026-06-21 — Reasoning quality is non-negotiable (clarification over cost framing)
+
+*Layered over the cost model in the consolidated 2026-06-20 section. This governs when there is tension.*
+
+### The separation that was missing
+
+The destination has stated `~$0.002 per improvement cycle` and `improvements are evaluated against cost-per-accepted-proposal`. This is a **measurement target**, not a reasoning filter. The model was reading it as a gate: "is this change worth the cost of a cycle?" That is wrong.
+
+**Cost governs two things only:**
+1. **Model selection** — use cheap models (haiku) for routine reasoning; escalate when the model genuinely cannot decide.
+2. **Proposal scope** — propose small, focused, low-risk changes that fit in a single cycle. Not big rewrites.
+
+**Cost does not govern:**
+- Whether to reason fully
+- Whether a valid proposal is "worth" acting on
+- How deep to examine the code
+
+### Reasoning quality is the floor
+
+The reasoning protocol — Mandate check → Examination → [!DECISION] with rejected alternative → Prediction → Blind spot — is executed completely on every cycle, regardless of model tier or cycle cost. This is the same governance architecture as the skillset. The caliber is the same. The cost buys a cheaper model, not shallower reasoning.
+
+If a model cannot reason to this standard at haiku tier, that is a **tier escalation signal**, not a reason to skip steps.
+
+### What "cost with quality" actually means
+
+- Reason fully, at the skillset standard
+- Propose the smallest change that genuinely serves the mandate
+- Use the cheapest model that can meet the reasoning standard
+- Measure the actual cost; use that data to improve model selection
+
+The `~$0.002` target was aspirational for haiku + routine changes. It is not a constraint on proposal acceptance. A well-reasoned proposal that costs $0.03 and gets accepted is better than a shallow one that costs $0.002 and gets discarded.
