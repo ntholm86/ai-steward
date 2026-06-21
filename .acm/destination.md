@@ -1332,3 +1332,24 @@ This is not about prompt quality. It is the same cognitive loop — compressed t
 5. **Auto-trigger Retrospect** — fire on convergence signal or after N accepted proposals.
 
 Each step is independent and shippable. Do not wait for all five before running.
+
+---
+
+## 2026-06-21 — Cost ceiling is provisional, not principled
+
+*Correction to the $1.00/cycle figure set earlier today.*
+
+The $1.00 ceiling is arbitrary. It was set reactively to remove the $0.002 floor that was causing the model to self-censor, not derived from any measurement or reasoning about what a cycle should cost.
+
+**The principled position:**
+
+There is no target cost. There is a cost constraint method:
+
+1. Use the cheapest model that reasons to the required quality standard.
+2. Measure actual cost per cycle. Record it in every trail entry (already done).
+3. When N accepted proposals have been collected, read the data: what did accepted proposals actually cost? What did rejected ones cost? What is the cost-per-accepted-proposal trend?
+4. From that data, set a principled ceiling.
+
+$1.00/cycle is a temporary operational upper bound — a circuit breaker to prevent runaway cost while the system is being built. It is not a quality signal, not a target, and not evidence of anything. It will be replaced by a data-derived figure once enough cycles have run.
+
+**Until then:** cost is measured and recorded. Quality is the gate. The model tier is the variable that gets optimised from evidence, not assumed from the start.
