@@ -29,13 +29,13 @@ ai-steward is both a proof (PEA reference implementation) and a tool (adoptable,
 ## What the next runs should test
 
 **1. External repo targeting.**
-Pick a small, well-tested Python project. Run `ai-steward run <path>`. Does the loop propose, implement, verify, and stage a genuine improvement? Does the trail entry land in `.trail/audit-trail.md` in that repo? Does the harness session land in `.trail/sessions/`?
+Pick a small, well-tested Python project. Run `ai-steward run <path>`. Does the loop propose, implement, verify, and stage a genuine improvement? Does the trail entry land in `.acm/audit-trail.md` in that repo? Does the harness session land in `.acm/sessions/`?
 
 **2. Multi-cycle convergence.**
 Run the loop multiple times on the same target until SCAN returns `nothing_found`. Does the loop stop when it should? Does the trail show a reasonable arc of diminishing returns, not infinite busy-work?
 
 **3. Harness ledger integrity.**
-The harness session files exist (`.trail/sessions/*.jsonl`). Are they correctly hash-chained per SPEC §8? Can the ledger be replayed? Can a verifier confirm the trail entry's claim matches the JSONL evidence? This is untested end-to-end.
+The harness session files exist (`.acm/sessions/*.jsonl`). Are they correctly hash-chained per SPEC §8? Can the ledger be replayed? Can a verifier confirm the trail entry's claim matches the JSONL evidence? This is untested end-to-end.
 
 **4. Accept or spec the trail format.**
 The destination says "improve-skill-style entries" without defining them. Either write a concrete format spec or accept the current format as sufficient. Until then, the record.py attractor will fire on future self-targeting runs.

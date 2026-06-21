@@ -1,4 +1,4 @@
-# Destination — AI Steward
+﻿# Destination â€” AI Steward
 
 *Operator-held destination. Append or layer new insights; never destructively overwrite.*
 
@@ -19,39 +19,39 @@ The operator commits or discards. Trust is earned one accepted proposal at a tim
 
 ### Dual purpose
 
-**Purpose 1 — Proof:** ai-steward is a reference implementation of the Principles of Earned Autonomy. It demonstrates that autonomous delegation can be structurally trustworthy — not through promises, but through Observable Autonomy (harness-captured evidence), Commander's Intent (operator-written destination), and Convergence Is Silence (stop when done, not when tired).
+**Purpose 1 â€” Proof:** ai-steward is a reference implementation of the Principles of Earned Autonomy. It demonstrates that autonomous delegation can be structurally trustworthy â€” not through promises, but through Observable Autonomy (harness-captured evidence), Commander's Intent (operator-written destination), and Convergence Is Silence (stop when done, not when tired).
 
-**Purpose 2 — Tool:** ai-steward must be genuinely useful and widely adoptable. The workflow is simple: write a destination → run the loop → review staged changes → commit. It works on any codebase. Adoption depends on cost-efficiency being *provable* — not claimed, measured.
+**Purpose 2 â€” Tool:** ai-steward must be genuinely useful and widely adoptable. The workflow is simple: write a destination â†’ run the loop â†’ review staged changes â†’ commit. It works on any codebase. Adoption depends on cost-efficiency being *provable* â€” not claimed, measured.
 
 Both purposes are essential. A proof that nobody uses proves nothing. A tool that violates the principles is just another black box.
 
 ### The architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  OPERATOR                                               │
-│  - Writes .trail/destination.md (Commander's Intent)    │
-│  - Reviews staged diffs                                 │
-│  - Commits or discards                                  │
-└─────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────┐
-│  PIPELINE (ai-steward)                                  │
-│  PRE-FLIGHT → SCAN → IMPLEMENT → VERIFY → RECORD        │
-│  - Tier 0: structural checks (zero tokens)              │
-│  - Tier 1: cheap models (haiku) for routine work        │
-│  - Tier 2+: deferred until V1 proves the baseline       │
-└─────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────┐
-│  HARNESS (localhost:8474)                               │
-│  - Intercepts all LLM API calls                         │
-│  - Writes .trail/sessions/*.jsonl BEFORE response       │
-│  - Hash-chained, tamper-evident                         │
-│  - The agent cannot fabricate evidence                  │
-└─────────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  OPERATOR                                               â”‚
+â”‚  - Writes .acm/destination.md (Commander's Intent)    â”‚
+â”‚  - Reviews staged diffs                                 â”‚
+â”‚  - Commits or discards                                  â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                          â”‚
+                          â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  PIPELINE (ai-steward)                                  â”‚
+â”‚  PRE-FLIGHT â†’ SCAN â†’ IMPLEMENT â†’ VERIFY â†’ RECORD        â”‚
+â”‚  - Tier 0: structural checks (zero tokens)              â”‚
+â”‚  - Tier 1: cheap models (haiku) for routine work        â”‚
+â”‚  - Tier 2+: deferred until V1 proves the baseline       â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                          â”‚
+                          â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  HARNESS (localhost:8474)                               â”‚
+â”‚  - Intercepts all LLM API calls                         â”‚
+â”‚  - Writes .acm/sessions/*.jsonl BEFORE response       â”‚
+â”‚  - Hash-chained, tamper-evident                         â”‚
+â”‚  - The agent cannot fabricate evidence                  â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ### Cost model
@@ -92,7 +92,7 @@ Self-targeting is the validation gate. If it can improve itself under its own di
 - Retrospect (arc-level orientation from harness ledger)
 - ARF probe (operator-triggered reasoning fidelity check)
 - Tier escalation (when cheap models can't decide)
-- Multi-family verification (proposer ≠ judge)
+- Multi-family verification (proposer â‰  judge)
 - Push/release autonomy (earned after N accepted proposals)
 
 ---
@@ -103,21 +103,21 @@ Self-targeting is the validation gate. If it can improve itself under its own di
 
 ---
 
-## 2026-05-14 — First articulation
+## 2026-05-14 â€” First articulation
 
 ### What this is
 
 AI Steward is an autonomous software evolution engine with a reasoning layer.
 
-It runs continuously without the operator present. It finds improvements, implements them, verifies them, and releases them — in the operator's name. The operator can trust this because every action is logged, every decision is reasoned, and the reasoning is independently verified.
+It runs continuously without the operator present. It finds improvements, implements them, verifies them, and releases them â€” in the operator's name. The operator can trust this because every action is logged, every decision is reasoned, and the reasoning is independently verified.
 
 This is **earned delegation**: the system earns the right to act unsupervised by building a verifiable record over time.
 
 ### The three layers
 
-**Execution layer** (new — informed by Evo, not derived from it)
+**Execution layer** (new â€” informed by Evo, not derived from it)
 
-Closed-loop pipeline: analyze → propose → implement → verify → decide → release → record. The execution layer does not reason — it executes, verifies, and logs. Reasoning is the job of the reasoning layer.
+Closed-loop pipeline: analyze â†’ propose â†’ implement â†’ verify â†’ decide â†’ release â†’ record. The execution layer does not reason â€” it executes, verifies, and logs. Reasoning is the job of the reasoning layer.
 
 What to take from Evo: hash-chained proof ledger, rollback, multi-language profiles, sandbox execution, proposal queues.
 
@@ -130,14 +130,14 @@ Gates are reasoning decisions, not hard rules. The execution layer presents evid
 - destination: persistent operator intent across sessions
 - Trail: decisions and reasoning recorded as they happen
 - Improve: meta-cognitive improvement loop; silence is a valid outcome
-- Retrospect: reads the full arc — is the loop improving the right thing?
+- Retrospect: reads the full arc â€” is the loop improving the right thing?
 - Probe: tests whether reasoning is genuine or pattern-matched
 
-Different model families handle different pipeline phases. Model-family independence is a reasoning integrity mechanism — the model that proposes a change and the model that judges it come from different families, so the judge cannot share the proposer's blind spots.
+Different model families handle different pipeline phases. Model-family independence is a reasoning integrity mechanism â€” the model that proposes a change and the model that judges it come from different families, so the judge cannot share the proposer's blind spots.
 
-**Structural integrity layer** (harness-protocol — standalone, separate from ai-steward)
+**Structural integrity layer** (harness-protocol â€” standalone, separate from ai-steward)
 
-Intercepts all API calls ai-steward makes — any model, any family, any key — and writes the raw stream before the model's response is processed.
+Intercepts all API calls ai-steward makes â€” any model, any family, any key â€” and writes the raw stream before the model's response is processed.
 
 The harness must be a separate application. If it were internal, ai-steward could modify its own evidence capture, especially when targeting itself. The capture mechanism must be independent of the thing being captured.
 
@@ -151,8 +151,8 @@ The harness scores model transparency per call:
 Models that do not provide a reasoning trail are flagged. The reasoning layer uses this score to calibrate trust in each model's output per pipeline phase.
 
 Two trail types, two trust levels:
-- Proxy-captured JSONL: evidence — raw, independent, the agent cannot modify it
-- `audit-trail.md`: memory — the agent's record of decisions and reasoning
+- Proxy-captured JSONL: evidence â€” raw, independent, the agent cannot modify it
+- `audit-trail.md`: memory â€” the agent's record of decisions and reasoning
 
 If they diverge, the proxy wins. The reasoning layer reads both but weights them differently.
 
@@ -160,50 +160,50 @@ The harness-protocol repo is outside ai-steward's autonomous scope. Changes to i
 
 ### Target model
 
-AI Steward can target any repository, including its own. Self-targeting is not a special mode — it is the same pipeline pointed at a different directory. Scope enforcement, proof trail, and probe verification apply identically.
+AI Steward can target any repository, including its own. Self-targeting is not a special mode â€” it is the same pipeline pointed at a different directory. Scope enforcement, proof trail, and probe verification apply identically.
 
 ### Competitive position
 
-Execution pipelines will be common. The reasoning layer is the differentiator — specifically:
+Execution pipelines will be common. The reasoning layer is the differentiator â€” specifically:
 - The separation of action integrity (what was done) from reasoning integrity (why, and whether the reasoning was genuine)
 - Model-family independence as a structural reasoning guarantee, not a performance choice
 - A convergence stopping criterion: the system stops when independent evaluators agree, not when it runs out of ideas
 
 ### Visibility
 
-Private until MVP. The trail and vision are also documentation — when published, they are part of the public record, not just internal notes.
+Private until MVP. The trail and vision are also documentation â€” when published, they are part of the public record, not just internal notes.
 
 ### Principles
 
-1. **Commander's Intent** — what + why, never how
-2. **Observable Autonomy** — autonomy without evidence is abdication
-3. **Convergence Is Silence** — stop when convergence is genuinely earned
+1. **Commander's Intent** â€” what + why, never how
+2. **Observable Autonomy** â€” autonomy without evidence is abdication
+3. **Convergence Is Silence** â€” stop when convergence is genuinely earned
 
 Full statement: [Principles of Earned Autonomy](https://github.com/ntholm86/principles-of-earned-autonomy)
 
 ---
 
-## 2026-06-19 — Token efficiency as architectural constraint
+## 2026-06-19 â€” Token efficiency as architectural constraint
 
 ### The constraint
 
-AI Steward must be economically viable at continuous operation. Token cost compounds; a system that burns expensive reasoning on every decision becomes unaffordable regardless of capability. **Token efficiency is not an optimization — it is a design constraint that shapes architecture.**
+AI Steward must be economically viable at continuous operation. Token cost compounds; a system that burns expensive reasoning on every decision becomes unaffordable regardless of capability. **Token efficiency is not an optimization â€” it is a design constraint that shapes architecture.**
 
-The harness-protocol is the exemplar: it delivers Observable Autonomy (Principle 2) without consuming any tokens. It's a standalone Rust program that intercepts, logs, and chains evidence at the network layer. The agent never calls an LLM to capture the trail — the trail captures itself structurally.
+The harness-protocol is the exemplar: it delivers Observable Autonomy (Principle 2) without consuming any tokens. It's a standalone Rust program that intercepts, logs, and chains evidence at the network layer. The agent never calls an LLM to capture the trail â€” the trail captures itself structurally.
 
 This is the pattern: **push as much as possible from cognitive (token-consuming) operations into structural (tokenless) mechanisms.**
 
 ### Evaluation by layer
 
-**Structural integrity layer (harness-protocol)** — Already tokenless. Evidence capture, hash chaining, tamper detection, provider normalization — all happen without LLM calls. This is the gold standard. Cost: zero tokens.
+**Structural integrity layer (harness-protocol)** â€” Already tokenless. Evidence capture, hash chaining, tamper detection, provider normalization â€” all happen without LLM calls. This is the gold standard. Cost: zero tokens.
 
-**Execution layer** — Mostly structural. Sandbox execution, test running, diff generation, rollback mechanics, file operations — none of these require reasoning. They require code. The execution layer should be primarily deterministic Python/Rust, calling LLMs only for the specific moments that require language understanding (e.g., "does this diff match the stated intent?"). Cost: minimal tokens, bounded per phase.
+**Execution layer** â€” Mostly structural. Sandbox execution, test running, diff generation, rollback mechanics, file operations â€” none of these require reasoning. They require code. The execution layer should be primarily deterministic Python/Rust, calling LLMs only for the specific moments that require language understanding (e.g., "does this diff match the stated intent?"). Cost: minimal tokens, bounded per phase.
 
-**Reasoning layer** — This is where tokens live, and where discipline matters most. Not every decision needs a reasoning model. The hierarchy:
+**Reasoning layer** â€” This is where tokens live, and where discipline matters most. Not every decision needs a reasoning model. The hierarchy:
 
 1. **Structural gates (zero tokens):** File exists? Tests pass? Diff size within bounds? Hash chain intact? These are code, not cognition.
 2. **Pattern-matched decisions (cheap tokens):** Routine approvals, standard rejections, format compliance. Small models, short prompts, cached responses where valid.
-3. **Situated reasoning (expensive tokens):** Novel situations, ambiguous evidence, cross-cutting trade-offs, convergence judgment. This is where frontier models earn their cost — but only here.
+3. **Situated reasoning (expensive tokens):** Novel situations, ambiguous evidence, cross-cutting trade-offs, convergence judgment. This is where frontier models earn their cost â€” but only here.
 
 The discipline: **escalate up this hierarchy only when the lower tier cannot decide.** Most pipeline cycles should never reach tier 3.
 
@@ -222,26 +222,26 @@ Model-family independence (the reasoning integrity requirement) applies at tier 
 
 ### What this means for PEA conformance
 
-AI Steward is a case study. It must demonstrate that earned delegation is viable, not just theoretically sound. If the principles only work with unlimited token budget, they're not a governance discipline — they're a luxury.
+AI Steward is a case study. It must demonstrate that earned delegation is viable, not just theoretically sound. If the principles only work with unlimited token budget, they're not a governance discipline â€” they're a luxury.
 
 The claim to validate: **structural mechanisms can replace cognitive work for most of Observable Autonomy, and the remaining cognitive work can be tiered so that expensive reasoning is rare, not routine.**
 
-The Skills Suite demonstrated the principles at the behavioral layer (instructions that direct reasoning). The harness-protocol demonstrated them at the structural layer (capture that doesn't depend on the agent's compliance). AI Steward must demonstrate them at the **operational layer** — a system that runs continuously, earns trust over time, and remains economically sustainable.
+The Skills Suite demonstrated the principles at the behavioral layer (instructions that direct reasoning). The harness-protocol demonstrated them at the structural layer (capture that doesn't depend on the agent's compliance). AI Steward must demonstrate them at the **operational layer** â€” a system that runs continuously, earns trust over time, and remains economically sustainable.
 
 ### V1 scope: lightweight
 
-Version 1 must be minimal. Not the full three-layer architecture — the smallest thing that demonstrates the concept works and provides real value.
+Version 1 must be minimal. Not the full three-layer architecture â€” the smallest thing that demonstrates the concept works and provides real value.
 
-**V1 definition:** A complete autonomous loop that stops before release. The system can analyze → propose → implement → verify → record without human intervention. It does not push or release — the operator reviews and decides whether to accept. This is full autonomy over the improvement cycle, with a human gate before the world changes.
+**V1 definition:** A complete autonomous loop that stops before release. The system can analyze â†’ propose â†’ implement â†’ verify â†’ record without human intervention. It does not push or release â€” the operator reviews and decides whether to accept. This is full autonomy over the improvement cycle, with a human gate before the world changes.
 
 **What v1 includes:**
 - Harness-protocol (`C:\git\harness-protocol`, already built, tokenless)
-- A single execution loop: analyze → propose → implement → verify → record
-- Tier 0 and tier 1 reasoning only — structural gates and cheap models
+- A single execution loop: analyze â†’ propose â†’ implement â†’ verify â†’ record
+- Tier 0 and tier 1 reasoning only â€” structural gates and cheap models
 - Single-model operation (no model-family independence yet)
 - One target repo at a time
 - Manual operator trigger to start, autonomous until the loop completes
-- Stops with a proposal ready for human review — does not push or release
+- Stops with a proposal ready for human review â€” does not push or release
 
 **What v1 defers:**
 - Push and release (human reviews before anything goes out)
@@ -253,9 +253,9 @@ Version 1 must be minimal. Not the full three-layer architecture — the smalles
 - Continuous unattended operation (multiple cycles without operator)
 
 **Why this ordering:**
-The harness proves Observable Autonomy can be structural. V1 proves the execution loop works end-to-end and that tier 0/1 reasoning is sufficient for routine improvements. The human gate before release is both a safety mechanism and a learning opportunity — every review teaches us where the loop's judgment is good enough and where it isn't.
+The harness proves Observable Autonomy can be structural. V1 proves the execution loop works end-to-end and that tier 0/1 reasoning is sufficient for routine improvements. The human gate before release is both a safety mechanism and a learning opportunity â€” every review teaches us where the loop's judgment is good enough and where it isn't.
 
-Only after that foundation exists do we add the expensive reasoning machinery — and we add it incrementally, measuring cost/value as we go. Push/release autonomy is earned by demonstrating that the pre-release loop produces consistently acceptable proposals.
+Only after that foundation exists do we add the expensive reasoning machinery â€” and we add it incrementally, measuring cost/value as we go. Push/release autonomy is earned by demonstrating that the pre-release loop produces consistently acceptable proposals.
 
 ### Open questions
 
@@ -378,7 +378,7 @@ The ordering is: (1) schema, (2) directed SCAN, (3) retrospect, (4) probe. Each 
 
 ### The architectural correction
 
-The TRAIL skill is a behavioral convention — it asks the LLM to append to a markdown file. The LLM is an unreliable narrator of itself. This is a structural problem that cannot be solved with better instructions.
+The TRAIL skill is a behavioral convention â€” it asks the LLM to append to a markdown file. The LLM is an unreliable narrator of itself. This is a structural problem that cannot be solved with better instructions.
 
 The harness-protocol is the structural solution. It intercepts LLM API traffic and writes a hash-chained ledger before the response is released. The LLM cannot fabricate, omit, or modify entries. Trail integrity becomes a technical guarantee, not a discipline.
 
@@ -396,7 +396,7 @@ The memory model must be redesigned around this fact:
 
 Three systems need context memory:
 
-1. The skill suite (currently .trail/)
+1. The skill suite (currently .acm/)
 2. The harness-protocol (currently .harness/)
 3. ai-steward (was going to be .ai-steward/)
 
@@ -413,13 +413,13 @@ These should be ONE directory with ONE standard.
 
 **Who writes what:**
 
-- `destination.yaml` — Operator. Never the LLM.
-- `sessions/*.jsonl` — Harness-protocol. Never the LLM.
-- `orientation.yaml` — LLM (retrospect), but derived from sessions/ which LLM did not author.
+- `destination.yaml` â€” Operator. Never the LLM.
+- `sessions/*.jsonl` â€” Harness-protocol. Never the LLM.
+- `orientation.yaml` â€” LLM (retrospect), but derived from sessions/ which LLM did not author.
 
 **The compatibility path:**
 
-ai-steward defines `.pea/` as the standard. The skill suite migrates from `.trail/` to reading/writing `.pea/`. The harness-protocol migrates from `.harness/` to `.pea/sessions/`. One directory, one standard, structural integrity.
+ai-steward defines `.pea/` as the standard. The skill suite migrates from `.acm/` to reading/writing `.pea/`. The harness-protocol migrates from `.harness/` to `.pea/sessions/`. One directory, one standard, structural integrity.
 
 ### How this maps to the three principles
 
@@ -433,8 +433,8 @@ ai-steward defines `.pea/` as the standard. The skill suite migrates from `.trai
 
 The Agent Audit Trail standard (AAS-1) is defining the schema for autonomous agent records. Two open proposals on the working group:
 
-1. Provenance (§6.9) should capture reasoning traces — the harness already captures this in the `reason` field.
-2. Reproducibility (§6.10) for non-deterministic models — reasoning reproducibility, not output-identical reproduction.
+1. Provenance (Â§6.9) should capture reasoning traces â€” the harness already captures this in the `reason` field.
+2. Reproducibility (Â§6.10) for non-deterministic models â€” reasoning reproducibility, not output-identical reproduction.
 
 ai-steward and the harness-protocol are reference implementations of what AAS-1 is standardizing. Alignment between the .pea/ standard and AAS-1 is a goal.
 
@@ -446,9 +446,9 @@ ai-steward and the harness-protocol are reference implementations of what AAS-1 
 
 The `.pea/` unification is not just ai-steward work. It requires coordinated changes across three projects:
 
-1. **ai-steward** — reads destination + derives context from sessions/ — the consumer
-2. **harness-protocol** — writes to `.pea/sessions/` instead of `.harness/sessions/` — the producer
-3. **skill suite** — migrates from `.trail/` to `.pea/` — the legacy system
+1. **ai-steward** â€” reads destination + derives context from sessions/ â€” the consumer
+2. **harness-protocol** â€” writes to `.pea/sessions/` instead of `.harness/sessions/` â€” the producer
+3. **skill suite** â€” migrates from `.acm/` to `.pea/` â€” the legacy system
 
 ### What has NOT converged
 
@@ -460,7 +460,7 @@ The memory model schema is not yet defined. The token budget constraints are sta
 - How does `orientation.yaml` get derived from `sessions/*.jsonl`? What's the summarization strategy?
 - What is "recent context"? Last N entries? Last N tokens? Entries from the last M hours? How is it computed from the harness ledger?
 - How does the harness know to write to `.pea/sessions/`? Is it HARNESS_ROOT pointing to `.pea/`? A new config option?
-- What migration path for existing `.trail/` and `.harness/` directories?
+- What migration path for existing `.acm/` and `.harness/` directories?
 
 ### The convergence path
 
@@ -469,7 +469,7 @@ The memory model standard will be defined through ai-steward development. The pa
 1. **ai-steward implements first.** Design choices are made, tested against real usage, refined.
 2. **The standard crystallizes.** Once ai-steward proves the model works cost-efficiently, it becomes the standard.
 3. **harness-protocol aligns.** Config option or default change to write to `.pea/sessions/`.
-4. **skill suite aligns.** Instructions updated to read/write `.pea/` instead of `.trail/`.
+4. **skill suite aligns.** Instructions updated to read/write `.pea/` instead of `.acm/`.
 
 ai-steward is the proving ground. The other projects align to what works.
 
@@ -494,11 +494,11 @@ This is design work before implementation. The schema must converge before the c
 
 `.pea/` names the directory after the Principles of Earned Autonomy project. That's backwards. A common standard should be named for **what it is**, not **where it came from**.
 
-The directory holds **context memory** — the working memory an agent reads at the start of a run and the evidence trail the harness writes during execution. The name should say that.
+The directory holds **context memory** â€” the working memory an agent reads at the start of a run and the evidence trail the harness writes during execution. The name should say that.
 
 ### The standardization insight
 
-The schema should not be defined in ai-steward's documentation. It should live in **its own repository** — a formal schema definition that:
+The schema should not be defined in ai-steward's documentation. It should live in **its own repository** â€” a formal schema definition that:
 
 - Declares the directory structure
 - Declares file formats (YAML, JSONL)
@@ -538,18 +538,18 @@ ai-steward, harness-protocol, and the skill suite all **reference and conform to
 
 ---
 
-## 2026-06-20 -- Decision: .trail/ is the standard
+## 2026-06-20 -- Decision: .acm/ is the standard
 
-The naming discussion is closed. `.trail/` is the standard directory name.
+The naming discussion is closed. `.acm/` is the standard directory name.
 
-**Rationale:** The skill suite already uses `.trail/`. It works. Changing the name for theoretical purity adds migration cost with no practical benefit. The standard can evolve in the future if needed, but the current convention is the starting point.
+**Rationale:** The skill suite already uses `.acm/`. It works. Changing the name for theoretical purity adds migration cost with no practical benefit. The standard can evolve in the future if needed, but the current convention is the starting point.
 
 **What this means:**
 
-1. ai-steward uses `.trail/` (not `.pea/`, not `.context/`)
-2. harness-protocol writes to `.trail/sessions/` (not `.harness/`)
+1. ai-steward uses `.acm/` (not `.pea/`, not `.context/`)
+2. harness-protocol writes to `.acm/sessions/` (not `.harness/`)
 3. skill suite continues as-is
-4. Schema repo (if created) defines the `.trail/` structure
+4. Schema repo (if created) defines the `.acm/` structure
 
 The prior discussion about naming was premature optimization. Ship with what works.
 
@@ -562,19 +562,19 @@ The prior discussion about naming was premature optimization. Ship with what wor
 
 ai-steward makes real API calls with real cost. Claims about improvement mean nothing without the cost side of the ledger. "V2 is better than V1" is an assertion; "V2 achieves the same improvement quality at 40% lower token cost" is evidence.
 
-Cost-efficiency must be a declared measurement dimension alongside improvement quality — not an afterthought.
+Cost-efficiency must be a declared measurement dimension alongside improvement quality â€” not an afterthought.
 
 ### What to measure
 
-- **Tokens per improvement cycle** — SCAN + IMPLEMENT + VERIFY call counts, prompt tokens, completion tokens, total cost in USD. Captured by the harness ledger already; needs surfacing.
-- **Cost per accepted improvement** — improvements that reach a passing VERIFY are the unit of value. Cost = total tokens spent in the cycle that produced the accepted improvement.
-- **Cost trend over iterations** — if the architecture improves, cost per accepted improvement should decrease or quality should increase at equal cost. Flat or rising cost with flat quality is a signal the loop is not converging.
+- **Tokens per improvement cycle** â€” SCAN + IMPLEMENT + VERIFY call counts, prompt tokens, completion tokens, total cost in USD. Captured by the harness ledger already; needs surfacing.
+- **Cost per accepted improvement** â€” improvements that reach a passing VERIFY are the unit of value. Cost = total tokens spent in the cycle that produced the accepted improvement.
+- **Cost trend over iterations** â€” if the architecture improves, cost per accepted improvement should decrease or quality should increase at equal cost. Flat or rising cost with flat quality is a signal the loop is not converging.
 
 ### ROI definition
 
 ROI = quality of accepted improvements / total token cost
 
-"Quality" is measured by the harness trail (accepted by VERIFY, not reverted). "Cost" is measured by the ledger. Both sides are auditable structural evidence — not self-reported.
+"Quality" is measured by the harness trail (accepted by VERIFY, not reverted). "Cost" is measured by the ledger. Both sides are auditable structural evidence â€” not self-reported.
 
 ### Why this matters for the skills
 
@@ -586,15 +586,15 @@ The skill suite runs in Copilot Chat (Copilot token budget, no direct cost visib
 
 ### Implementation direction
 
-1. **Harness ledger already captures token counts** — no new data needed.
-2. **Surface cost per cycle** — ai-steward run output should report: total tokens, estimated USD cost, tokens per phase.
-3. **Record cost in trail entries** — each improve iteration's trail entry should include the token cost of that cycle.
-4. **Track trend** — retrospect.md should include a cost-trend claim when enough data exists.
-5. **Establish a baseline** — the first N runs establish the baseline cost per accepted improvement. Future architectural changes are evaluated against it.
+1. **Harness ledger already captures token counts** â€” no new data needed.
+2. **Surface cost per cycle** â€” ai-steward run output should report: total tokens, estimated USD cost, tokens per phase.
+3. **Record cost in trail entries** â€” each improve iteration's trail entry should include the token cost of that cycle.
+4. **Track trend** â€” retrospect.md should include a cost-trend claim when enough data exists.
+5. **Establish a baseline** â€” the first N runs establish the baseline cost per accepted improvement. Future architectural changes are evaluated against it.
 
 ### What counts as improvement
 
-An architectural change that reduces cost-per-accepted-improvement by X% is evidence of improvement — independently of whether the output "feels better." This is the same structural-evidence discipline the manifesto applies to reasoning fidelity: eliminate subjective claims, replace with auditable measurement.
+An architectural change that reduces cost-per-accepted-improvement by X% is evidence of improvement â€” independently of whether the output "feels better." This is the same structural-evidence discipline the manifesto applies to reasoning fidelity: eliminate subjective claims, replace with auditable measurement.
 
 
 ---
@@ -608,7 +608,7 @@ ai-steward can target any repository, including its own. But self-targeting befo
 **Precondition 1 -- P2 (Observable Autonomy) is structurally complete**
 
 The two-tier trust model must be functional end-to-end:
-- Harness sessions land in `.trail/sessions/` (co-located with `audit-trail.md`) -- done.
+- Harness sessions land in `.acm/sessions/` (co-located with `audit-trail.md`) -- done.
 - Every trail entry references the harness session by path -- done.
 - The link is verifiable: the referenced JSONL exists independently and cannot be modified by the agent.
 
@@ -670,10 +670,10 @@ The best design makes the bug impossible. Catching errors at runtime is defense 
 
 **What this means for ai-steward:**
 
-- Path validation in SCAN rejects `..` and absolute paths by structure — the code cannot construct an out-of-scope path, not merely refuses to when asked.
-- The harness writes evidence before releasing the response — the response cannot reach the caller without the ledger entry existing. Observable Autonomy is structural, not behavioral.
-- Token cost is captured from the API response, not self-reported — the agent cannot misstate its own cost.
-- Session path is discovered by before/after directory scan, not passed from the LLM call — the agent cannot fabricate a session reference.
+- Path validation in SCAN rejects `..` and absolute paths by structure â€” the code cannot construct an out-of-scope path, not merely refuses to when asked.
+- The harness writes evidence before releasing the response â€” the response cannot reach the caller without the ledger entry existing. Observable Autonomy is structural, not behavioral.
+- Token cost is captured from the API response, not self-reported â€” the agent cannot misstate its own cost.
+- Session path is discovered by before/after directory scan, not passed from the LLM call â€” the agent cannot fabricate a session reference.
 
 If a bug requires the system to be "working correctly" to prevent it, the design is not defensive enough. The question to ask: *can this fail silently?* If yes, add a structural constraint that makes silent failure impossible.
 
@@ -685,7 +685,7 @@ This principle supersedes "add a test." Tests verify behavior; structure prevent
 
 *Closes the open question from the self-targeting gate section.*
 
-**Question:** "Reasoning layer as good as the skillset" — does this mean SCAN should produce a trail entry that looks like an improve skill entry (lenses, predictions, `[!DECISION]` markers), or does it mean the *outcomes* are equivalently sound?
+**Question:** "Reasoning layer as good as the skillset" â€” does this mean SCAN should produce a trail entry that looks like an improve skill entry (lenses, predictions, `[!DECISION]` markers), or does it mean the *outcomes* are equivalently sound?
 
 **Decision from destination:** Structural equivalence. The destination says:
 
@@ -693,23 +693,23 @@ This principle supersedes "add a test." Tests verify behavior; structure prevent
 - "Trail: decisions and reasoning recorded as they happen"
 - "The separation of action integrity (what was done) from reasoning integrity (why, and whether the reasoning was genuine)"
 
-The skill suite trail format (lenses, predictions, `[!DECISION]`, `[!REALIZATION]`, `[!REVERSAL]`) is the established pattern for visible reasoning. If ai-steward is the PEA exemplar, and P2 requires the reasoning to be visible, then the trail entries must show the reasoning structure — not just the outcomes.
+The skill suite trail format (lenses, predictions, `[!DECISION]`, `[!REALIZATION]`, `[!REVERSAL]`) is the established pattern for visible reasoning. If ai-steward is the PEA exemplar, and P2 requires the reasoning to be visible, then the trail entries must show the reasoning structure â€” not just the outcomes.
 
 **Implication:** SCAN must produce trail entries that include:
 - Which lenses were applied and what each revealed
 - A pre-commit prediction of what the change will achieve
 - A named blind spot this run did not examine
 - `[!DECISION]` marker on the chosen finding
-- `[!REVERSAL]` if the prediction was wrong — added by the operator in a subsequent run when VERIFY evidence is available. **Never a placeholder. Never emitted by the pipeline.**
+- `[!REVERSAL]` if the prediction was wrong â€” added by the operator in a subsequent run when VERIFY evidence is available. **Never a placeholder. Never emitted by the pipeline.**
 
-**[DONE — 2026-06-20]** `record.py` now produces entries with this structure from the Finding + context already available. No new LLM calls required. The format is stable. Do not refactor `_build_entry` — it is intentional.
+**[DONE â€” 2026-06-20]** `record.py` now produces entries with this structure from the Finding + context already available. No new LLM calls required. The format is stable. Do not refactor `_build_entry` â€” it is intentional.
 
 ### Canonical trail entry format (authoritative)
 
 Each pipeline-generated entry contains exactly these sections, in this order:
 
 ```
-## YYYY-MM-DD — ai-steward: <description>
+## YYYY-MM-DD â€” ai-steward: <description>
 
 **[!DECISION]** Proposed: <description>
 *Rationale:* <rationale>
@@ -725,7 +725,7 @@ Each pipeline-generated entry contains exactly these sections, in this order:
 **Blind spot:** <blind_spot or 'Not identified for this run.'>
 
 **File:** `<file>`
-**Tokens:** SCAN in/out — IMPL in/out — cycle est. $X.XXXXX USD
+**Tokens:** SCAN in/out â€” IMPL in/out â€” cycle est. $X.XXXXX USD
 **Harness session:** `<path>`
 
 **Diff:**
@@ -736,12 +736,12 @@ Each pipeline-generated entry contains exactly these sections, in this order:
 *Staged for operator review. Not committed.*
 ```
 
-**`[!REVERSAL]` rule:** This marker appears in audit-trail.md only when a prediction was demonstrably wrong — appended by the operator after VERIFY evidence is available. It is never emitted by the pipeline as a structural placeholder. Any proposal that adds a `[!REVERSAL]` placeholder section to `_build_entry` violates this rule and must be rejected.
+**`[!REVERSAL]` rule:** This marker appears in audit-trail.md only when a prediction was demonstrably wrong â€” appended by the operator after VERIFY evidence is available. It is never emitted by the pipeline as a structural placeholder. Any proposal that adds a `[!REVERSAL]` placeholder section to `_build_entry` violates this rule and must be rejected.
 
 
 ---
 
-## 2026-06-20 — Expanded destination: universal autonomous improvement engine
+## 2026-06-20 â€” Expanded destination: universal autonomous improvement engine
 
 ### The identity correction
 
@@ -750,7 +750,7 @@ ai-steward is not a code improvement tool.
 It is a **universal autonomous improvement engine**. The target is anything an LLM can read and
 reason about: a Python codebase, a Rust library, a Node.js project, a book manuscript, a research
 paper, a song, a legal document, a product strategy. Code projects are the most obvious initial
-use case — not the boundary.
+use case â€” not the boundary.
 
 This matters for positioning: ai-steward's proof is not "we can autonomously improve Python code."
 It is "any artifact that can be expressed as text can be autonomously improved under Observable
@@ -760,14 +760,14 @@ Autonomy discipline." That proof is much stronger.
 
 The only things ai-steward truly requires:
 
-1. **A readable artifact** — something the LLM can examine (files, text, any content)
-2. **A way to apply a change** — write back to a file, patch a document, modify any artifact
-3. **A way to review the change** — the operator sees what changed and accepts or rejects it
-4. **A trail** — RECORD always runs; the harness always captures; the ledger always appends
+1. **A readable artifact** â€” something the LLM can examine (files, text, any content)
+2. **A way to apply a change** â€” write back to a file, patch a document, modify any artifact
+3. **A way to review the change** â€” the operator sees what changed and accepts or rejects it
+4. **A trail** â€” RECORD always runs; the harness always captures; the ledger always appends
 
 Everything else is operator-declared:
-- **Test runner:** erify_command in .ai-steward.yaml — or empty for no verification
-- **File scope:** scope.allowed glob patterns — **/*.py, **/*.md, **/*.ts, **/*
+- **Test runner:** erify_command in .ai-steward.yaml â€” or empty for no verification
+- **File scope:** scope.allowed glob patterns â€” **/*.py, **/*.md, **/*.ts, **/*
 - **LLM:** configurable per phase, swappable per purpose
 - **Version control:** git if present, file-backup diff if not, operator review either way
 
@@ -781,7 +781,7 @@ For non-git targets:
 
 The trail recording (RECORD phase, harness sessions) requires no git at all.
 
-PRE-FLIGHT's "git clean" gate becomes optional — it applies when git is present, is bypassed when
+PRE-FLIGHT's "git clean" gate becomes optional â€” it applies when git is present, is bypassed when
 it is not.
 
 ### The LLM is configurable per purpose
@@ -797,7 +797,7 @@ The harness captures it regardless.
 
 ### Open questions for V2 architecture
 
-These are deliberately unresolved — they shape whether the next iteration is incremental or
+These are deliberately unresolved â€” they shape whether the next iteration is incremental or
 architectural:
 
 1. **Review mechanism abstraction.** Git staging is one review path. A "show before/after diff"
@@ -817,20 +817,20 @@ architectural:
 The question ai-steward must be able to answer yes to:
 
 > "Can I point this at a song manuscript, write a destination, and get a disciplined,
-> traceable improvement cycle with a tamper-evident trail — without touching Python or git?"
+> traceable improvement cycle with a tamper-evident trail â€” without touching Python or git?"
 
 If the answer is no, the universal claim is not yet true.
 
 
 ---
 
-## 2026-06-20 — Clarification: git as anchor, not constraint
+## 2026-06-20 â€” Clarification: git as anchor, not constraint
 
 ### The git model (corrected)
 
 Git is **assumed but not required to be pre-existing**. The invariant is:
 
-> The git repository root is always the anchor for .trail/.
+> The git repository root is always the anchor for .acm/.
 
 ai-steward provides git if needed:
 - If the target directory is already a git repo: use it as-is.
@@ -840,8 +840,8 @@ ai-steward provides git if needed:
 - If git is not installed: fail PRE-FLIGHT with a clear message: install git.
 
 Git is not a dependency the operator must arrange. It is infrastructure ai-steward sets up.
-This means .trail/ always has a canonical home, rollback always works, and the diff is
-always a git diff — regardless of whether the target was "a Python repo" or "a folder of
+This means .acm/ always has a canonical home, rollback always works, and the diff is
+always a git diff â€” regardless of whether the target was "a Python repo" or "a folder of
 song lyrics the user just created."
 
 ### What this changes
@@ -861,28 +861,28 @@ It is defined by: **anything the LLM can read and reason about**.
 
 Song lyrics, legal documents, a Python codebase, a Rust library, a book manuscript,
 a marketing strategy, a research paper. The LLM is swappable per purpose.
-ai-steward provides the discipline layer — proposal, application, verification, trail.
+ai-steward provides the discipline layer â€” proposal, application, verification, trail.
 What gets improved is the operator's choice.
 
 The only structural requirements:
 1. Git is available (ai-steward will init if needed)
 2. The target consists of files (ai-steward reads them; IMPLEMENT writes them back)
-3. The operator writes a .trail/destination.md (or ai-steward scaffolds one via init)
+3. The operator writes a .acm/destination.md (or ai-steward scaffolds one via init)
 
 ### What this does NOT change
 
-- The trail anchor is always the git root. .trail/ lives there. Always.
+- The trail anchor is always the git root. .acm/ lives there. Always.
 - RECORD always runs. The harness always captures. Observable Autonomy applies to every domain.
 - The operator always reviews the staged diff. Trust is earned one accepted proposal at a time.
 - The harness (llm-harness-proxy) is still outside the agent. The guarantee is structural.
 
 ---
 
-## 2026-06-20 — V2 architecture: full memory model pipeline
+## 2026-06-20 â€” V2 architecture: full memory model pipeline
 
 ### The core problem with V1 SCAN
 
-V1 pipeline: PRE-FLIGHT → SCAN → IMPLEMENT → VERIFY → RECORD.
+V1 pipeline: PRE-FLIGHT â†’ SCAN â†’ IMPLEMENT â†’ VERIFY â†’ RECORD.
 
 SCAN reads destination.md as a hint and then scans files for "something worth improving."
 This produces noise when the destination is thin. A poor destination equals wasted cycles.
@@ -894,40 +894,40 @@ The pipeline was blind to its own work queue.
 
 The destination skill, retrospect, and the improve skill are currently human-invoked tools
 that feed the pipeline. In V2, they ARE phases of the pipeline. The pipeline embodies the
-full memory model: Destination → Retrospect → SCAN (guided) → IMPLEMENT → VERIFY → RECORD.
+full memory model: Destination â†’ Retrospect â†’ SCAN (guided) â†’ IMPLEMENT â†’ VERIFY â†’ RECORD.
 
-### Destination gate (Phase 0 — before any code is touched)
+### Destination gate (Phase 0 â€” before any code is touched)
 
 Three cases:
-1. **No destination / thin destination** — the pipeline pauses. It reads raw context from
-   `.trail/` (docs, notes, specs, anything the operator dropped there), synthesizes inferences,
+1. **No destination / thin destination** â€” the pipeline pauses. It reads raw context from
+   `.acm/` (docs, notes, specs, anything the operator dropped there), synthesizes inferences,
    and asks the operator the minimum questions needed to produce a quality destination.md.
    Only when destination.md is accurate does the pipeline proceed.
 
-2. **Stale destination** — detected when operator-added raw docs predate the last
+2. **Stale destination** â€” detected when operator-added raw docs predate the last
    destination update, or when the operator signals drift. Pipeline re-runs destination
    derivation for the changed sections.
 
-3. **Quality destination** — proceed.
+3. **Quality destination** â€” proceed.
 
-The primary onboarding path: **operator drops raw context into `.trail/` → ai-steward
-derives destination.md → asks clarifying questions → destination confirmed → work begins.**
+The primary onboarding path: **operator drops raw context into `.acm/` â†’ ai-steward
+derives destination.md â†’ asks clarifying questions â†’ destination confirmed â†’ work begins.**
 This replaces "manually write destination.md before running."
 
 The pipeline must never start a SCAN cycle without a quality destination.
 The `ai-steward init` command is the stub of this; the full version derives from
 whatever context is available.
 
-### Retrospect gate (Phase 1 — work queue management)
+### Retrospect gate (Phase 1 â€” work queue management)
 
-Retrospect produces the **prioritized work queue** — the ranked list of next-highest-leverage
+Retrospect produces the **prioritized work queue** â€” the ranked list of next-highest-leverage
 items. SCAN is guided by this queue, not by free-ranging file inspection.
 
 The work queue is a **persistent, lazy cache**. Retrospect runs only when the cache is invalid:
 
-- **Cold start** — no prior retrospect has run (`.trail/retrospect.md` absent or empty)
-- **Queue exhausted** — all items from the last retrospect have been completed
-- **Destination changed** — the operator updated destination.md, invalidating the prior queue
+- **Cold start** â€” no prior retrospect has run (`.acm/retrospect.md` absent or empty)
+- **Queue exhausted** â€” all items from the last retrospect have been completed
+- **Destination changed** â€” the operator updated destination.md, invalidating the prior queue
 
 Between these events, the pipeline consumes queue items one by one without re-running
 retrospect. Retrospect is expensive (full arc-read); it must not run redundantly.
@@ -939,51 +939,51 @@ The loop stops. The operator is informed. This is a success state, not a failure
 
 ```
 Destination gate
-    ├─ thin/missing → derive from raw docs + questions → loop back
-    └─ quality ✓
-         ↓
+    â”œâ”€ thin/missing â†’ derive from raw docs + questions â†’ loop back
+    â””â”€ quality âœ“
+         â†“
 Retrospect gate
-    ├─ stale/empty/changed → run retrospect → work queue
-    │       └─ queue empty → SILENCE (convergence declared, loop stops)
-    └─ valid queue ✓
-         ↓
+    â”œâ”€ stale/empty/changed â†’ run retrospect â†’ work queue
+    â”‚       â””â”€ queue empty â†’ SILENCE (convergence declared, loop stops)
+    â””â”€ valid queue âœ“
+         â†“
 SCAN (guided by work queue top item)
-    └─ IMPLEMENT → VERIFY → RECORD → mark item done
-         ↓
-    Work queue empty? → back to Retrospect gate
-    Destination changed? → back to Destination gate
-    Otherwise → next queue item
+    â””â”€ IMPLEMENT â†’ VERIFY â†’ RECORD â†’ mark item done
+         â†“
+    Work queue empty? â†’ back to Retrospect gate
+    Destination changed? â†’ back to Destination gate
+    Otherwise â†’ next queue item
 ```
 
 ### What does NOT change
 
 - The harness captures every LLM call. Observable Autonomy applies to Destination and
-  Retrospect phases too — their reasoning is captured, not just SCAN/IMPLEMENT.
+  Retrospect phases too â€” their reasoning is captured, not just SCAN/IMPLEMENT.
 - The operator always reviews staged diffs. Trust is earned one accepted proposal at a time.
 - RECORD always runs when a proposal is staged.
-- The target is still unbounded — anything the LLM can read.
+- The target is still unbounded â€” anything the LLM can read.
 - The trail anchor is always the git root.
 
 ---
 
-## 2026-06-20 — V2 architecture: simplified (supersedes verbose flowchart above)
+## 2026-06-20 â€” V2 architecture: simplified (supersedes verbose flowchart above)
 
 *KISS / DRY / YAGNI / Solve by design. Newest section wins on conflicts.*
 
 ### Three rules
 
 ```
-1. No destination  →  define destination. Nothing else runs.
-2. No todos        →  run retrospect (destination required). Nothing else runs.
-3. Todos exist     →  run improve loop. One item per cycle.
+1. No destination  â†’  define destination. Nothing else runs.
+2. No todos        â†’  run retrospect (destination required). Nothing else runs.
+3. Todos exist     â†’  run improve loop. One item per cycle.
 ```
 
 That is the complete pipeline logic. The structure enforces the behaviour.
 
 ### Destination derivation (Rule 1)
 
-If `.trail/destination.md` is absent or thin:
-- Read all raw context the operator dropped into `.trail/` (docs, notes, specs, anything)
+If `.acm/destination.md` is absent or thin:
+- Read all raw context the operator dropped into `.acm/` (docs, notes, specs, anything)
 - Form sourced inferences
 - Ask the minimum questions needed to produce an accurate destination
 - Write destination.md. Only then proceed.
@@ -1003,7 +1003,7 @@ SCAN executes the top item. The queue persists between cycles.
 
 ### Convergence check
 
-When retrospect finds nothing → run once more with Opus before declaring silence.
+When retrospect finds nothing â†’ run once more with Opus before declaring silence.
 Cheap models may declare convergence too early. One expensive verification is worth it.
 After Opus confirms nothing remains: loop stops. This is a success state.
 
