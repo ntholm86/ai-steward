@@ -202,6 +202,41 @@ def _load_scope_context(repo: Path) -> str | None:
     return "\n\n---\n\n".join(sections)
 
 
+def _load_orient_context(repo: Path) -> str | None:
+    """Load repo-scoped ORIENT context: retrospect.md (head) and learning.md (tail).
+
+    These are repo-local artifacts — not traversed up the parent hierarchy.
+    retrospect.md carries current arc-claims and operational rules; the head
+    of the file is most relevant (claims listed first).
+    learning.md carries chronological [!REALIZATION]/[!REVERSAL] markers;
+    the tail is most relevant (most recent markers last).
+
+    Budget: retrospect up to 1000 chars, learning up to 500 chars.
+    Returns None if neither file exists.
+    """
+    sections: list[str] = []
+
+    retrospect = repo / ".acm" / "retrospect.md"
+    if retrospect.is_file():
+        try:
+            text = retrospect.read_text(encoding="utf-8", errors="ignore")
+            excerpt = text[:1000] + "\n[... truncated ...]" if len(text) > 1000 else text
+            sections.append(f"### Current orientation (retrospect):\n\n{excerpt}")
+        except OSError:
+            pass
+
+    learning = repo / ".acm" / "learning.md"
+    if learning.is_file():
+        try:
+            text = learning.read_text(encoding="utf-8", errors="ignore")
+            excerpt = "[... truncated ...]\n" + text[-500:] if len(text) > 500 else text
+            sections.append(f"### Learning surface (recent markers):\n\n{excerpt}")
+        except OSError:
+            pass
+
+    return "\n\n---\n\n".join(sections) if sections else None
+
+
 _BINARY_HEURISTIC_BYTES = 8192
 
 # Directories excluded when using the default scope (**/*).
@@ -286,14 +321,21 @@ def scan(
     )
 
     destination = _load_scope_context(repo)
+    orient = _load_orient_context(repo)
+
+    parts: list[str] = []
     if destination:
-        user_content = (
-            f"Commander's Intent (operator destination — higher scope governs):\n\n{destination}\n\n"
-            f"---\n\nRepository files:\n\n{file_list}\n\n"
-            "Identify one improvement that advances the stated destination."
+        parts.append(
+            f"Commander's Intent (operator destination — higher scope governs):\n\n{destination}"
         )
-    else:
-        user_content = f"Repository files:\n\n{file_list}\n\nIdentify one improvement."
+    if orient:
+        parts.append(orient)
+    parts.append(
+        f"Repository files:\n\n{file_list}\n\n"
+        + ("Identify one improvement that advances the stated destination."
+           if destination else "Identify one improvement.")
+    )
+    user_content = "\n\n---\n\n".join(parts)
 
     message = client.messages.create(
         model=config.models.analyze,

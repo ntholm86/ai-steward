@@ -407,3 +407,62 @@ def test_collect_files_default_scope_excludes_binary_files(tmp_path: Path) -> No
 
     assert "image.png" not in files
     assert "notes.txt" in files
+
+
+# ---------------------------------------------------------------------------
+# ORIENT — retrospect.md and learning.md injection
+# ---------------------------------------------------------------------------
+
+
+def test_scan_includes_retrospect_in_context(tmp_path: Path) -> None:
+    """retrospect.md content appears in user_content when the file exists."""
+    (tmp_path / "utils.py").write_text("x = 1\n")
+    (tmp_path / ".acm").mkdir()
+    (tmp_path / ".acm" / "retrospect.md").write_text(
+        "# retrospect.md\n\nClaim: the loop is working.", encoding="utf-8"
+    )
+    config = _make_config(tmp_path)
+    client = _mock_client({"nothing": True})
+
+    scan(tmp_path, config, client=client)
+
+    user_content = client.messages.create.call_args[1]["messages"][0]["content"]
+    assert "Current orientation (retrospect):" in user_content
+    assert "Claim: the loop is working." in user_content
+
+
+def test_scan_includes_learning_in_context(tmp_path: Path) -> None:
+    """learning.md tail content appears in user_content when the file exists."""
+    (tmp_path / "utils.py").write_text("x = 1\n")
+    (tmp_path / ".acm").mkdir()
+    (tmp_path / ".acm" / "learning.md").write_text(
+        "# Learning\n\n## 2026-06-21\n\n**[!REALIZATION]** The loop converges.", encoding="utf-8"
+    )
+    config = _make_config(tmp_path)
+    client = _mock_client({"nothing": True})
+
+    scan(tmp_path, config, client=client)
+
+    user_content = client.messages.create.call_args[1]["messages"][0]["content"]
+    assert "Learning surface (recent markers):" in user_content
+    assert "**[!REALIZATION]** The loop converges." in user_content
+
+
+def test_scan_skips_missing_orient_files(tmp_path: Path) -> None:
+    """SCAN succeeds normally when retrospect.md and learning.md are absent."""
+    (tmp_path / "utils.py").write_text("x = 1\n")
+    config = _make_config(tmp_path)
+    client = _mock_client({
+        "file": "utils.py",
+        "description": "test",
+        "proposed_change": "x = 2",
+        "rationale": "better",
+        "risk": "low",
+    })
+
+    result = scan(tmp_path, config, client=client)
+
+    assert isinstance(result, Finding)
+    user_content = client.messages.create.call_args[1]["messages"][0]["content"]
+    assert "Current orientation" not in user_content
+    assert "Learning surface" not in user_content
