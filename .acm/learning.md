@@ -1,58 +1,386 @@
 # Learning
 
-Auto-generated from `.trail/audit-trail.md` by the `record.py learning --write` command in the autonomous-agent-skills install.
-Do not edit by hand — re-run the command to refresh.
+Auto-generated from `.acm/audit-trail.md` by the `record.py learning --write` command in the autonomous-agent-skills install.
+Do not edit by hand â€” re-run the command to refresh.
 
-Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker. The learning surface — what the loop has actually concluded across runs. Read this before reading `audit-trail.md` in full; reach for `audit-trail.md` only when an item here needs its surrounding context.
+Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker. The learning surface â€” what the loop has actually concluded across runs. Read this before reading `audit-trail.md` in full; reach for `audit-trail.md` only when an item here needs its surrounding context.
 
-## 2026-05-14 — Evo analysis and new project decision
+## 2026-05-14 â€” Evo analysis and new project decision
 
 **[!REALIZATION]** ** Evo's self-improvement is metric-driven (benchmark merge rate). It does not know why it improves, whether improvements are genuine, or whether it is optimizing the right thing. The skills layer adds exactly what is missing: Vision (operator intent), Trail (reasoning as it happens), Improve (meta-cognitive loop with silence as valid), Retrospect (arc-level reading), Probe (ARF — tests whether reasoning is genuine).
 
-## 2026-05-14 — Evo analysis and new project decision
+## 2026-05-14 â€” Evo analysis and new project decision
 
 **[!REALIZATION]** ** The correct framing of model-family mixing: in most multi-agent systems, models are mixed for task specialization (performance optimization). In ai-steward, model-family independence is a *reasoning integrity mechanism* — the model that proposes a change and the model that judges it come from different families, so the judge cannot share the proposer's blind spots. This is structurally different from performance optimization.
 
-## 2026-05-14 — Vision run: understanding operator intent
+## 2026-05-14 â€” Vision run: understanding operator intent
 
 **[!REALIZATION]** ** The execution layer is deliberately dumb: executes, verifies, logs. Does not reason. Gates are reasoning decisions made by the reasoning layer, not mechanical rules.
 
-## 2026-05-14 — Vision run: understanding operator intent
+## 2026-05-14 â€” Vision run: understanding operator intent
 
 **[!REVERSAL]** ** Vision corrected: removed "demonstration artifact" framing; replaced with "earned unsupervised operation as normal running state."
 
-## 2026-05-14 — Architectural clarification: harness-protocol role and dual-use trail
+## 2026-05-14 â€” Architectural clarification: harness-protocol role and dual-use trail
 
 **[!REALIZATION]** ** The harness is not a passive recorder — it is a model trustworthiness classifier. For every API call it scores what the model exposed: thinking tokens, tool usage, decision rationale. Models that do not provide a reasoning trail are flagged. The reasoning layer uses this score to calibrate trust per model per pipeline phase.
 
-## 2026-05-14 — Architectural clarification: harness-protocol role and dual-use trail
+## 2026-05-14 â€” Architectural clarification: harness-protocol role and dual-use trail
 
 **[!REALIZATION]** ** The trail serves two purposes at different trust levels:
 
-## 2026-05-14 — Vision cleanup
+## 2026-05-14 â€” Vision cleanup
 
 **[!REALIZATION]** ** The harness-protocol is not just a passive recorder — it is an active transparency evaluator. For every API call, it scores what the model exposed: thinking tokens, tool usage, decision rationale, structured reasoning. Models that don't provide a proper trail are flagged. This makes it a model trustworthiness classifier.
 
-## 2026-05-14 — Vision cleanup
+## 2026-05-14 â€” Vision cleanup
 
 **[!REALIZATION]** ** The dual-use tension in the trail is real and must be maintained, not resolved:
 
-## 2026-05-14 — Vision cleanup
+## 2026-05-14 â€” Vision cleanup
 
 **[!REALIZATION]** ** The key architectural distinction: Evo tangled reasoning and execution. ai-steward separates them. The execution layer is deliberately dumb. The reasoning layer is architecturally separate and observes/guides from outside. Gates become reasoning decisions, not hard mechanical rules.
 
-## 2026-05-14 — Vision cleanup
+## 2026-05-14 â€” Vision cleanup
 
 **[!REVERSAL]** ** Vision corrected: removed "demonstration artifact" framing; replaced with "earned unsupervised operation as normal running state."
 
-## 2026-05-15 — First retrospect run; launch orientation before first code sprint
+## 2026-05-15 â€” First retrospect run; launch orientation before first code sprint
 
 **[!REALIZATION]** ** The risk going into the first code sprint is the mirror of harness-protocol's early loop problem. harness iterated on visible features while the core claim was untested. ai-steward's risk is deferring phase assignment and model family decisions until the pipeline "feels ready" — meaning those decisions get made by the code rather than before it. The operational rules in `retrospect.md` are designed to prevent this.
 
-## 2026-05-28 — vision-to-destination-rename
+## 2026-05-28 â€” vision-to-destination-rename
 
 **[!REALIZATION]** :* not fired — no prior realisation in this repo argued for or against the artifact filename.
 
+## 2026-06-19 â€” Post-destination-refinement retrospect
+
+**[!REALIZATION]** ** The founding decisions (harness as tokenless capture, dumb execution layer, separation of execution from reasoning) are structurally aligned with the new token-efficiency constraint. The founding vision *enables* token efficiency; the June refinement *requires* it.
+
+## 2026-06-19 â€” Post-destination-refinement retrospect
+
+**[!REALIZATION]** ** The existing code (config.py) encodes the full vision — five-phase model assignment with model-family independence — while V1 explicitly says "single-model operation." This is a concrete gap. Either the config needs simplification, or V1 inherits scaffolding it said it would defer.
+
+## 2026-06-19 â€” Post-destination-refinement retrospect
+
+**[!REALIZATION]** ** The deepest uncertainty: can the autonomous loop produce acceptable proposals without tier 2/3 reasoning? The destination asserts tier 0/1 is sufficient for routine improvements. V1 is the test. If it fails, the token-efficiency constraint conflicts with the earned-delegation destination.
+
+## 2026-06-19 â€” Improve: config.py docstring correction (V1 / V2 framing)
+
+**[!REALIZATION]** `:* not fired.
+
+## 2026-06-19 â€” Improve: V1 pipeline design
+
+**[!REALIZATION]** `:* not fired — design is consistent with all founding realizations.
+
+## 2026-06-19 â€” Improve: harness.py — structural Observable Autonomy
+
+**[!REALIZATION]** `:* not fired.
+
+## 2026-06-19 â€” Improve: pipeline loop skeleton + PRE-FLIGHT gates
+
+**[!REALIZATION]** `:* not fired.
+
+## 2026-06-19 â€” Improve: VERIFY phase + rollback utility
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-19 â€” Improve: VERIFY phase + rollback utility
+
+**[!REVERSAL]** ** Prediction partially failed — 2 test bugs. Both pass-path tests triggered the 2x size guard inadvertently (6-byte original, 19-byte modified = 3x). The verify.py code was correct. Fixed by using same-size file content. Three runs to get to green (initial fail, stale assertion, pass).
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REALIZATION]** below.
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REALIZATION]** ** CRLF is a recurring test-infrastructure hazard in this codebase. Every test that writes a file with `write_text` and then compares byte sizes will produce a CRLF mismatch on Windows. The pattern to remember: when byte size matters, use `write_bytes(content.encode("utf-8"))` to control exact on-disk layout. This will fire again in any test that exercises VERIFY's 2x size gate with newly-written test files.
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REALIZATION]** ** Finding and LoopResult belong in `pipeline/_types.py`. The circular import that forced lazy phase imports in run() is a structural smell. V2 refactor target: move Finding and LoopResult to _types.py, update all phase modules and tests to import from there, restore top-level imports in loop.py.
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REALIZATION]** s that aged well:**
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REALIZATION]** arc-level (new -- surfaces from arc-read not visible in any iteration):**
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REVERSAL]** ** test_implement_returns_original_size_bytes initially used `write_text(original)` and asserted `len(original.encode("utf-8"))`. On Windows, `write_text` emits CRLF, inflating the on-disk size by 4 bytes (32 vs 28). Fixed by using `write_bytes(original.encode("utf-8"))` to control exact byte layout. Same CRLF class as verify tests -- this is now the third occurrence in one session.
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REVERSAL]** , multiple [!REALIZATION])
+
+## 2026-06-19 â€” Improve: SCAN phase
+
+**[!REVERSAL]** markers across 15 entries. Prediction accuracy: high -- most held exactly. One class of mistake repeated 3 times (CRLF/byte-size on Windows), documented and mitigated.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** (arc-level):** The founding hypothesis — "structural guarantees replace social contracts" — validated under operational contact. This is the most important confirmation in the arc. The hypothesis is no longer theoretical.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** (arc-level):** The next gap is not more code. SCAN works but is undirected. The architectural constraint now is schema design for .pea/ memory model before directed SCAN implementation.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** ** The destination.md truncation direction is inverted. The file is append-only (oldest content at top, newest at bottom). Truncating with [:3000] delivers the founding vision from May — correct framing, but the most recent operator decisions (post-V1 direction, .trail/ decision) are cut. The fix is [-3000:] to take the tail. Low-cost correction; high impact on SCAN quality.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** -flagged truncation direction defect.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** from the directed SCAN iteration explicitly named this: 	ext[:3000] delivers the founding vision (oldest content); 	ext[-3000:] delivers the most recent operator decisions. The destination.md is append-only. Newest entries are at the bottom. This is a one-line fix with high SCAN quality impact.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** :* not fired — this change RESOLVES the [!REALIZATION] from the prior entry.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** :* not fired — this change RESOLVES the [!REALIZATION] ("Finding and LoopResult belong in pipeline/_types.py") from the loop-wiring entry.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** (arc-level):** The retrospect.md was materially stale. .pea/ references throughout; _types.py marked as outstanding debt; directed SCAN described as "not implemented." The prior retrospect was one day old but three commits behind. Retrospect runs after substantive implementation work should be mandatory, not optional.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** ** The dual purpose (proof + tool) was always implicit but never stated. The consolidation didn't change direction; it made the direction visible. Every decision since May 14 served both purposes.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** ** The remaining P1 gap is structural, not cognitive. SCAN reasons (harness proves it). But the reasoning is NOT visible in the audit-trail.md entry. The destination says "every decision is reasoned, and the reasoning is independently verified." The harness proves reasoning happened; the trail entry should show what it was.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** ** Cost tracking is complete but there's no baseline yet. The ~$ .002/cycle from the first run is the baseline. Future changes evaluated against it.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** :* not fired -- this resolves the P1 gap identified in retrospect.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** :* not fired -- this resolves the placeholder introduced last iteration.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** ** P1 (Commander's Intent + reasoning visibility) is now structurally complete. Both P2 (harness capture) and P1 were listed as preconditions for merging self-targeting runs. Both are now met. The self-targeting gate is open.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REVERSAL]** markers across 17 entries. High prediction accuracy. CRLF class documented and mitigated.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REVERSAL]** ** The top-level import promotion broke 3 tests. With lazy imports, monkeypatching scan_mod.scan worked because run() called
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REVERSAL]** fix.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REVERSAL]** ** Prediction of 61/61 on first attempt failed: 7 test_implement.py tests unpacked the return as 3-tuples (`ok, _, _` and `ok, reason, size`). They all raised `ValueError: too many values to unpack`. I missed that test_implement.py calls implement() directly — test_loop.py uses monkeypatched lambdas (which I did update), but test_implement.py unpacks the real return. Fixed by updating all 7 unpackings to use `*_` for the extra values: `ok, *_`, `ok, reason, size, *_`, `_, _, original_size, *_`. 61/61 after fix.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REVERSAL]** ** Prediction of 61/61 on first attempt failed: test_harness.py had two tests asserting `str(tmp_path / ".harness")` that needed updating to `str(tmp_path / ".trail")`. Caught immediately, fixed in same iteration. This is the same pattern as the previous implement-tuple reversal: tests that directly test the changed contract need updating; tests that mock out the whole function do not.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REVERSAL]** fired for the second consecutive iteration (test assertions on changed return contracts). Pattern: when changing a contract that has direct test coverage, those tests need updating. Not a structural problem -- honest coverage catching real changes. Not fired as "recurring problem," fired as "pattern documented."
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REVERSAL]** ` markers across 20+ entries. High prediction accuracy. Recurring class (test assertions on changed contracts) documented and mitigated.
+
+## 2026-06-20 â€” ai-steward: Add validation to reject findings with file paths containing directory traversal sequences.
+
+**[!REVERSAL]** ** Initial test data was ~2585 chars total -- below the 3000-char threshold -- so truncation never fired and both section headings appeared in the output. Fixed by increasing old_section padding from "A" * 2500 to "A" * 3500 (total ~3587 chars). Same class of mistake as the CRLF test failures: test data that does not actually trigger the code path under test.
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to capture reasoning structure (lenses, predictions, blind spots) in improve-skill-style format to meet structural equivalence requirement from destination 2026-06-20.
+
+**[!REVERSAL]** ** placeholder section for capturing prediction mismatches in future runs, and reorganize the entry so the blind_spot field is prominent as a named decision gate rather than a trailing afterthought.
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to capture reasoning structure (lenses, predictions, blind spots) in improve-skill-style format to meet structural equivalence requirement from destination 2026-06-20.
+
+**[!REVERSAL]** ** Prediction Mismatch Gate:  \n"
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to structure reasoning output as improve-skill-style trail entry per destination decision 2026-06-20.
+
+**[!REALIZATION]** (arc-level):** The AI keeps proposing the same wrong fix to `record.py`. The destination says "improve-skill-style entries" without defining them. This creates an attractor loop: every self-targeting run reads the destination, concludes record.py needs restructuring, and produces a proposal with hardcoded `[!REVERSAL]` placeholders. Either define the format concretely or accept the current format as sufficient.
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to structure reasoning output as improve-skill-style trail entry per destination decision 2026-06-20.
+
+**[!REVERSAL]** ` marker stub for future VERIFY data binding, and formats the prediction/rationale structure to match the skill-suite pattern (lenses, predictions, decision marker, blind spot) rather than the current lightweight summary format.
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to structure reasoning output as improve-skill-style trail entry per destination decision 2026-06-20.
+
+**[!REVERSAL]** ` markers when VERIFY data becomes available in future runs; the current record.py has no mechanism to query prior session data or link reversals across cycles.
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to structure reasoning output as improve-skill-style trail entry per destination decision 2026-06-20.
+
+**[!REVERSAL]** ** *stub â€” VERIFY binding pending*\n"
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to structure reasoning output as improve-skill-style trail entry per destination decision 2026-06-20.
+
+**[!REVERSAL]** ` placeholder error)
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to structure reasoning output as improve-skill-style trail entry per destination decision 2026-06-20.
+
+**[!REVERSAL]** ` in the `_types.py` refactor (monkeypatch timing). Honest handling.
+
+## 2026-06-20 â€” DRY extraction: run_tests to _utils.py
+
+**[!REALIZATION]** ** `loop.py` has `_baseline_tests()` and `verify.py` has `_run_tests()` — identical implementations with different names. Naming difference masked semantic identity during prior sessions. This is exactly the kind of duplication the destination calls out: "DRY: Shared logic extracted."
+
+## 2026-06-20 â€” Fix implement() return type annotation
+
+**[!REALIZATION]** ** `implement()` has `-> tuple[bool, str, int]` annotation but actually returns `tuple[bool, str, int, int, int]`. The two token-count return values (`input_tokens`, `output_tokens`) were added during P2 token-tracking work without updating the annotation or docstring. Tests used `*_` star-unpacking so nothing broke at runtime, but a type checker flags this. Loop.py correctly unpacks all 5 values — the mismatch is purely in the signature.
+
+## 2026-06-20 â€” Make codebase mypy-clean
+
+**[!REALIZATION]** ** harness.py had the same missing TYPE_CHECKING/anthropic guard that scan.py and implement.py already have. cli.py accessed
+
+## 2026-06-20 â€” Make codebase mypy-clean
+
+**[!REALIZATION]** (macro -- recurring-class trigger FIRED):** Last three iterations were all annotation/type discipline fixes (DRY test-runner, wrong 3->5-tuple annotation, missing TYPE_CHECKING + null guard). All root-caused to the P2 token-tracking implementation pass landing quickly without a type-check gate. The code is now clean; the structural fix is adding mypy to CI so the next rapid implementation pass cannot leave the same gap silently.
+
+## 2026-06-20 â€” Retrospect: post-CI-closure
+
+**[!REALIZATION]** (arc-level):** Self-targeting has hit diminishing returns. Two consecutive sessions (P1/P2 closure + this CI session) found nothing functional to improve in ai-steward's own codebase. The loop is ready to prove generalisation by running against external repos.
+
+## 2026-06-20 â€” Retrospect: post-CI-closure
+
+**[!REVERSAL]** markers across the full session (one from _types.py refactor, one from implement-tuple test unpacking). Honest, within expected noise.
+
+## 2026-06-20 â€” First external-repo run: vectorium (TypeScript) — VERIFY gap discovered
+
+**[!REALIZATION]** VERIFY has no meaningful guards for non-Python repos.**
+
+## 2026-06-20 â€” First external-repo run: vectorium (TypeScript) — VERIFY gap discovered
+
+**[!REALIZATION]** SCAN and IMPLEMENT have different failure modes on large files.**
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to structure reasoning as improve-skill format entries with lenses, predictions, and decision markers matching audit-trail pattern.
+
+**[!REVERSAL]** markers when VERIFY data contradicts predictions.
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to structure reasoning as improve-skill format entries with lenses, predictions, and decision markers matching audit-trail pattern.
+
+**[!REVERSAL]** placeholder section for future verification data—transforming the trail entry from outcome-focused to reasoning-focused per the 2026-06-20 decision on structural equivalence.
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to structure reasoning as improve-skill format entries with lenses, predictions, and decision markers matching audit-trail pattern.
+
+**[!REVERSAL]** markers when VERIFY data contradicts predictions.
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to structure reasoning as improve-skill format entries with lenses, predictions, and decision markers matching audit-trail pattern.
+
+**[!REVERSAL]** ** *(Reserved for VERIFY phase)*  \n"
+
+## 2026-06-20 â€” ai-steward: Refactor _build_entry to structure reasoning as improve-skill format entries with lenses, predictions, and decision markers matching audit-trail pattern.
+
+**[!REVERSAL]** placeholder is explicitly prohibited by operational rules — it marks actual reversals, never reserved sections; (2) removes trailing newline at EOF (regression). The refactoring itself is cosmetic with no leverage. This is the attractor loop documented in retrospect.md firing and the operator gate holding. Evidence that the review-then-commit workflow functions correctly.
+
+## 2026-06-20 â€” fix-scan-false-positive-already-exists-check
+
+**[!REALIZATION]** : not fired.
+
+## 2026-06-20 â€” feat-ai-steward-init-command
+
+**[!REALIZATION]** : not fired.
+
+## 2026-06-20 â€” feat-configurable-verify-command
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-20 â€” feat-configurable-verify-command
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-20 â€” feat-configurable-verify-command
+
+**[!REVERSAL]** ** First run: 2 pre-existing tests failed. `**/*` collected `.trail/destination.md` as a file, causing its raw content to appear twice in the SCAN prompt (once from `_load_destination()`, once from `_collect_files()`). Fix: add `_DEFAULT_SKIP_DIRS` to exclude `.trail/` and other system dirs when using the default scope. Fixed in same iteration.
+
+## 2026-06-20 â€” feat-configurable-verify-command
+
+**[!REVERSAL]** fired again — test relying on directory isolation broke when scope was widened. Class: "test isolation assumptions break when collection scope widens." Documented. Mitigated by `_DEFAULT_SKIP_DIRS`.
+
+## 2026-06-21 â€” scan-reasoning-quality + V1-milestone-confirmed
+
+**[!REALIZATION]** The first run under the improved prompt returning NOTHING FOUND is not a failure — it is a quality gate working. The previous run with the flat prompt produced a speculative off-mandate proposal in seconds. The new prompt produced genuine mandate-aligned examination followed by an honest rejection. The quality bar is structurally higher now.
+
+## 2026-06-21 â€” scan-reasoning-quality + V1-milestone-confirmed
+
+**[!REALIZATION]** The skills (GitHub Copilot, trail) and ai-steward both write to the same .acm/audit-trail.md. This is the shared evidence layer: human-supervised sessions write trail-skill-format entries; the autonomous pipeline writes RECORD-phase-format entries. Both are governed by the same destination.md and both read from the same .acm/ context. Unified governance, two classes of author.
+
+## 2026-06-21 â€” scan-reasoning-quality + V1-milestone-confirmed
+
+**[!REALIZATION]** contradicted: No.
+
+## 2026-06-21 â€” scan-reasoning-quality + V1-milestone-confirmed
+
+**[!REALIZATION]** The first run under the improved prompt returning NOTHING FOUND is not a failure — it is a quality gate working. The previous flat prompt produced a speculative off-mandate proposal instantly. The new prompt produced genuine mandate-aligned examination followed by an honest rejection.
+
+## 2026-06-21 â€” scan-reasoning-quality + V1-milestone-confirmed
+
+**[!REALIZATION]** The skills (GitHub Copilot, trail skill) and ai-steward both write to the same `.acm/audit-trail.md`. This is the shared evidence layer: human-supervised sessions write trail-skill-format entries; the autonomous pipeline writes RECORD-phase-format entries. Both are governed by the same `destination.md` and both read from the same `.acm/` context. Unified governance, two classes of author.
+
+## 2026-06-21 â€” scan-reasoning-quality + V1-milestone-confirmed
+
+**[!REALIZATION]** contradicted: No.
+
 ---
 
-**12 markers — 10 realisations, 2 reversals**
+**94 markers â€” 65 realisations, 29 reversals**

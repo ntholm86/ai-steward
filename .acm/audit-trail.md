@@ -2652,3 +2652,47 @@ Across-trail trigger evaluation (mandatory):
 1. External repo targeting — run against a small well-tested Python project to prove generalisation beyond self-targeting.
 2. Multi-cycle convergence — run ai-steward in a loop until SCAN returns nothing_found; verify it stops cleanly.
 3. Regenerate `history.md` and `learning.md` from `audit-trail.md` (stale — last updated 2026-05-28).
+
+---
+
+## 2026-06-21 — Retrospect: post-v1-milestone-config-surface
+
+- target: ai-steward
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: retrospect v1.9.0
+- scope: "Read the 2026-06-21 arc (scope-context-traversal through config-surface destination) and determine: where does the loop's attention need to shift, what structural facts emerged, and are the three prior open gaps (convergence, harness ledger, trail format) closer or farther?"
+
+### Freshness guard
+
+- `python C:\Users\admin\.copilot\skills\harness\tools\record.py history --write` → wrote .acm/history.md (35 entries)
+- `python C:\Users\admin\.copilot\skills\harness\tools\record.py learning --write` → wrote .acm/learning.md (94 markers)
+- Gate: **PASS**
+
+### Arc-claims formed
+
+1. **Mandate gate is now a hard structural filter.** 5-step protocol closes the off-mandate gap. One run proven; pattern not yet established.
+
+2. **V1 proof complete. Convergence is the critical untested claim.** External targeting, self-targeting, and mandate-gated SCAN demonstrated. Multi-cycle convergence never tested.
+
+3. **Cost model in destination Current State is obsolete.** "$0.002 (haiku)" contradicts actual ~$0.03/cycle under sonnet-4-5 + 5-step protocol. Needs correction.
+
+4. **RECORD phase is the largest gap.** Reflection, trigger evaluation, Candidate Next Moves — all in destination, none in `record.py`. SCAN got all the attention; RECORD is structurally behind.
+
+5. **Duplicate trail entry created.** "scan-reasoning-quality + V1-milestone-confirmed" appears twice (entries 34–35). Trail skill has no duplicate detection gate.
+
+6. **Shared .acm/ evidence layer is an achieved structural fact.** Skills and autonomous pipeline both write to the same trail and are governed by the same destination. ORIENT phase implementation is the remaining step.
+
+7. **Config surface is defined before implementation.** `max_cost_per_cycle_usd`, memory, retrospect, reasoning, escalation controls captured in destination. Correct order (design-in); risk is aspirational drift if not implemented within 2–3 sessions.
+
+### New operational rules added
+
+- Test SCAN prompt changes with a live run before declaring them correct.
+- Check for duplicate before appending trail entry.
+- Update cost model in destination when operating parameters change materially.
+- Use Python (not PowerShell) for all .acm/ file reads and writes.
+
+### Loop-effectiveness
+
+[!REALIZATION] SCAN has received exclusive autonomous attention. RECORD has received zero. These phases are equally critical — SCAN generates the proposal, RECORD closes the feedback loop. The asymmetry means every cycle currently produces a trail entry that does not meet the trail skill standard. This is the loop's structural blind spot.
+
+[!REALIZATION] "Convergence Is Silence" is named in every destination section but has never been demonstrated. A principle stated but untested is an aspiration, not a claim. The convergence test is the session that turns this into evidence.
