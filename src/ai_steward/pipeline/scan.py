@@ -77,7 +77,8 @@ Do NOT reproduce full file contents in proposed_change.
   "rationale": "<why this change earns its maintenance cost>",
   "risk": "<low | medium | high>",
   "blind_spot": "<the file/area from Step 5>",
-  "already_exists_check": "<the exact line(s) from Step 2, or 'not found'>"
+  "already_exists_check": "<the exact line(s) from Step 2, or 'not found'>",
+  "prediction": "<falsifiable statement from Step 4: what this change will achieve and what it will NOT change>"
 }
 
 If nothing survives all five steps, output exactly: {"nothing": true}
@@ -358,6 +359,7 @@ def scan(
 
     return Finding(
         file=file_path,
+        prediction=data.get("prediction", ""),
         description=data["description"],
         proposed_change=data["proposed_change"],
         rationale=data["rationale"],

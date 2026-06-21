@@ -25,6 +25,7 @@ class Finding:
     impl_input_tokens: int = 0
     impl_output_tokens: int = 0
     blind_spot: str = ""
+    prediction: str = ""
 
 
 @dataclass

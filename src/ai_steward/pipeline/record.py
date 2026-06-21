@@ -93,7 +93,7 @@ def _build_entry(finding: Finding, diff: str, harness_session_path: str | None =
         f"**[!DECISION]** Proposed: {finding.description}  \n"
         f"*Rationale:* {finding.rationale}  \n"
         f"*Risk:* {finding.risk}\n\n"
-        f"**Prediction:** {finding.proposed_change}  \n"
+        f"**Prediction:** {finding.prediction or finding.proposed_change}  \n"
         f"*Expected outcome:* {finding.rationale}\n\n"
         f"**Lenses applied:**\n"
         f"- *Commander\u2019s Intent:* Operator destination (`.acm/destination.md`) "
