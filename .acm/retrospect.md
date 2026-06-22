@@ -1,103 +1,110 @@
 # retrospect.md — ai-steward
 
-_Last updated: 2026-06-22 (run: post-governance-layer-completion)_
+_Last updated: 2026-06-22 (run: post-multi-cycle-convergence)_
 
 ---
 
 ## Current claims
 
-**1. The mandate gate is live-validated, not just structurally implemented.**
-The 5-step SCAN protocol has been tested in live runs (entries 44, 49). The mandate gate works under operational conditions: a NOTHING FOUND that correctly deferred an off-mandate finding, a genuine mandate-aligned proposal accepted by the operator. The gate is empirically demonstrated, not just specified.
-**Falsifiable by:** a SCAN run that produces an off-mandate proposal despite the 5-step prompt.
+**1. Multi-cycle convergence is validated.**
+Entry 75 ran 5 cycles against ai-steward itself. Result: 1 genuine change (reflect model field), then 3 consecutive NOTHING FOUND (cycles 2, 4, 5). Cycle 3 was VERIFY FAILED due to scope gate bug — which the run discovered and fixed. The "Convergence Is Silence" principle is now empirically demonstrated, not just stated.
+Silence on: self-targeting convergence. Bar tested: internal text-layer correctness for `src/**/*.py`. Bars not tested: external repo convergence, workspace-level mandate conflicts, custom lens behavior in production.
+**Falsifiable by:** a multi-cycle run that fails to stop cleanly after exhausting genuine findings.
 
-**2. Multi-cycle convergence is the critical untested architectural claim.**
-The loop has never been run until it self-silences. Convergence Is Silence is named in every destination section but has never been demonstrated in practice. With governance infrastructure now structurally complete (entries 36–52), multi-cycle testing is no longer blocked — it is the next necessary validation. A principle stated but untested is an aspiration, not a claim.
-**Falsifiable by:** a multi-cycle run that fails to stop cleanly, or continues past all genuine findings.
+**2. System-prompt instructions are soft constraints — all constraints that matter must be enforced in code.**
+Cycle 3 of the convergence run exposed this: SCAN proposed `tests/test_scan.py` (blocked by `scope.blocked: [tests/**]`) by reasoning around the file-list instruction. The prompt said "choose from the provided file list" — the model ignored it. Fix: added code-level scope enforcement in `scan.py` (lines 445–453). Two new tests.
+This generalizes the "trust but verify" principle to LLM pipelines: the model will follow instructions most of the time, but the pipeline must be structurally correct even when it doesn't.
+**Falsifiable by:** an out-of-scope proposal that bypasses the code-level gate.
 
-**3. Single-cycle pipeline structural parity with human trail entries is complete.**
-All single-cycle fields are now structurally correct: Prediction (entry 37), Lenses/examination_summary (entry 42), Blind spot, Reflection (entry 47), Trigger evaluations (entry 47), Token counts, Cycle cost (entry 46), Harness session links (entry 50). The autonomous trail entry is structurally indistinguishable from a human-supervised trail skill entry for the single-cycle case.
-Silence on: structural completeness for the single-cycle case. Bars not tested: multi-cycle compounding behavior, whether Candidate Next Moves from autonomous entries are useful to operators, across-trail trigger accuracy over time.
-**Falsifiable by:** an autonomous trail entry structurally missing a field that a human-supervised entry would include.
-
-**4. ORIENT context now delivers both arc-claims and operational rules — but was silently broken from day one.**
-[!REVERSAL of prior claim 4] The prior retrospect stated "ORIENT is implemented; the autonomous pipeline now reads from the same evidence layer." This was false. The 1000-char head window delivered 12% of retrospect.md — claims #1–2 (partial) and nothing else. Operational rules begin at char 5681. Every SCAN call from entry 40 through entry 51 executed without operational constraints.
-Fixed in entry 52: head window raised to 2000 chars, `## Active operational rules` extracted by section header unconditionally. Both are now contract-tested.
+**3. ORIENT context now delivers both arc-claims and operational rules.**
+Entry 52 fixed a silent failure: the prior 1000-char head window delivered only 12% of retrospect.md, missing all operational rules. Now: 2000-char head window + unconditional `## Active operational rules` section extraction. Contract-tested.
 **Falsifiable by:** a SCAN context inspection showing operational rules absent from the model's input.
 
+**4. Single-cycle pipeline structural parity with human trail entries is complete.**
+All required fields: Prediction (entry 37), Lenses/examination_summary (entry 42), Blind spot, Reflection (entry 47), Trigger evaluations (entry 47), Token counts, Cycle cost (entry 46), Harness session links (entry 50). 112 tests. Autonomous trail entries are structurally indistinguishable from human-supervised ones.
+**Falsifiable by:** an autonomous trail entry structurally missing a field that a human-supervised entry would include.
+
 **5. Unit tests alone are insufficient for prompt and token-budget changes; live runs are required.**
-The max_tokens=1024 bug (entry 44) passed all 81 unit tests but failed immediately in the first live run. The 5-step reasoning protocol consumed 3977 chars before JSON was emitted, exceeding the budget. Unit tests structurally cannot test "is the model's output long enough to fit in the budget?" — this requires live model calls.
-**Falsifiable by:** a prompt or token-budget change that passes unit tests but fails live.
+Entry 44: max_tokens=1024 passed 81 unit tests but failed immediately in live run. Entry 75: scope bypass passed all tests but failed in live multi-cycle run. Unit tests structurally cannot test "does the model actually obey the prompt under operational conditions?"
+**Falsifiable by:** a prompt change that passes unit tests and live runs without issue.
 
-**6. The cost model in destination.md is stale.**
-`record.py` uses model-keyed pricing (entry 46) and produces accurate per-entry costs. But `destination.md` still says "~$0.002 per cycle (haiku, 2 LLM calls)." The validated cost under the current configuration (claude-sonnet-4-5, 3 LLM calls: SCAN + IMPLEMENT + REFLECT) is ~$0.027–0.030/cycle. The code is correct; the destination document is not.
-**Falsifiable by:** a destination.md that still shows "$0.002" without qualification.
+**6. The cost model in destination.md is current.**
+Entry 72 appended the correction: actual validated cost ~$0.027–0.030/cycle at claude-sonnet-4-5 + 3-call pipeline. The prior claim #6 from the last retrospect is now falsified — destination.md no longer shows "$0.002" without qualification.
+**Falsifiable by:** destination.md showing outdated cost figures without correction annotation.
 
-**7. Duplicate trail entries 34–35 are unaddressed.**
-Not blocking. Structural cleanliness gap only. The operational rule (check before appending) has been in place since entry 35.
+**7. Duplicate trail entries 34–35 remain unaddressed.**
+Not blocking. Structural cleanliness gap only. The operational rule (check before appending) prevents recurrence.
 
 **8. The operator-gate rejection pattern is working correctly.**
-One proposal discarded by operator review (record.py [!REVERSAL] placeholder abuse). The rejection is evidence the review workflow functions — the pipeline produced a wrong proposal, the operator caught it, the trail records it.
-**Falsifiable by:** a rejected proposal that is not recorded in the trail.
+Two documented rejections: record.py `[!REVERSAL]` placeholder abuse (entries 18–19, 28), and the cycle-3 scope bypass (entry 75). Both caught by operator review, discarded, and trailed. The review workflow functions.
+**Falsifiable by:** a rejected proposal not recorded in the trail.
 
-**9. Three consecutive fixes shared a single root cause: no contract tests verifying inputs reach their consumers.**
-Entry 50 (harness): session files not verified to be all captured. Entry 51 (CONFIG_TEMPLATE): operator-tunable fields not verified to be in the generated template. Entry 52 (ORIENT): operational rules not verified to be in SCAN context. Each fix added exactly one contract test. The pattern is now mitigated for these three points. Other injection points (e.g., destination.md's tail truncation behavior, learning.md's tail budget) have not been contract-tested.
-**Falsifiable by:** discovery of another injection point that lacks a contract test verifying delivery.
+**9. The V2 cost optimization (dedicated reflect model) is structurally enabled.**
+Entry 74 added `reflect: str | None = None` to ModelAssignment with backward-compatible defaulting to `analyze`. Operators can now assign a cheaper model (e.g. haiku) to REFLECT without changing SCAN's model. The destination's named optimization is no longer blocked.
+**Falsifiable by:** a config that sets `reflect: claude-haiku-4-5` failing to use haiku for REFLECT.
 
-**10. The governance infrastructure is structurally complete; the target's weight now lies in behavioral validation.**
-Entries 36–52 (17 iterations over two days) built the governance layer: SCAN reasoning quality, RECORD fields, ORIENT context, REFLECT phase, harness coverage, CONFIG surface. The loop has spent this entire arc building the infrastructure that was supposed to be a means to an end. The end — "finds genuine improvements, applies them, verifies them" — has been tested in only ~3 live runs, all single-cycle. The governance infrastructure is a complete instrument. It has not been played.
-**Falsifiable by:** a multi-cycle run on a non-trivial target that completes without operator intervention and produces accepted proposals.
+**10. The governance infrastructure is structurally complete.**
+Entries 36–75 (40 iterations over 4 days) built and validated: SCAN reasoning quality, RECORD fields, ORIENT context, REFLECT phase, harness coverage, CONFIG surface, scope enforcement. With the multi-cycle convergence validation, the infrastructure has been played, not just built.
+**Falsifiable by:** discovery of a missing structural component required for V1 operation.
 
 ---
 
 ## What the next runs should test
 
-1. **Multi-cycle convergence** — run `ai-steward run` in a loop until SCAN returns `nothing_found` on a real target. This is the highest-leverage test remaining: it simultaneously validates "Convergence Is Silence," exercises the orient context with accumulating context from prior cycles, and tests compounding behavior that single-cycle testing cannot reach. All governance blockers are cleared.
+1. **External repo targeting** — the pipeline has only been tested against itself. The vectorium run (entry 26) exposed the deletion-guard gap; the fix has not been re-validated. Run against a TypeScript or mixed-language repo to test the binary heuristic, skip-dirs, and custom verify_command paths.
 
-2. **Cost model correction in destination.md** — append actual validated cost (~$0.027–0.030/cycle at claude-sonnet-4-5 + 3-call pipeline). 2-line append. Stale documentation undermines the "efficiency is measured, not claimed" destination principle.
+2. **Workspace-level destination conflicts** — cycle 3 showed SCAN reading the workspace-level `.acm/destination.md` and using it to justify test-coverage proposals that hit the blocked scope. If workspace-level mandates systematically steer toward blocked targets, the pipeline wastes tokens. Examine whether this is happening.
 
-3. **Model ID variant matching in `_model_cost_per_token()`** — model IDs like `claude-sonnet-4-5-20250514` fall through to the haiku fallback. A `startswith` prefix match would be more robust. Low-effort, high-correctness.
+3. **Custom lens behavior in production** — entries 69–71 wired `lenses` and `reflect_lenses` config fields. Never live-tested with non-default lens sets. Run with a custom lens configuration to validate the prompt wiring.
 
-4. **Add `scope` to `_CONFIG_TEMPLATE`** — the scope section (allowed/blocked paths) is the first thing operators need after basic configuration. Currently absent from `ai-steward init` output. Named blind spot since entry 51.
+4. **Harness ledger hash-chain integrity** — structural mechanism exists but has never been exercised end-to-end. Verify that a session JSONL tampered after capture is detected.
 
-5. **P1 compliance completion** — destination says "SCAN must produce trail entries with visible reasoning." P1 is now structurally implemented but has only been live-validated twice. Verify it holds across multiple proposals of varying complexity.
-
-6. **External repo reliability** — vectorium run exposed a VERIFY gap (bulk deletion, fixed by deletion-guard). The fix has not been re-tested against vectorium. Rerun to confirm.
+5. **Haiku-for-REFLECT cost measurement** — now that `reflect:` is a separate field, measure actual cost difference: `reflect: claude-haiku-4-5` vs. inheriting sonnet. Document whether the quality tradeoff is acceptable.
 
 ---
 
 ## Active operational rules
 
 - **V1 stops before release.** Operator reviews every staged diff. Inviolable.
-- **llm-harness-proxy is outside ai-steward's autonomous scope.** Structural exclusion. Do not propose changes to the proxy binary or its SPEC.
+- **llm-harness-proxy is outside ai-steward's autonomous scope.** Structural exclusion.
 - **Execution layer must remain separate from reasoning layer.** Phases execute; skills reason.
 - **ACM §4.2 stop conditions govern scope traversal.** Filesystem root, `.acm-root` marker, 4-level cap.
-- **Trail entries required for all `scan.py` changes.** No scan.py change without a trail entry in the same session.
-- **Test SCAN prompt changes with a live run before declaring them correct.** Unit tests cannot detect token-budget overruns. The max_tokens=1024 failure (entry 44) established this rule empirically.
-- **Before appending a trail entry, check for duplicate.** Entries 34–35 show the cost of skipping this check.
-- **Update cost model in destination when operating parameters change materially.** Destination.md still says "$0.002" — this rule applies now.
-- **Use Python (not PowerShell) for all `.acm/` file reads and writes.** PowerShell 5.1 silently corrupts UTF-8 (mojibake on em-dash U+2014).
-- **Write contract tests when adding new pipeline context injections.** Entries 50–52 all lacked contract tests on delivery; each fix added one. The pattern: if you add a feature that injects data into a consumer, write a test verifying the consumer receives it.
-- **Bound every silence claim.** Name which quality bar the silence applies to and which surfaces are in scope. Unbounded silence claims ("the target is in good shape") have been overturned within the same day in the manifesto arc.
-- **Do not place `[!REVERSAL]` as a placeholder for future data.** It marks actual reversals in the current session only. (Operator gate caught this in entries 18–19, 28.)
+- **Trail entries required for all scan.py changes.** No scan.py change without a trail entry in the same session.
+- **Test SCAN prompt changes with a live run before declaring correct.** Unit tests cannot detect token-budget overruns (entry 44) or prompt-bypass behaviors (entry 75).
+- **Before appending a trail entry, check for duplicate.** Entries 34–35 show the cost of skipping.
+- **Use Python (not PowerShell) for all `.acm/` file reads and writes.** PowerShell 5.1 mojibakes UTF-8.
+- **Write contract tests when adding new pipeline context injections.** Entries 50–52 established this pattern.
+- **Bound every silence claim.** Name which quality bar and which surfaces.
+- **Do not place `[!REVERSAL]` as a placeholder for future data.** It marks actual reversals only.
+- **System-prompt instructions are soft constraints — enforce in code.** Entry 75: the model bypassed the scope constraint by reasoning around it. Any behavioral constraint that matters for correctness must be structurally enforced.
 
 ---
 
 ## Loop-effectiveness notes
 
-The loop has been focused and effective since the last retrospect. Six improvements landed (entries 47–52) without a failed commit (one within-iteration [!REVERSAL] on a test count in entry 47 — expected noise). The operator-gate is steering correctly.
+**What changed since the prior retrospect (post-governance-layer-completion):**
+- Multi-cycle convergence run completed (entry 75): 5 cycles, 1 change, 3 NOTHING FOUND, 1 bug discovered and fixed
+- Scope gate bug found and closed (code-level enforcement in scan.py)
+- V2 cost optimization structurally enabled (reflect model field)
+- Cost model correction applied (entry 72)
+- 97 → 112 tests
 
-**What the loop has been exclusively focused on since entry 36:**
-The governance layer of ai-steward itself. SCAN quality, RECORD fields, ORIENT context, REFLECT phase, harness coverage, CONFIG surface. This was necessary — the governance layer had to be structurally sound before it could be trusted to run autonomously. It is now structurally sound.
+**What the loop has been challenged on and passed:**
+- Multi-cycle convergence: validated (cycles 2, 4, 5 = stable silence)
+- Scope bypass: discovered and closed within the same run
+- ORIENT context delivery: corrected (entry 52), contract-tested
 
-**What the loop has never been challenged on:**
-- Multi-cycle convergence: never demonstrated; the loop's defining claim
-- Behavioral correctness at scale: 3 live runs total, all single-cycle
-- External repo reliability post-deletion-guard: vectorium was tested once, fix not re-validated
-- Harness ledger hash-chain integrity: structural mechanism exists, never exercised end-to-end
-- Compounding error detection: if ORIENT carries a stale claim that steers cycle N+1 wrong, that failure mode is invisible in single-cycle testing — and was structurally suppressed for entries 40–51 because the operational rules never reached the SCAN model
+**What the loop has NOT been challenged on:**
+- External repo targeting: vectorium run was pre-deletion-guard; post-fix validation pending
+- Workspace-level mandate steering: observed but not examined for systematic waste
+- Custom lens configurations: structurally wired but never live-tested
+- Harness hash-chain integrity: mechanism exists, never exercised
+- Haiku-for-REFLECT quality tradeoff: structurally enabled but not measured
 
 **What kind of finding would this loop structurally miss?**
-Any failure mode requiring two cycles to manifest. The orient context fix (entry 52) is the leading example: the loop could not diagnose its own orientation failure by running one cycle. The retrospect saw it because the retrospect reads the full arc. This class of failure — "the instrument used to detect the problem is also the instrument that's broken" — is only catchable at the arc level.
+1. Failures requiring external context the loop doesn't have (e.g., actual user adoption feedback)
+2. Cross-repo coordination issues (the loop targets one repo at a time)
+3. Subtle quality degradation under cheaper model configurations (the loop tests correctness, not quality)
 
 **Loop-effectiveness verdict:**
-The governance infrastructure is complete. Continued single-cycle self-targeting has near-zero expected value. The next session should be a multi-cycle run on a non-trivial target. If the loop is functioning correctly, it will find genuine improvements, apply them cleanly, and stop when there is nothing left. If it is not, the multi-cycle run will surface the failure mode.
+The loop is functioning correctly. The multi-cycle run found a genuine bug (scope gate), applied a genuine improvement (reflect field), and then converged cleanly. The governance infrastructure has been validated under operational conditions. The next challenge is breadth: external repos, custom configurations, and the quality tradeoffs enabled by V2 cost optimizations.

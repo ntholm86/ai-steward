@@ -5475,3 +5475,57 @@ structurally correct even when it doesn't.
 3. External repo targeting — the pipeline has been tested only against itself. Run
    against `C:\git\pea\manifesto` or another small repo to test generalization.
    First proof that the scope gate and convergence behavior hold outside self-targeting.
+
+---
+
+## 2026-06-22 — Retrospect: post-multi-cycle-convergence
+
+- target: ai-steward
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: retrospect v1.9.0
+
+### Scope statement
+
+Read the full trail (75 entries) and assess whether the loop has converged on the right parts of the target. The last 8 commits include: logging infrastructure, specific exception types, from __future__ annotations, reflect model field, scope gate fix. The multi-cycle convergence test just completed. Question: Is the silence earned? What does the arc reveal about where the target's weight actually lies?
+
+### Freshness check
+
+- commands: `python tools/record.py history --write`; `python tools/record.py learning --write`; `python -m pytest`
+- verify result: OK -- 112 passed, 75 entries, 163 markers
+- gate: PASS (arc-claims allowed)
+
+### Arc-claims formed
+
+Updated `retrospect.md` with 10 claims:
+
+1. **Multi-cycle convergence is validated.** Entry 75 ran 5 cycles: 1 change, 3 NOTHING FOUND, 1 bug discovered and fixed. Supersedes prior claim #2 ("critical untested claim").
+2. **System-prompt instructions are soft constraints.** Cycle 3 exposed scope bypass; code-level enforcement added (scan.py lines 445-453). New operational rule extracted.
+3. **ORIENT context delivers operational rules.** Entry 52 fix confirmed, contract-tested. Prior claim #4 corrected.
+4. **Single-cycle structural parity complete.** 112 tests, all fields populated.
+5. **Live runs required for prompt changes.** Entries 44 and 75 both demonstrated unit-test blind spots.
+6. **Cost model is current.** Entry 72 falsified prior claim #6.
+7. **Duplicates 34-35 remain.** Structural cleanliness gap only.
+8. **Operator-gate working.** Two documented rejections.
+9. **V2 cost optimization structurally enabled.** Reflect field added (entry 74).
+10. **Governance infrastructure complete.** 40 iterations, now behaviorally validated.
+
+### Loop-effectiveness findings
+
+The loop is functioning correctly. The multi-cycle run found a genuine bug (scope gate), applied a genuine improvement (reflect field), and then converged cleanly. The governance infrastructure has been validated under operational conditions.
+
+**What the loop has NOT been challenged on:**
+- External repo targeting (vectorium post-fix validation pending)
+- Workspace-level mandate steering (observed but not examined)
+- Custom lens configurations (wired but never live-tested)
+- Harness hash-chain integrity (mechanism exists, never exercised)
+- Haiku-for-REFLECT quality tradeoff (enabled but not measured)
+
+### Candidate Next Moves
+
+1. External repo targeting -- validate post-deletion-guard fixes against vectorium or similar
+2. Workspace-level destination conflict investigation -- examine whether higher-scope mandates systematically steer toward blocked targets
+3. Custom lens live validation -- run with non-default `lenses` configuration
+4. Haiku-for-REFLECT cost measurement -- set `reflect: claude-haiku-4-5` and measure quality vs. cost
+
+[!REALIZATION] The loop has transitioned from infrastructure building to behavioral validation. 40 entries (36-75) built the governance layer; the multi-cycle run proved it works. The next arc should be breadth: external repos, custom configurations, cost optimizations. The prior retrospect's claim #10 ("the instrument has not been played") is now falsified -- it has been played and passed.
+

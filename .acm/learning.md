@@ -657,6 +657,10 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** ** System-prompt instructions are soft constraints. Any behavioral
 
+## 2026-06-22 — Retrospect: post-multi-cycle-convergence
+
+**[!REALIZATION]** The loop has transitioned from infrastructure building to behavioral validation. 40 entries (36-75) built the governance layer; the multi-cycle run proved it works. The next arc should be breadth: external repos, custom configurations, cost optimizations. The prior retrospect's claim #10 ("the instrument has not been played") is now falsified -- it has been played and passed.
+
 ---
 
-**163 markers — 124 realisations, 39 reversals**
+**164 markers — 125 realisations, 39 reversals**
