@@ -21,3 +21,4 @@ def _load(name: str) -> str:
 SCAN_SYSTEM = _load("scan_system")
 REFLECT_SYSTEM = _load("reflect_system")
 IMPLEMENT_SYSTEM = _load("implement_system")
+REORIENT_SYSTEM = _load("reorient_system")

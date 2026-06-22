@@ -5529,3 +5529,133 @@ The loop is functioning correctly. The multi-cycle run found a genuine bug (scop
 
 [!REALIZATION] The loop has transitioned from infrastructure building to behavioral validation. 40 entries (36-75) built the governance layer; the multi-cycle run proved it works. The next arc should be breadth: external repos, custom configurations, cost optimizations. The prior retrospect's claim #10 ("the instrument has not been played") is now falsified -- it has been played and passed.
 
+
+---
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+- target: ai-steward pipeline
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve v3.10.0
+- outcome: CHANGE ACCEPTED — 129 tests pass
+
+### Interpretation
+
+Operator asked: "ai-steward must be smarter — retrospect has to work like the retrospect skill and be used like that."
+
+The gap identified: ai-steward runs cycles one at a time without stepping back to ask "am I looking at the right thing?" The human-driven skills suite has this via the Retrospect skill; the robot did not.
+
+### [!DECISION]
+
+[!DECISION] Add REORIENT phase — the robot's equivalent of the Retrospect skill.
+
+**New files:**
+- `src/ai_steward/pipeline/reorient.py` — one LLM call that reads full audit-trail.md, forms arc-claims, returns new retrospect.md content
+- `src/ai_steward/pipeline/prompts/reorient_system.md` — prompt mirroring retrospect skill structure
+- `tests/test_reorient.py` — 17 tests covering all helper functions and main flow
+
+**New config fields:**
+- `models.reorient: str | None` — defaults to analyze, allows dedicated model for arc-reading
+- `max_tokens_reorient: int = 8192` — large context needed for full trail
+- `reorient_interval: int = 5` — auto-trigger every N successful cycles (0 disables)
+- `reorient_trail_budget_chars: int = 50000` — truncation budget for trail input
+
+**New CLI command:**
+- `ai-steward reorient REPO` — manual invocation
+
+### Prediction
+
+After this change:
+- `ai-steward reorient .` will read the full trail and produce fresh `retrospect.md`
+- The next SCAN will read this fresh orientation instead of stale arc-claims
+- Automatic triggers (after N cycles, after NOTHING FOUND) are structurally enabled but not yet wired — that's the next iteration
+
+### Verification
+
+- 129 tests pass (112 + 17 new)
+- mypy clean
+- Prompt structure mirrors retrospect skill's output format
+
+### Reflection
+
+**Model claim:** ai-steward now has the structural capacity for arc-level awareness. The robot can invoke arc-reading via CLI. The cognition gap identified at the start of this session — "the robot doesn't know how to step back" — is closed at the capability layer.
+
+**Blind spot:** The CLI still runs one cycle at a time. `ai-steward run` does not trigger REORIENT automatically. The config fields for auto-triggering (`reorient_interval`) exist but are not wired into a multi-cycle mode. This needs a `run-loop` command or modification to `run`.
+
+**Trigger evaluations:**
+- Recurring finding-class: not fired — new capability
+- About to declare silence: not fired — made a change
+- Contradicts prior realization: not fired
+- Operator explicitly asked: FIRED
+
+### Candidate Next Moves
+
+1. **Wire automatic REORIENT triggers** — add `ai-steward run-loop REPO` that iterates cycles and triggers REORIENT after N successes, after NOTHING FOUND, after VERIFY FAILED
+2. **Option C discussion** — now that REORIENT exists, explore whether there's a cognitive layer beyond arc-awareness we should add
+3. **Live test REORIENT** — run `ai-steward reorient` against this repo to validate the prompt produces useful arc-claims
+
+
+---
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+- target: ai-steward pipeline
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve v3.10.0
+- outcome: CHANGE ACCEPTED — 129 tests pass
+
+### Interpretation
+
+Operator asked: "ai-steward must be smarter — retrospect has to work like the retrospect skill and be used like that."
+
+The gap identified: ai-steward runs cycles one at a time without stepping back to ask "am I looking at the right thing?" The human-driven skills suite has this via the Retrospect skill; the robot did not.
+
+### [!DECISION]
+
+[!DECISION] Add REORIENT phase — the robot's equivalent of the Retrospect skill.
+
+**New files:**
+- `src/ai_steward/pipeline/reorient.py` — one LLM call that reads full audit-trail.md, forms arc-claims, returns new retrospect.md content
+- `src/ai_steward/pipeline/prompts/reorient_system.md` — prompt mirroring retrospect skill structure
+- `tests/test_reorient.py` — 17 tests covering all helper functions and main flow
+
+**New config fields:**
+- `models.reorient: str | None` — defaults to analyze, allows dedicated model for arc-reading
+- `max_tokens_reorient: int = 8192` — large context needed for full trail
+- `reorient_interval: int = 5` — auto-trigger every N successful cycles (0 disables)
+- `reorient_trail_budget_chars: int = 50000` — truncation budget for trail input
+
+**New CLI command:**
+- `ai-steward reorient REPO` — manual invocation
+
+### Prediction
+
+After this change:
+- `ai-steward reorient .` will read the full trail and produce fresh `retrospect.md`
+- The next SCAN will read this fresh orientation instead of stale arc-claims
+- Automatic triggers (after N cycles, after NOTHING FOUND) are structurally enabled but not yet wired — that's the next iteration
+
+### Verification
+
+- 129 tests pass (112 + 17 new)
+- mypy clean
+- Prompt structure mirrors retrospect skill's output format
+
+### Reflection
+
+**Model claim:** ai-steward now has the structural capacity for arc-level awareness. The robot can invoke arc-reading via CLI. The cognition gap identified at the start of this session — "the robot doesn't know how to step back" — is closed at the capability layer.
+
+**Blind spot:** The CLI still runs one cycle at a time. `ai-steward run` does not trigger REORIENT automatically. The config fields for auto-triggering (`reorient_interval`) exist but are not wired into a multi-cycle mode. This needs a `run-loop` command or modification to `run`.
+
+**Trigger evaluations:**
+- Recurring finding-class: not fired — new capability
+- About to declare silence: not fired — made a change
+- Contradicts prior realization: not fired
+- Operator explicitly asked: FIRED
+
+### Candidate Next Moves
+
+1. **Wire automatic REORIENT triggers** — add `ai-steward run-loop REPO` that iterates cycles and triggers REORIENT after N successes, after NOTHING FOUND, after VERIFY FAILED
+2. **Option C discussion** — now that REORIENT exists, explore whether there's a cognitive layer beyond arc-awareness we should add
+3. **Live test REORIENT** — run `ai-steward reorient` against this repo to validate the prompt produces useful arc-claims
+

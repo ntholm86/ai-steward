@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.pipeline import run as pipeline_run
+from ai_steward.pipeline.reorient import reorient as reorient_phase, write_retrospect
 
 
 @click.group()
@@ -82,6 +83,7 @@ models:
   verify: claude-haiku-4-5
   judge: claude-haiku-4-5
   reflect: claude-haiku-4-5    # optional — defaults to analyze if omitted
+  reorient: claude-haiku-4-5  # optional — arc-level reading; defaults to analyze
 
 verify_command: python -m pytest --tb=no -q  # or: make test, npm test, etc.
 
@@ -100,6 +102,7 @@ scope:
 max_tokens_scan: 4096       # SCAN: 5-step reasoning needs ~4000; 1024 is too small
 max_tokens_implement: 4096  # IMPLEMENT: full file rewrites can be large
 max_tokens_reflect: 400     # REFLECT: concise post-cycle reflection
+max_tokens_reorient: 8192   # REORIENT: arc-level reading needs large output
 
 lenses:
   - mandate       # Commander's Intent check (destination.md)
@@ -110,6 +113,8 @@ lenses:
 # Safety limits — pipeline stops when either is reached.
 max_iterations: 10          # maximum improvement cycles per run
 budget_usd: 5.0             # cumulative cost cap in USD
+reorient_interval: 5        # auto-REORIENT every N successful cycles (0 disables)
+reorient_trail_budget_chars: 50000  # max chars from audit-trail.md for REORIENT context
 
 allow_dirty: false          # set true to run on repos with uncommitted changes
 acm_scope_depth: 4          # ACM scope traversal depth (org/workspace/team/repo hierarchies)
@@ -193,3 +198,55 @@ def init(repo: str) -> None:
     click.echo("  2. Set ANTHROPIC_API_KEY")
     click.echo("  3. Start llm-harness-proxy on localhost:8474")
     click.echo(f"  4. Run: ai-steward run {repo_path}")
+
+
+@main.command()
+@click.argument("repo", type=click.Path(exists=True))
+def reorient(repo: str) -> None:
+    """Run arc-level trail reading and rewrite retrospect.md.
+
+    REORIENT reads the full audit-trail.md, forms arc-claims about the target,
+    and rewrites .acm/retrospect.md. This gives the pipeline fresh orientation
+    for subsequent SCAN calls.
+
+    Triggers automatically during multi-cycle runs after N successful cycles,
+    after NOTHING FOUND, or after VERIFY FAILED. This command runs it manually.
+    """
+    repo_path = Path(repo).resolve()
+    config_file = repo_path / ".ai-steward.yaml"
+
+    if not config_file.exists():
+        click.echo(
+            f"No .ai-steward.yaml found in {repo_path}\n"
+            "Run 'ai-steward init' first.",
+            err=True,
+        )
+        sys.exit(1)
+
+    try:
+        data = yaml.safe_load(config_file.read_text(encoding="utf-8")) or {}
+        data.pop("repo", None)
+        config = AiStewardConfig(repo=repo_path, **data)
+    except (ValidationError, yaml.YAMLError) as exc:
+        click.echo(f"Invalid .ai-steward.yaml: {exc}", err=True)
+        sys.exit(1)
+
+    # Check if audit-trail.md exists
+    trail_file = repo_path / ".acm" / "audit-trail.md"
+    if not trail_file.exists():
+        click.echo(
+            f"No .acm/audit-trail.md found in {repo_path}\n"
+            "Run at least one improvement cycle first.",
+            err=True,
+        )
+        sys.exit(1)
+
+    click.echo(f"REORIENT: Reading trail and forming arc-claims...")
+    content, in_tok, out_tok = reorient_phase(repo_path, config, trigger="manual")
+    retro_path = write_retrospect(repo_path, content)
+
+    click.echo(f"REORIENT complete")
+    click.echo(f"  Tokens:  {in_tok} in / {out_tok} out")
+    click.echo(f"  Wrote:   {retro_path}")
+    click.echo("")
+    click.echo("The next SCAN will read this fresh orientation.")

@@ -77,6 +77,7 @@ class ModelAssignment(BaseModel):
     verify: str
     judge: str
     reflect: str | None = None  # defaults to analyze for backward compatibility
+    reorient: str | None = None  # defaults to analyze for backward compatibility
 
 
 class ScopeConfig(BaseModel):
@@ -100,6 +101,9 @@ class AiStewardConfig(BaseModel):
     max_tokens_scan: int = 4096     # SCAN phase token budget; 1024 was too small for 5-step reasoning
     max_tokens_implement: int = 4096  # IMPLEMENT phase token budget for full file rewrites
     max_tokens_reflect: int = 400   # REFLECT phase token budget for post-implementation reasoning
+    max_tokens_reorient: int = 8192  # REORIENT phase token budget — needs large context for full trail
+    reorient_interval: int = 5  # auto-trigger REORIENT every N successful cycles (0 disables)
+    reorient_trail_budget_chars: int = 50000  # character budget for audit-trail.md in REORIENT context
     acm_scope_depth: int = 4  # how many parent .acm/ directories to consult (org/workspace/team hierarchies)
     destination_budget_chars: int = 3000  # total character budget for destination.md excerpts in SCAN context
     binary_heuristic_bytes: int = 8192  # first N bytes inspected for NUL byte (binary file detection)
@@ -153,8 +157,10 @@ class AiStewardConfig(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def default_reflect_model(self) -> "AiStewardConfig":
-        """Default models.reflect to models.analyze for backward compatibility."""
+    def default_optional_models(self) -> "AiStewardConfig":
+        """Default optional model fields to analyze for backward compatibility."""
         if self.models.reflect is None:
             self.models.reflect = self.models.analyze
+        if self.models.reorient is None:
+            self.models.reorient = self.models.analyze
         return self
