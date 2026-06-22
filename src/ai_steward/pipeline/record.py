@@ -19,9 +19,32 @@ from pathlib import Path
 from ai_steward.config import AiStewardConfig
 from ai_steward.pipeline._types import Finding
 
-# claude-haiku-4-5 pricing (V1 model — update if model changes)
-_INPUT_COST_PER_TOKEN = 0.80 / 1_000_000   # $0.80 / MTok
-_OUTPUT_COST_PER_TOKEN = 4.00 / 1_000_000  # $4.00 / MTok
+# Pricing table (USD / token) for known Anthropic models.
+# Source: https://www.anthropic.com/pricing — update when pricing changes.
+# Unknown models fall back to haiku-4-5 as a conservative baseline estimate.
+_MODEL_PRICING: dict[str, tuple[float, float]] = {
+    "claude-haiku-4-5":  (0.80 / 1_000_000,  4.00 / 1_000_000),
+    "claude-sonnet-4-5": (3.00 / 1_000_000, 15.00 / 1_000_000),
+    "claude-opus-4-5":   (15.00 / 1_000_000, 75.00 / 1_000_000),
+}
+_FALLBACK_PRICING: tuple[float, float] = (0.80 / 1_000_000, 4.00 / 1_000_000)
+
+
+def _model_cost_per_token(model: str) -> tuple[float, float]:
+    """Return (input_cost_per_token, output_cost_per_token) for a model."""
+    return _MODEL_PRICING.get(model, _FALLBACK_PRICING)
+
+
+def _estimate_cycle_cost(config: AiStewardConfig, finding: Finding) -> float:
+    """Estimate total cycle cost using model-appropriate pricing."""
+    scan_in, scan_out = _model_cost_per_token(config.models.analyze)
+    impl_in, impl_out = _model_cost_per_token(config.models.implement)
+    return (
+        finding.input_tokens * scan_in
+        + finding.output_tokens * scan_out
+        + finding.impl_input_tokens * impl_in
+        + finding.impl_output_tokens * impl_out
+    )
 
 
 def record(
@@ -35,7 +58,7 @@ def record(
 
     Args:
         repo: Repository root.
-        config: Pipeline configuration (reserved for future use in V2).
+        config: Pipeline configuration — used for model-appropriate cost estimation.
         finding: The change that was applied by IMPLEMENT.
         diff: Output of ``git diff HEAD -- <file>`` captured before staging.
         harness_session_path: Repo-relative path to the harness session
@@ -45,7 +68,8 @@ def record(
     Returns:
         The trail entry string that was appended.
     """
-    entry = _build_entry(finding, diff, harness_session_path)
+    cycle_cost_usd = _estimate_cycle_cost(config, finding)
+    entry = _build_entry(finding, diff, harness_session_path, cycle_cost_usd=cycle_cost_usd)
     _append_to_trail(repo, entry)
     _stage_file(repo, finding.file)
     return entry
@@ -56,7 +80,12 @@ def record(
 # ---------------------------------------------------------------------------
 
 
-def _build_entry(finding: Finding, diff: str, harness_session_path: str | None = None) -> str:
+def _build_entry(
+    finding: Finding,
+    diff: str,
+    harness_session_path: str | None = None,
+    cycle_cost_usd: float = 0.0,
+) -> str:
     """Build a structured trail entry from a Finding.
 
     The format is intentional and stable — do not refactor to add structural
@@ -73,15 +102,7 @@ def _build_entry(finding: Finding, diff: str, harness_session_path: str | None =
     authoritative spec.
     """
     today = date.today().isoformat()
-    scan_cost = (
-        finding.input_tokens * _INPUT_COST_PER_TOKEN
-        + finding.output_tokens * _OUTPUT_COST_PER_TOKEN
-    )
-    impl_cost = (
-        finding.impl_input_tokens * _INPUT_COST_PER_TOKEN
-        + finding.impl_output_tokens * _OUTPUT_COST_PER_TOKEN
-    )
-    cycle_cost = scan_cost + impl_cost
+    cycle_cost = cycle_cost_usd
     session_line = (
         harness_session_path
         if harness_session_path
