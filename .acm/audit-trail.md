@@ -4304,3 +4304,77 @@ index bea0fed..135244f 100644
 **Harness session:** `.acm/sessions/01KVQ0EJ4TS4CFAYD2P3CBQPZ4.jsonl`
 
 **Finding:** VERIFY gate catches LLM-introduced syntax errors before they reach the operator. Retroactively validates retrospect claim #5: 'unit tests alone are insufficient; live runs required.' The syntax error would not have been caught by any unit test — only by running Python on the modified file.
+
+---
+
+## 2026-06-22 — extract-json-fence-overlap-fix
+
+- target: ai-steward (src/ai_steward/pipeline/scan.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve (manual investigation of cycle-8 false NOTHING FOUND)
+- outcome: BUG FOUND AND FIXED — _extract_json false-negative on back-to-back code fences
+
+### Ask
+
+Determine why cycle 8 returned NOTHING FOUND despite SCAN finding real hardcoded constants
+(_BINARY_HEURISTIC_BYTES = 8192, _DEFAULT_SKIP_DIRS in scan.py) that should be configurable.
+
+### Examination
+
+Session file 01KVQ0Q4E2ZTJMRYT3DME4R2KT.jsonl: act=null (proxy records null for text responses,
+not tool calls -- does not indicate nothing_found at the pipeline level). The reason field
+contains a valid JSON proposal in a ```json...``` fence. However _extract_json returned None.
+
+Debug run confirmed: fence_matches found 1. The ONE match content was plain text ("These
+constants affect operator-visible behavior...") -- NOT the JSON proposal. The JSON fence
+was invisible to the generic regex.
+
+Root cause: The model output two consecutive code fences back-to-back:
+  [fence 1]  ``` \n\nThese constants...\n```json\n{...proposal...}\n```
+
+The regex r"```(?:json)?\s*\n(.*?)\n```" uses a non-greedy (.*?) that stops at
+the FIRST \n``` . In the back-to-back sequence \n```json, the \n``` portion
+matches as the CLOSING of fence 1, leaving json\n{...} as dangling text that does not
+start a new fence match. Strategy 3 (outermost braces) then extracted from the first {
+in the ENTIRE reason text to the last }, spanning all the prose -- not valid JSON.
+All strategies failed -> scan() returned None -> false NOTHING FOUND.
+
+Empirically reproduced: Strategy 0 (explicit ```json fence) found 1 match and parsed
+the proposal correctly (file: src/ai_steward/config.py, risk: low).
+
+### Decision
+
+Fix _extract_json by adding Strategy 0 that explicitly searches for ```json fences before
+the generic pattern. The generic pattern remains as fallback. This prioritises the canonical
+JSON output format (```json blocks) which is immune to the overlap ambiguity.
+
+### Action
+
+Added Strategy 0 to _extract_json in scan.py:
+  json_fence_matches = list(re.finditer(r"```json\s*\n(.*?)\n```", text, re.DOTALL))
+  Iterates reversed, tries json.loads on each match.
+  Falls through to original Strategy 1 (generic fence) and Strategy 2/3 if no ```json
+  fence found.
+
+All 102 tests pass. Cycle 8 session text now parsed correctly.
+
+### Reflection
+
+Cycle 8 NOTHING FOUND was NOT convergence -- it was a false negative caused by a regex
+parsing bug triggered by the model's output formatting. The pipeline found a real and
+actionable improvement (binary_heuristic_bytes and default_skip_dirs as config fields)
+but failed to surface it.
+
+The multi-cycle convergence test revealed four empirical findings:
+1. VERIFY gate catches LLM syntax errors (cycle 7) -- validates governance claim
+2. REFLECT made a false claim about grep results (cycle 3) -- governance risk
+3. _extract_json back-to-back fence blindspot (cycle 8) -- this fix
+4. Dead config pattern: lenses, acm_scope_depth, destination_budget_chars added to
+   config.py across cycles 1-6 are still not consumed by scan.py (cycle 7 VERIFY fail
+   never retried by the autonomous pipeline)
+
+Trigger evaluations:
+- Does the change align with the destination? YES -- scan.py correctness is prerequisite to all evolution
+- Does the change introduce new dependencies or surface area? NO -- pure defensive logic addition, Strategy 0 is identical in structure to Strategy 1
+- Could the change mask a real NOTHING FOUND? NO -- silence ({"nothing":true}) is valid JSON and would be extracted by Strategy 0 correctly, still returning None from scan()
+- Was cycle 8 silence bounded? NO -- it was a false negative, not a convergence declaration

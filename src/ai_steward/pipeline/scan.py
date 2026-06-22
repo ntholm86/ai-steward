@@ -91,7 +91,20 @@ def _extract_json(text: str) -> dict | None:
     Takes the last valid JSON object found — when a model revises its answer,
     the final fence contains the intended response.
     """
-    # Strategy 1: extract from the last markdown code fence
+    # Strategy 0: look for explicit ```json fences first — these are the
+    # canonical output format and must be tried before the generic pattern.
+    # The generic pattern's closing `\n``` ` can be mistakenly consumed when
+    # two code fences are back-to-back (e.g. ```\ncontent\n```json\n{...}\n```)
+    # because `\n``` ` matches the prefix of `\n```json`, leaving `json\n{...}`
+    # as non-matching dangling text.
+    json_fence_matches = list(re.finditer(r"```json\s*\n(.*?)\n```", text, re.DOTALL))
+    for m in reversed(json_fence_matches):
+        try:
+            return json.loads(m.group(1).strip())
+        except (json.JSONDecodeError, ValueError):
+            continue
+
+    # Strategy 1: extract from the last markdown code fence (generic)
     fence_matches = list(re.finditer(r"```(?:json)?\s*\n(.*?)\n```", text, re.DOTALL))
     for m in reversed(fence_matches):
         try:
