@@ -81,6 +81,8 @@ models:
   implement: claude-haiku-4-5
   verify: claude-haiku-4-5
   judge: claude-haiku-4-5
+
+verify_command: python -m pytest --tb=no -q  # or: make test, npm test, etc.
 """
 
 _DESTINATION_TEMPLATE = """\
