@@ -61,6 +61,23 @@ Do not edit by hand — re-run the command to refresh.
 | ▸ 54 | 2026-06-22 | fix(record): model ID prefix matching in _model_cost_per_token | date-versioned model IDs resolve to correct pricing; claude-sonnet-4-6 added to table; 4 contract tests added | record.py +11 lines; test_record.py +37 lines; 97→101 tests |
 | ▸ 55 | 2026-06-22 | feat(cli): scope section added to CONFIG_TEMPLATE | `ai-steward init` now generates a config with a `scope:` section; operators discover file-targeting on first use | cli.py +9 lines; test assertion widened by 1 field; 101→101 tests (count unchanged; assertion tightened) |
 | ▸ 56 | 2026-06-22 | fix(reflect): wire REFLECT token cost into Finding and cycle cost estimate | REFLECT token cost now tracked, reported in trail entries, and included in cycle cost estimate | 6 files changed; +2 fields to Finding; reflect() now returns tuple[str, int, int]; 101→102 tests |
+| ▸ 57 | 2026-06-22 | ai-steward: Add lenses configuration field to AiStewardConfig |  |  |
+| ▸ 58 | 2026-06-22 | ai-steward: Add configurable lenses field to AiStewardConfig with default ['mandate', 'examination'] |  |  |
+| ▸ 59 | 2026-06-22 | ai-steward: Add acm_scope_depth and destination_budget_chars config fields |  |  |
+| ▸ 60 | 2026-06-22 | ai-steward: Add lenses field to _CONFIG_TEMPLATE with operator-facing documentation |  |  |
+| ▸ 61 | 2026-06-22 | ai-steward: Add docstring to AiStewardConfig.lenses explaining purpose, defaults, and operator use cases |  |  |
+| ▸ 62 | 2026-06-22 | ai-steward: Add missing config fields (acm_scope_depth, destination_budget_chars, sandbox) to init template |  |  |
+| ▸ 63 | 2026-06-22 | ai-steward: VERIFY FAILED — scan.py lenses wiring attempt |  |  |
+| ▸ 64 | 2026-06-22 | extract-json-fence-overlap-fix | BUG FOUND AND FIXED — _extract_json false-negative on back-to-back code fences |  |
+| ▸ 65 | 2026-06-22 | dead-config-wire-scope-context | CHANGE ACCEPTED — acm_scope_depth and destination_budget_chars wired into _load_scope_context |  |
+| ▸ 66 | 2026-06-22 | test-scope-context-parameter-variation | CHANGE ACCEPTED — two tests added covering scope_depth and budget_chars parameter variation |  |
+| ▸ 67 | 2026-06-22 | wire-binary-heuristic-and-skip-dirs | CHANGE ACCEPTED — binary_heuristic_bytes and default_skip_dirs wired from config |  |
+| ▸ 68 | 2026-06-22 | ai-steward: Add reflect_lenses parameter to AiStewardConfig for operator control of reflection scope |  |  |
+| ▸ 69 | 2026-06-22 | wire-lenses-into-scan-system-prompt | CHANGE ACCEPTED — lenses config field now live; _build_system_prompt wires custom lenses into SCAN |  |
+| ▸ 70 | 2026-06-22 | wire-reflect-lenses-into-reflect-system-prompt | CHANGE ACCEPTED — reflect_lenses config field now live; _build_reflect_system_prompt wires custom lenses into REFLECT |  |
+| ▸ 71 | 2026-06-22 | field-validator-for-unknown-lens-names | CHANGE ACCEPTED — unknown lens names now trigger UserWarning at config load time |  |
+| ▸ 72 | 2026-06-22 | destination-cost-model-correction | CHANGE ACCEPTED — destination.md cost model corrected; retrospect claim #6 falsified |  |
+| ▸ 73 | 2026-06-22 | evo-code-quality-patterns | CHANGE ACCEPTED — 3 code quality patterns from evo applied |  |
 
 ### Run 1 — 2026-05-14 — Evo analysis and new project decision
 
@@ -339,4 +356,72 @@ Do not edit by hand — re-run the command to refresh.
 - **decided:** Add `reflect_input_tokens: int = 0` and `reflect_output_tokens: int = 0` to `Finding`. Change `reflect()` return type to `tuple[str, int, int]`. Capture usage in reflect.py (same try/except pattern as implement.py). Update loop.py to unpack. Update `_estimate_cycle_cost()` and the trail tokens line.
 - **REVERSAL:** Entry 46's realization "record.py field-level correctness is now complete for the single-cycle case" was false. REFLECT was added in entry 47 without wiring its cost into record.py. The field-level correctness claim is now accurate: all three LLM phases are tracked.
 
-**56 runs total — 56 with changes, 0 silence**
+### Run 57 — 2026-06-22 — ai-steward: Add lenses configuration field to AiStewardConfig
+
+- **decided:** ** Proposed: Add lenses configuration field to AiStewardConfig
+- **REVERSAL:** Operator rejected — 2026-06-22:** Dead config (YAGNI). The pipeline predicted the field would be inert yet proposed it as structural prep. A config field that does nothing is waste, not preparation. Unstaged and discarded. Next cycle must find a change that alters behaviour.
+
+### Run 58 — 2026-06-22 — ai-steward: Add configurable lenses field to AiStewardConfig with default ['mandate', 'examination']
+
+- **decided:** ** Proposed: Add configurable lenses field to AiStewardConfig with default ['mandate', 'examination']
+- **REVERSAL:** Operator correction — 2026-06-22:** Cycle-1 YAGNI rejection was wrong. destination.md explicitly mandates lenses be operator-configurable and not hardcoded. SCAN was correctly reading the mandate both cycles. The partial-implementation pattern (config field now, scan.py wiring next cycle) is the correct iterative approach. Cycle-2 proposal accepted and committed as `31f4015`. Cycle-3 should wire the lenses field into scan.py prompt construction.
+
+### Run 59 — 2026-06-22 — ai-steward: Add acm_scope_depth and destination_budget_chars config fields
+
+- **decided:** ** Proposed: Add acm_scope_depth and destination_budget_chars config fields
+
+### Run 60 — 2026-06-22 — ai-steward: Add lenses field to _CONFIG_TEMPLATE with operator-facing documentation
+
+- **decided:** ** Proposed: Add lenses field to _CONFIG_TEMPLATE with operator-facing documentation
+
+### Run 61 — 2026-06-22 — ai-steward: Add docstring to AiStewardConfig.lenses explaining purpose, defaults, and operator use cases
+
+- **decided:** ** Proposed: Add docstring to AiStewardConfig.lenses explaining purpose, defaults, and operator use cases
+- **REVERSAL:** Operator rejected — 2026-06-22:** Dead-field documentation. lenses field is still not consumed by scan.py. Documenting intended-but-not-implemented behavior is misleading, not progress. Pending substantive work: (1) wire lenses into scan.py, (2) wire acm_scope_depth+destination_budget_chars into scan.py, (3) add acm_scope_depth+destination_budget_chars to CONFIG_TEMPLATE. Next cycle must choose one of these or declare silence.
+
+### Run 62 — 2026-06-22 — ai-steward: Add missing config fields (acm_scope_depth, destination_budget_chars, sandbox) to init template
+
+- **decided:** ** Proposed: Add missing config fields (acm_scope_depth, destination_budget_chars, sandbox) to init template
+
+### Run 65 — 2026-06-22 — dead-config-wire-scope-context
+
+- **decided:** ** Wire acm_scope_depth and destination_budget_chars into _load_scope_context.
+
+### Run 66 — 2026-06-22 — test-scope-context-parameter-variation
+
+- **decided:** ** Add two tests calling _load_scope_context directly:
+
+### Run 67 — 2026-06-22 — wire-binary-heuristic-and-skip-dirs
+
+- **decided:** ** Add binary_heuristic_bytes: int = 8192 and default_skip_dirs: list[str]
+
+### Run 68 — 2026-06-22 — ai-steward: Add reflect_lenses parameter to AiStewardConfig for operator control of reflection scope
+
+- **decided:** ** Proposed: Add reflect_lenses parameter to AiStewardConfig for operator control of reflection scope
+
+### Run 69 — 2026-06-22 — wire-lenses-into-scan-system-prompt
+
+- **decided:** ** Additive injection: keep _BASE_SYSTEM_PROMPT as the unchanged base (Steps 1-5).
+- **REVERSAL:** of that state.
+- **REVERSAL:** ** The lenses config field is no longer dead config. Custom lenses now produce
+
+### Run 70 — 2026-06-22 — wire-reflect-lenses-into-reflect-system-prompt
+
+- **decided:** ** Mirror the scan.py lenses architecture in reflect.py:
+
+### Run 71 — 2026-06-22 — field-validator-for-unknown-lens-names
+
+- **decided:** ** Add _KNOWN_SCAN_LENSES and _KNOWN_REFLECT_LENSES frozensets to config.py
+
+### Run 72 — 2026-06-22 — destination-cost-model-correction
+
+- **decided:** ** Append a new dated section to destination.md with the validated cost
+
+### Run 73 — 2026-06-22 — evo-code-quality-patterns
+
+- **decided:** Iteration 1 — Logging infrastructure (highest leverage)**
+- **decided:** Iteration 2 — Narrow exception types**
+- **decided:** Iteration 3 — from __future__ annotations**
+- **REVERSAL:** : test_implement.py was raising RuntimeError as the mock exception.
+
+**73 runs total — 73 with changes, 0 silence**

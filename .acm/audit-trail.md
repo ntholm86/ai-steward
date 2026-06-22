@@ -5159,3 +5159,116 @@ this codebase should either find a genuine structural gap or declare bounded sil
    6 are now stale. A retrospect run would re-orient the trail and update the claims.
 3. External targeting -- run ai-steward against c:\git\pea\agent-context-memory or
    c:\git\pea\manifesto per V2 direction. First proof of generalization beyond self-targeting.
+
+---
+
+## 2026-06-22 — evo-code-quality-patterns
+
+- target: ai-steward (pipeline/ + harness.py + config.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve (3 iterations)
+- outcome: CHANGE ACCEPTED — 3 code quality patterns from evo applied
+
+### Ask
+
+"What else can we learn from evo on a code quality level? Yes, and use the improve skill."
+Intent: apply the patterns evo has that ai-steward lacks — logging infrastructure,
+specific exception types, from __future__ annotations — using improve-skill discipline
+(one change per iteration, each with a prediction, trail entry, and commit).
+
+### Examination
+
+Comparative analysis of evo (C:\git\evo\src\evo\core\) vs ai-steward pipeline:
+
+**Inconsistency lens — what evo does that ai-steward doesn't:**
+
+1. **Logging** — evo: 12/12 core modules have `logger = logging.getLogger(__name__)`.
+   ai-steward: 0/6 pipeline modules had any logging. Silent failures (e.g., reflect()
+   returning ("", 0, 0) on exception) left no trace.
+
+2. **Specific exception types** — evo: consistently catches specific types
+   (`OSError`, `ValueError`, `subprocess.SubprocessError`). ai-steward: bare
+   `except Exception` in implement.py (wrapped only `client.messages.create()`)
+   and reflect.py. The implement.py catch had `# noqa: BLE001` acknowledging it
+   was broad but not fixing it.
+
+3. **`from __future__ import annotations`** — evo: all 13 core modules have it.
+   ai-steward: 9/11 modules had it. Missing: config.py and harness.py.
+
+### Decisions
+
+**[!DECISION] Iteration 1 — Logging infrastructure (highest leverage)**
+Add `import logging` + `logger = logging.getLogger(__name__)` to all 6 pipeline
+modules and harness.py. Add `logger.exception()` at the two silent-swallow sites:
+- reflect.py's `except Exception: return "", 0, 0`
+- implement.py's `except Exception as exc: return False, ...`
+Alternative rejected: Only add to the two silent-catch sites. The module-level logger
+is a structural property the whole module benefits from, not a local fix.
+Prediction: pipeline failures will produce a log trace. 110 tests pass.
+Result: prediction held. 2eaacd5.
+
+**[!DECISION] Iteration 2 — Narrow exception types**
+implement.py's try block wraps only `client.messages.create()` — narrow to
+`AnthropicError`. Remove `# noqa: BLE001`. Real bugs (not API errors) now
+propagate instead of being silently caught.
+reflect.py's try block covers LLM call + content extraction; reflect() has a
+"never raises" contract — keep `except Exception` but document why. Changed
+`logger.exception` → `logger.warning` for implement.py (expected failure mode,
+not a bug; stack trace is noise, not signal).
+Alternative rejected: Narrow reflect.py too. That would expose content-extraction
+edge cases that are also part of the "never raises" contract.
+[!REVERSAL]: test_implement.py was raising RuntimeError as the mock exception.
+With the narrowed except, the test began propagating. Updated the test to raise
+AnthropicError — this was a TEST QUALITY FIX (the test was testing the wrong
+exception type). Prediction: real bugs propagate; 110 tests pass. 314186b.
+
+**[!DECISION] Iteration 3 — from __future__ annotations**
+Add to config.py and harness.py — the only two modules missing it.
+Prediction: cosmetic-only change, 110 tests pass. aed9f2e.
+
+### Reflection
+
+**Model of target:** The pipeline now has the three evo code quality properties
+applied. The logging addition is structural — it changes what's observable, not
+what's executed. The exception narrowing is substantive: it converts a "never fail
+visibly" design to "fail visibly for unexpected errors, handle expected errors
+gracefully." The `__future__` addition is cosmetic.
+
+**Blind spot:** The test suite was not examined for other places where mock
+exceptions use the wrong type. The test_implement.py fix was found incidentally —
+there may be similar issues in test_reflect.py or test_scan.py.
+
+**Imagined expert pushback:** "You added `logger.exception()` in the implement.py
+catch but then changed it to `logger.warning()`. Why? Because after narrowing to
+`AnthropicError`, the exception is an expected failure mode (network, rate limit,
+auth) — not a bug. `logger.exception()` includes a full stack trace which is noise
+for expected failures. `logger.warning()` is the right severity."
+
+Trigger evaluations:
+- Recurring finding-class: not fired — three different finding classes (logging,
+  exception types, annotations) in one session. No single recurring class.
+- About to declare silence: not fired — this run made 3 changes.
+- Contradicts prior [!REALIZATION]: not fired — checked learning.md, no contradiction.
+- Operator explicitly asked: FIRED — "yes and use the improve skill to do it."
+
+**[!REALIZATION]** The evo comparison revealed a structural asymmetry: evo was
+built with observability from the start (logging, strict mode, specific exceptions).
+ai-steward was built for correctness first. Now that the pipeline is stable,
+observability is the right next investment — the logging addition is the most
+valuable of the three changes because multi-cycle runs (the next major test) will
+produce failures that are currently invisible. The exception narrowing complements
+this: it ensures that when something unexpected happens in IMPLEMENT, it surfaces
+rather than being absorbed.
+
+### Candidate Next Moves
+
+1. Multi-cycle convergence testing (retrospect #1) — all structural blockers cleared.
+   Run `ai-steward run C:\git\pea\ai-steward` in a loop until SCAN returns
+   nothing_found. This validates Convergence Is Silence with the full 3-call
+   pipeline and exposes any compounding errors across cycles. Highest-value remaining
+   test, requires harness running at localhost:8474.
+2. Retrospect run — retrospect.md is 4+ commits stale. Claims 2, 5, 6 addressed.
+   A fresh retrospect would recalibrate the arc-claims and identify what's actually
+   still open. Do this before or after multi-cycle convergence testing.
+3. Examine test_reflect.py and test_scan.py for wrong mock exception types —
+   the test_implement.py fix was found incidentally. Similar latent issues may exist.

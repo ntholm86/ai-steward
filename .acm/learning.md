@@ -569,6 +569,86 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REVERSAL]** Entry 46's realization "record.py field-level correctness is now complete for the single-cycle case" was false. REFLECT was added in entry 47 without wiring its cost into record.py. The field-level correctness claim is now accurate: all three LLM phases are tracked.
 
+## 2026-06-22 — ai-steward: Add lenses configuration field to AiStewardConfig
+
+**[!REVERSAL]** Operator rejected — 2026-06-22:** Dead config (YAGNI). The pipeline predicted the field would be inert yet proposed it as structural prep. A config field that does nothing is waste, not preparation. Unstaged and discarded. Next cycle must find a change that alters behaviour.
+
+## 2026-06-22 — ai-steward: Add configurable lenses field to AiStewardConfig with default ['mandate', 'examination']
+
+**[!REVERSAL]** Operator correction — 2026-06-22:** Cycle-1 YAGNI rejection was wrong. destination.md explicitly mandates lenses be operator-configurable and not hardcoded. SCAN was correctly reading the mandate both cycles. The partial-implementation pattern (config field now, scan.py wiring next cycle) is the correct iterative approach. Cycle-2 proposal accepted and committed as `31f4015`. Cycle-3 should wire the lenses field into scan.py prompt construction.
+
+## 2026-06-22 — ai-steward: Add docstring to AiStewardConfig.lenses explaining purpose, defaults, and operator use cases
+
+**[!REVERSAL]** Operator rejected — 2026-06-22:** Dead-field documentation. lenses field is still not consumed by scan.py. Documenting intended-but-not-implemented behavior is misleading, not progress. Pending substantive work: (1) wire lenses into scan.py, (2) wire acm_scope_depth+destination_budget_chars into scan.py, (3) add acm_scope_depth+destination_budget_chars to CONFIG_TEMPLATE. Next cycle must choose one of these or declare silence.
+
+## 2026-06-22 — dead-config-wire-scope-context
+
+**[!REALIZATION]** : not fired -- wiring dead config is consistent with all
+
+## 2026-06-22 — dead-config-wire-scope-context
+
+**[!REALIZATION]** :** The 8-cycle autonomous loop plus the manual improve runs
+
+## 2026-06-22 — test-scope-context-parameter-variation
+
+**[!REALIZATION]** : not fired -- consistent with all prior realizations.
+
+## 2026-06-22 — wire-binary-heuristic-and-skip-dirs
+
+**[!REALIZATION]** : not fired.
+
+## 2026-06-22 — wire-binary-heuristic-and-skip-dirs
+
+**[!REALIZATION]** :** The config surface completion arc spans entries
+
+## 2026-06-22 — wire-lenses-into-scan-system-prompt
+
+**[!REALIZATION]** : FIRED -- prior realization "lenses field is dead config"
+
+## 2026-06-22 — wire-lenses-into-scan-system-prompt
+
+**[!REVERSAL]** of that state.
+
+## 2026-06-22 — wire-lenses-into-scan-system-prompt
+
+**[!REVERSAL]** ** The lenses config field is no longer dead config. Custom lenses now produce
+
+## 2026-06-22 — wire-reflect-lenses-into-reflect-system-prompt
+
+**[!REALIZATION]** below.
+
+## 2026-06-22 — wire-reflect-lenses-into-reflect-system-prompt
+
+**[!REALIZATION]** : FIRED -- prior realization "lenses field is dead config"
+
+## 2026-06-22 — wire-reflect-lenses-into-reflect-system-prompt
+
+**[!REALIZATION]** ** All operator-configurable fields are now live: lenses, reflect_lenses,
+
+## 2026-06-22 — field-validator-for-unknown-lens-names
+
+**[!REALIZATION]** : not fired.
+
+## 2026-06-22 — destination-cost-model-correction
+
+**[!REALIZATION]** : not fired.
+
+## 2026-06-22 — destination-cost-model-correction
+
+**[!REALIZATION]** ** The improve loop for ai-steward's V1 code is structurally converging.
+
+## 2026-06-22 — evo-code-quality-patterns
+
+**[!REALIZATION]** : not fired — checked learning.md, no contradiction.
+
+## 2026-06-22 — evo-code-quality-patterns
+
+**[!REALIZATION]** ** The evo comparison revealed a structural asymmetry: evo was
+
+## 2026-06-22 — evo-code-quality-patterns
+
+**[!REVERSAL]** : test_implement.py was raising RuntimeError as the mock exception.
+
 ---
 
-**141 markers — 108 realisations, 33 reversals**
+**161 markers — 122 realisations, 39 reversals**
