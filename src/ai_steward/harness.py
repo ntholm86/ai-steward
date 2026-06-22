@@ -12,6 +12,8 @@ Credentials pass through unchanged (proxy forwards all headers verbatim).
 Set base_url in the provider SDK to the value returned by anthropic_base_url().
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import socket

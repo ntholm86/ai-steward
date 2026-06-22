@@ -7,6 +7,8 @@ Every design decision lives here in code:
 - Safety budget (iteration cap and cost cap)
 """
 
+from __future__ import annotations
+
 import warnings
 from pathlib import Path
 from pydantic import BaseModel, field_validator
