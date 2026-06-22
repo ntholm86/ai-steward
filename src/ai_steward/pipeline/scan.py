@@ -14,6 +14,7 @@ full prompt rationale and gate conditions.
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -26,6 +27,7 @@ from ai_steward.pipeline._types import Finding
 if TYPE_CHECKING:
     import anthropic
 
+logger = logging.getLogger(__name__)
 
 _BASE_SYSTEM_PROMPT = _prompts.SCAN_SYSTEM
 

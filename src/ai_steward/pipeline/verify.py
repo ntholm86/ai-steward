@@ -14,12 +14,15 @@ full spec and rationale.
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from pathlib import Path
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.pipeline._utils import run_verify_command
 from ai_steward.rollback import rollback_file
+
+logger = logging.getLogger(__name__)
 
 
 # Test-running logic extracted to _utils.py (DRY principle)

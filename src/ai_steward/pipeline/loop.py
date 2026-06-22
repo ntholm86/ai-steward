@@ -9,6 +9,7 @@ Full phase specification, gate conditions, and data types are in:
 
 from __future__ import annotations
 
+import logging
 import os
 import subprocess
 from pathlib import Path
@@ -22,6 +23,8 @@ from ai_steward.pipeline.record import record
 from ai_steward.pipeline.reflect import reflect
 from ai_steward.pipeline.scan import scan
 from ai_steward.pipeline.verify import verify
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------

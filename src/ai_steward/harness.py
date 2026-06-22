@@ -12,6 +12,7 @@ Credentials pass through unchanged (proxy forwards all headers verbatim).
 Set base_url in the provider SDK to the value returned by anthropic_base_url().
 """
 
+import logging
 import os
 import socket
 import time
@@ -24,6 +25,8 @@ from ai_steward.config import HarnessConfig
 
 if TYPE_CHECKING:
     import anthropic
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # ULID generation (SPEC §4.2: sid MUST be a 26-char Crockford base-32 ULID)

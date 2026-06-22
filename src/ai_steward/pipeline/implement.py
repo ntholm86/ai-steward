@@ -13,6 +13,7 @@ full spec and rationale.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -24,6 +25,7 @@ from ai_steward.pipeline._types import Finding
 if TYPE_CHECKING:
     import anthropic
 
+logger = logging.getLogger(__name__)
 
 _SYSTEM_PROMPT = _prompts.IMPLEMENT_SYSTEM
 
@@ -84,6 +86,7 @@ def implement(
             messages=[{"role": "user", "content": user_message}],
         )
     except Exception as exc:  # noqa: BLE001
+        logger.exception("IMPLEMENT LLM call failed: %s", exc)
         return False, f"LLM call failed: {exc}", 0, 0, 0
 
     # Capture token usage before extracting content

@@ -12,12 +12,15 @@ full spec and rationale.
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from datetime import date
 from pathlib import Path
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.pipeline._types import Finding
+
+logger = logging.getLogger(__name__)
 
 # Pricing table (USD / token) for known Anthropic models.
 # Source: https://www.anthropic.com/pricing — update when pricing changes.

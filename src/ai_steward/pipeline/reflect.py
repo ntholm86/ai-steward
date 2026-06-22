@@ -16,6 +16,7 @@ Called from loop.py after VERIFY passes and before RECORD.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -27,6 +28,7 @@ from ai_steward.pipeline._types import Finding
 if TYPE_CHECKING:
     import anthropic
 
+logger = logging.getLogger(__name__)
 
 _BASE_REFLECT_SYSTEM = _prompts.REFLECT_SYSTEM
 
@@ -138,4 +140,5 @@ def reflect(
         text = getattr(block, "text", "") or ""
         return text.strip(), _in_tok, _out_tok
     except Exception:
+        logger.exception("REFLECT LLM call failed — returning empty reflection")
         return "", 0, 0
