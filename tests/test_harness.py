@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from ai_steward.config import HarnessConfig
-from ai_steward.harness import anthropic_base_url, harness_session, is_reachable
+from ai_steward.harness import anthropic_base_url, anthropic_client, harness_session, is_reachable
 
 
 def test_is_reachable_returns_false_when_nothing_listening() -> None:
@@ -28,6 +28,32 @@ def test_anthropic_base_url_strips_trailing_slash() -> None:
     # HarnessConfig validator strips the slash; base_url must be clean.
     config = HarnessConfig(endpoint="http://localhost:8474/")
     assert anthropic_base_url(config) == "http://localhost:8474"
+
+
+def test_anthropic_client_raises_outside_harness_session() -> None:
+    """anthropic_client() MUST raise if called outside a harness_session() context.
+
+    This is the explicit boundary enforcement: all LLM API calls must be
+    harness-captured, no exceptions. The guard fires before any network
+    activity — the error is immediate, not after a failed API call.
+    """
+    os.environ.pop("HARNESS_SESSION_ID", None)
+    config = HarnessConfig()
+    with pytest.raises(RuntimeError, match="outside a harness_session"):
+        anthropic_client(config)
+
+
+def test_anthropic_client_does_not_raise_inside_harness_session(tmp_path: Path) -> None:
+    """anthropic_client() must not raise when HARNESS_SESSION_ID is set."""
+    config = HarnessConfig()
+    with harness_session(tmp_path, config):
+        # We only assert no RuntimeError is raised — not that a live client works.
+        try:
+            anthropic_client(config)
+        except RuntimeError as exc:
+            raise AssertionError(f"anthropic_client raised inside harness_session: {exc}") from exc
+        except Exception:
+            pass  # ImportError, network error, etc — not a boundary violation
 
 
 def test_harness_session_sets_harness_root(tmp_path: Path) -> None:

@@ -92,11 +92,14 @@ def anthropic_client(
 ) -> "anthropic.Anthropic":
     """Anthropic SDK client pre-configured for the harness proxy.
 
-    The harness proxy compresses responses with gzip but omits the
-    Content-Encoding header, so the SDK's httpx transport cannot
-    auto-decompress them. Setting Accept-Encoding: identity in the
-    request prevents compression and allows the SDK to parse responses
-    correctly.
+    INVARIANT: This function MUST only be called inside a harness_session()
+    context. Calling it outside raises RuntimeError immediately.
+
+    This is not a convention — it is a hard structural boundary. Every LLM
+    API call made by ai-steward must be harness-captured, without exception.
+    The harness_session() context sets HARNESS_SESSION_ID, which serves as
+    both the session-grouping token and the proof that the caller is operating
+    inside the Observable Autonomy boundary.
 
     When harness_root is provided, the X-Harness-Root header directs the
     proxy to write the session ledger to <harness_root>/sessions/<sid>.jsonl
@@ -104,17 +107,25 @@ def anthropic_client(
     Observable Autonomy structural: sessions land in the target repo's
     .acm/ directory, co-located with audit-trail.md.
 
-    Usage:
-        client = anthropic_client(config.harness, harness_root=repo / ".acm")
-        message = client.messages.create(...)
+    Usage (always inside harness_session()):
+        with harness_session(repo, config.harness):
+            client = anthropic_client(config.harness, harness_root=repo / ".acm")
+            message = client.messages.create(...)
     """
     import anthropic as _anthropic
     import httpx as _httpx
 
+    run_id = os.environ.get("HARNESS_SESSION_ID")
+    if run_id is None:
+        raise RuntimeError(
+            "anthropic_client() called outside a harness_session() context. "
+            "All LLM API calls must be harness-captured — no exceptions. "
+            "Wrap this call inside 'with harness_session(repo, config.harness):'."
+        )
+
     default_headers: dict[str, str] = {"Accept-Encoding": "identity"}
     if harness_root is not None:
         default_headers["X-Harness-Root"] = str(harness_root)
-    run_id = os.environ.get("HARNESS_SESSION_ID")
     if run_id:
         # X-Harness-Session groups all calls in this pipeline run into one
         # session file once the proxy implements the header (SPEC §4.2 sid).
