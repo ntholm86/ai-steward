@@ -1521,3 +1521,66 @@ Falsifiable by: a destination.md that still shows '$0.002' without qualification
 
 The original $0.002 line remains in the 2026-06-20 section (geological record preserved).
 This section provides the qualification and the current validated measurement.
+
+---
+
+## 2026-06-22 — Cognition Gap Analysis and REORIENT
+
+### What was learned
+
+The skills suite (Trail, Improve, Retrospect, Destination) operates with a human in the loop who brings full context, can ask clarifying questions, and naturally notices when goals are achieved or the approach is stuck. ai-steward runs unattended with truncated context and no clarification — it compensates structurally through gates and human review, but lacked arc-level awareness.
+
+**Gap closed:** REORIENT phase added (commit b0463c0). The robot can now step back and re-read the full audit trail, forming arc-claims and rewriting retrospect.md. This mirrors the Retrospect skill.
+
+### The stopping condition: Convergence is Silence
+
+The principle: the robot keeps working until SCAN returns NOTHING FOUND. Silence signals one of two states:
+
+1. **Destination achieved** — the goal is met; the robot should propose a successor destination for human approval
+2. **Robot stuck** — the approach is exhausted; the robot should escalate or self-diagnose
+
+The robot cannot currently distinguish these states or act on them. Two new meta-cognitive phases are needed.
+
+### Next phases (post-REORIENT)
+
+**1. Destination Revision (GRADUATE phase)**
+
+When SCAN returns NOTHING FOUND for N consecutive cycles:
+- Read destination.md, retrospect.md, recent trail entries
+- Classify the silence: ACHIEVED, STALE, STUCK, PREMATURE
+- If ACHIEVED or STALE: draft a successor destination for human approval
+- If STUCK: trigger Self-Modification Awareness
+- If PREMATURE: adjust scanning strategy and continue
+
+This is the robot's equivalent of the human noticing "this goal is done, time to move on."
+
+**2. Self-Modification Awareness (ESCALATE phase)**
+
+When repeated failures share a pattern (same test fails, same phase fails, same error class):
+- Detect the pattern by reading recent trail entries
+- Classify: TOOLING_BROKEN, PIPELINE_BOTTLENECK, DESTINATION_UNREACHABLE, CONTEXT_INSUFFICIENT
+- Escalate to human with diagnosis and options
+
+This is the robot's equivalent of the human noticing "the problem isn't the code, it's the approach."
+
+### Why these belong in ai-steward (not the skills suite)
+
+The skills suite assumes human presence. Destination Revision and Self-Modification Awareness compensate for the *absence* of human guidance between cycles. They are structural mechanisms that do what a human would intuitively do: recognize completion, recognize stuck patterns, and adapt.
+
+### Updated cognitive architecture
+
+| Layer | Skills Suite (Human+AI) | ai-steward (Robot) |
+|-------|------------------------|--------------------|
+| **Goal** | Destination skill | Reads destination.md |
+| **Goal-meta** | Human intuition | **GRADUATE (to add)** |
+| **Action** | Improve skill | SCAN→PROPOSE→APPLY→VERIFY |
+| **Reflection** | Retrospect skill | **REORIENT (added)** |
+| **Stuck-meta** | Human intuition | **ESCALATE (to add)** |
+| **Memory** | Trail skill | audit-trail.md + learning.md |
+
+### Predictions
+
+- After GRADUATE: the robot can propose "mission accomplished" and draft a successor destination
+- After ESCALATE: the robot can diagnose repeated failures and ask for help instead of looping forever
+- These phases trigger on silence / failure patterns, not every cycle — they are meta-phases
+
