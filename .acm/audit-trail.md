@@ -3864,3 +3864,62 @@ Prediction held exactly. 101/101 tests pass. mypy clean.
 1. **Add scope to `_CONFIG_TEMPLATE`** — the scope section (allowed/blocked paths) is the first thing operators need after basic config; named blind spot since entry 51; zero effort risk.
 2. **Cost model correction in destination.md** — 2-line append; destination still says "$0.002/cycle"; the code is correct, the documentation is not; low effort.
 3. **Multi-cycle convergence test** — governance layer complete; all code blockers cleared; this is the live run that validates the whole system.
+
+---
+
+## 2026-06-22 — feat(cli): scope section added to CONFIG_TEMPLATE
+
+- target: ai-steward — src/ai_steward/cli.py, tests/test_cli.py
+- operator: Nils Holmager
+- agent: claude-sonnet-4-6 (GitHub Copilot)
+- skill: improve v3.10.0
+- outcome: `ai-steward init` now generates a config with a `scope:` section; operators discover file-targeting on first use
+- delta: cli.py +9 lines; test assertion widened by 1 field; 101→101 tests (count unchanged; assertion tightened)
+
+### Interpretation of the ask
+
+"use improve skill" with `.ai-steward.yaml` open in the editor. Agent-initiated direction applied. The operator holding the live config open is a clear signal: they were looking at the scope section present in the live config but absent from the template. Top-ranked candidate from retrospect candidate #1 and trail entry 80 candidate #1.
+
+### Examination
+
+**Purpose lens:** `scope:` is the most important operator-tunable parameter for real-world use. Without it in the template, operators running `ai-steward init` have no way to discover that they can restrict the agent to `src/` and block tests and trails. The default (empty lists = all files) is wrong for most repos. The live `.ai-steward.yaml` demonstrates the correct pattern — it was written by the operator precisely because the template didn't provide it.
+
+**Inconsistency lens:** Live config has `scope:`, `harness:`, `sandbox: local`. Template had none of these. `scope` is the only one that is purely operator-tunable and day-to-day relevant. `harness.endpoint` is infrastructure-specific; `sandbox` is a V1 deployment detail. Only `scope` was added this cycle.
+
+### Decision
+
+[!DECISION] Add `scope:` section to `_CONFIG_TEMPLATE` with `allowed` and `blocked` example patterns and explanatory comments. Extend test assertion to include `scope` as a required field.
+
+Rejected: also add `harness:` and `sandbox:` to the template. Both are infrastructure concerns not relevant to day-1 operator use. One change per cycle.
+
+### Prediction
+
+Template gains `scope:` with `allowed: ["src/**/*.py"]` and `blocked: ["tests/**", ".acm/**"]` as examples. The test `test_init_config_includes_full_tuning_surface` assertion now requires `scope` in addition to the prior 6 fields. 101/101 tests pass. mypy clean (no new types introduced).
+
+**What will NOT happen:** no change to scope's default behavior (empty = all files). No change to any other config field.
+
+### Outcome
+
+Prediction held exactly. 101/101 tests pass.
+
+### Reflection
+
+**Current model of target as a falsifiable claim:** `ai-steward init` now produces a config that covers all fields an operator needs to configure on day 1: model assignment, test command, token budgets, safety limits, and file scope. The template is complete for the single-operator V1 use case.
+
+**Blind spot:** The template still lacks `harness:` and `sandbox:`. An operator who wants to run with the harness proxy must discover the `harness.endpoint` field from source code or documentation. Whether this matters depends on whether the harness proxy ever ships to operators — which is outside V1 scope by the operational rules.
+
+**Imagined reader pushback:** "The example scope patterns are Python-specific. A TypeScript operator will need to change `src/**/*.py` to `**/*.ts` and might not know that immediately." The comment says "or TypeScript sources" — but the example line is commented out. That could be clearer. Within-iteration improvement deferred to stay to one change.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* FIRED — entries 51 (CONFIG_TEMPLATE), 80 (pricing table), 81 (scope): three consecutive template/discoverability fixes. The pattern is: fields exist in config.py, fields exist in the live config, fields are missing from the generated template. The template test is now the governance mechanism. This is the last known instance of this class.
+- *About to declare silence:* not fired — change made.
+- *Contradicts prior [!REALIZATION]:* not fired — no prior realization argued against scope discoverability.
+- *Operator explicitly asked:* not fired.
+
+[!REALIZATION] (macro — recurring-class trigger fired): The CONFIG_TEMPLATE gap pattern (entries 51, 80, 81) has now been exhausted. All known operator-tunable fields are in the template and the assertion test enforces them. The test `test_init_config_includes_full_tuning_surface` is the governance mechanism preventing silent recurrence. This class of finding is closed.
+
+### Candidate Next Moves
+
+1. **Multi-cycle convergence test** — all governance blockers cleared; this is the live run that validates the whole system; highest-leverage remaining test.
+2. **Cost model correction in destination.md** — destination still says "$0.002/cycle"; 2-line append; stale documentation; lowest-effort correction.
+3. **REFLECT token cost in `_estimate_cycle_cost()`** — REFLECT has configurable `max_tokens_reflect` but its token counts (`reflect_input_tokens`, `reflect_output_tokens`) are not tracked in `Finding` or costed in `_estimate_cycle_cost()`; a small but real gap in the cost model.

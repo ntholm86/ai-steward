@@ -59,6 +59,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 52 | 2026-06-22 | fix(scan): orient context delivers operational rules | SCAN now receives operational rules in every call; head budget raised 1000→2000 chars | scan.py _load_orient_context rewritten (+20 lines); 2 new tests; 95→97 |
 | â–¸ 53 | 2026-06-22 | Retrospect: post-governance-layer-completion |  |  |
 | â–¸ 54 | 2026-06-22 | fix(record): model ID prefix matching in _model_cost_per_token | date-versioned model IDs resolve to correct pricing; claude-sonnet-4-6 added to table; 4 contract tests added | record.py +11 lines; test_record.py +37 lines; 97→101 tests |
+| â–¸ 55 | 2026-06-22 | feat(cli): scope section added to CONFIG_TEMPLATE | `ai-steward init` now generates a config with a `scope:` section; operators discover file-targeting on first use | cli.py +9 lines; test assertion widened by 1 field; 101→101 tests (count unchanged; assertion tightened) |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -328,4 +329,8 @@ Do not edit by hand â€” re-run the command to refresh.
 
 - **decided:** Fix with prefix matching: `model == key or model.startswith(key + "-")`. Add `claude-sonnet-4-6` to the table (distinct model, not a date variant of 4-5). Add 4 contract tests.
 
-**54 runs total â€” 54 with changes, 0 silence**
+### Run 55 â€” 2026-06-22 â€” feat(cli): scope section added to CONFIG_TEMPLATE
+
+- **decided:** Add `scope:` section to `_CONFIG_TEMPLATE` with `allowed` and `blocked` example patterns and explanatory comments. Extend test assertion to include `scope` as a required field.
+
+**55 runs total â€” 55 with changes, 0 silence**

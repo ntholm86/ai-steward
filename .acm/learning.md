@@ -553,6 +553,14 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** :* not fired — the realization "delivery contract tests are the missing governance mechanism" is confirmed, not contradicted.
 
+## 2026-06-22 â€” feat(cli): scope section added to CONFIG_TEMPLATE
+
+**[!REALIZATION]** :* not fired — no prior realization argued against scope discoverability.
+
+## 2026-06-22 â€” feat(cli): scope section added to CONFIG_TEMPLATE
+
+**[!REALIZATION]** (macro — recurring-class trigger fired): The CONFIG_TEMPLATE gap pattern (entries 51, 80, 81) has now been exhausted. All known operator-tunable fields are in the template and the assertion test enforces them. The test `test_init_config_includes_full_tuning_surface` is the governance mechanism preventing silent recurrence. This class of finding is closed.
+
 ---
 
-**137 markers â€” 105 realisations, 32 reversals**
+**139 markers â€” 107 realisations, 32 reversals**

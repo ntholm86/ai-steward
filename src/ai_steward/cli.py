@@ -84,6 +84,17 @@ models:
 
 verify_command: python -m pytest --tb=no -q  # or: make test, npm test, etc.
 
+# Scope — which files the agent may read and modify.
+# Both lists support glob patterns (e.g. "src/**/*.py", "**/*.ts").
+# Empty allowed list means all files are in scope.
+# blocked is always applied after allowed.
+scope:
+  allowed:
+    - "src/**/*.py"     # restrict to source files; remove to allow all
+  blocked:
+    - "tests/**"        # never modify tests
+    - ".acm/**"         # never modify the evidence trail
+
 # Token budgets — raise if the model truncates output; lower to reduce cost.
 max_tokens_scan: 4096       # SCAN: 5-step reasoning needs ~4000; 1024 is too small
 max_tokens_implement: 4096  # IMPLEMENT: full file rewrites can be large
