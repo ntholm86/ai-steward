@@ -4696,3 +4696,48 @@ unexpected, that reveals a surface the manual loop missed.
    minor performance fix for large repos; closes the micro-optimization blind spot named above.
 3. Wire lenses into the SCAN system prompt -- the last dead config field, requires
    designing the lens-application prompt structure; deferred until after autonomous pipeline test.
+
+---
+
+## 2026-06-22 — ai-steward: Add reflect_lenses parameter to AiStewardConfig for operator control of reflection scope
+
+**[!DECISION]** Proposed: Add reflect_lenses parameter to AiStewardConfig for operator control of reflection scope  
+*Rationale:* The destination explicitly requires operator-facing controls for cognitive phases. REFLECT is a reasoning phase but currently offers no control beyond token count. Adding reflect_lenses follows the established pattern (SCAN's lenses parameter) and lets operators tune reflection focus without code changes. Low maintenance cost (one field), high governance alignment (matches destination's 'config is the contract' rule).  
+*Risk:* low
+
+**Prediction:** This will add reflect_lenses to the config schema with a default that reproduces current REFLECT behavior exactly. It will NOT change any reflection output for operators using the default config. Operators who set custom reflect_lenses will see no effect until reflect.py is updated to consume the parameter (that is a separate change).  
+
+**Lenses applied:**
+Examined config.py (found max_tokens_reflect but no other REFLECT controls), reflect.py (found hardcoded _REFLECT_SYSTEM prompt with three fixed items), and cli.py's _CONFIG_TEMPLATE (confirmed no reflect_lenses in generated YAML). The gap: REFLECT has no operator-facing controls for reasoning scope, violating the destination's 'config is the contract' design rule.
+
+**Blind spot:** src/ai_steward/pipeline/scan.py — did not examine how SCAN's lenses are currently applied (dynamic prompt construction vs. config-only listing) to verify the reflect_lenses pattern should mirror it exactly.
+
+**Reflection:**
+The prediction held perfectly. The schema change added `reflect_lenses` with a default matching the hardcoded three-item structure in reflect.py, no existing behavior changed, and operators setting custom values will see no effect until reflect.py reads the parameter. The verification confirms the diff landed as intended with no side effects.
+
+The config schema now claims that reflection lenses are a tunable list, not a fixed requirement. If this claim is true, then reflect.py must tolerate any subset or reordering of the three lenses, and operators should be able to run reflection with only `["prediction"]` or `["blind_spot", "prediction"]` without the pipeline breaking. If the code assumes all three lenses in a fixed order, the schema is lying.
+
+The blind spot is correct and significant: we added `reflect_lenses` by copying the pattern of `lenses`, but never verified that `lenses` itself is consumed correctly. If SCAN just prints the lens names as labels without actually changing its prompt or logic per lens, then `reflect_lenses` inherits a broken pattern—cosmetic configuration that creates the illusion of flexibility while the actual behavior remains hardcoded. The next cycle must open `scan.py` and trace how `lenses` flows from config into prompt construction.
+
+**File:** `src/ai_steward/config.py`  
+**Tokens:** SCAN 21624/1863 — IMPL 1511/1267 — REFLECT 498/280 — cycle est. $0.12205 USD  
+**Harness sessions:** `.acm/sessions/01KVQFWBSCWV2G6RGYE1QKG2HV.jsonl`  
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/config.py b/src/ai_steward/config.py
+index 7ea4ff5..f82d28e 100644
+--- a/src/ai_steward/config.py
++++ b/src/ai_steward/config.py
+@@ -71,6 +71,7 @@ class AiStewardConfig(BaseModel):
+     models: ModelAssignment
+     scope: ScopeConfig = ScopeConfig()
+     lenses: list[str] = ['mandate', 'examination']
++    reflect_lenses: list[str] = ["prediction", "model_claim", "blind_spot"]  # lenses applied in REFLECT phase; default mirrors current three-item structure
+     max_iterations: int = 10
+     budget_usd: float = 5.0
+     max_tokens_scan: int = 4096     # SCAN phase token budget; 1024 was too small for 5-step reasoning
+
+```
+
+*Staged for operator review. Not committed.*

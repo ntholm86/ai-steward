@@ -71,6 +71,7 @@ class AiStewardConfig(BaseModel):
     models: ModelAssignment
     scope: ScopeConfig = ScopeConfig()
     lenses: list[str] = ['mandate', 'examination']
+    reflect_lenses: list[str] = ["prediction", "model_claim", "blind_spot"]  # lenses applied in REFLECT phase; default mirrors current three-item structure
     max_iterations: int = 10
     budget_usd: float = 5.0
     max_tokens_scan: int = 4096     # SCAN phase token budget; 1024 was too small for 5-step reasoning
