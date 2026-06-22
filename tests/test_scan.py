@@ -150,6 +150,52 @@ def test_scan_returns_none_if_file_not_in_repo(tmp_path: Path) -> None:
     assert result is None
 
 
+def test_scan_rejects_blocked_file_proposal(tmp_path: Path) -> None:
+    """Model must not be able to propose a file that is in scope.blocked."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "utils.py").write_text("x = 1\n")
+    tests = tmp_path / "tests"
+    tests.mkdir()
+    (tests / "test_utils.py").write_text("def test_x(): pass\n")
+    config = _make_config(
+        tmp_path,
+        scope=ScopeConfig(allowed=["src/**/*.py"], blocked=["tests/**"]),
+    )
+
+    result = scan(tmp_path, config, client=_mock_client({
+        "file": "tests/test_utils.py",
+        "description": "Add test coverage",
+        "proposed_change": "Add a new test function",
+        "rationale": "coverage",
+        "risk": "low",
+    }))
+
+    assert result is None
+
+
+def test_scan_rejects_out_of_allowed_scope_proposal(tmp_path: Path) -> None:
+    """Model must not be able to propose a file outside scope.allowed."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "utils.py").write_text("x = 1\n")
+    (tmp_path / "outside.py").write_text("y = 2\n")
+    config = _make_config(
+        tmp_path,
+        scope=ScopeConfig(allowed=["src/**/*.py"]),
+    )
+
+    result = scan(tmp_path, config, client=_mock_client({
+        "file": "outside.py",
+        "description": "Fix something",
+        "proposed_change": "y = 3",
+        "rationale": "better",
+        "risk": "low",
+    }))
+
+    assert result is None
+
+
 def test_scan_returns_none_if_no_files_in_scope(tmp_path: Path) -> None:
     # No .py files — _collect_files returns empty dict, no LLM call made.
     config = _make_config(tmp_path)

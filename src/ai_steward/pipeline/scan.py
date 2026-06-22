@@ -439,6 +439,17 @@ def scan(
     if not target.is_file():
         return None
 
+    # Scope enforcement: reject proposals for files outside the configured scope.
+    # The system prompt tells the model to only propose files from the provided file
+    # list, but the model can reason its way around that instruction. This is the
+    # structural gate — not a hint.
+    if any(target.match(b) for b in config.scope.blocked):
+        logger.warning("SCAN proposed blocked file %s — rejected by scope", file_path)
+        return None
+    if config.scope.allowed and not any(target.match(p) for p in config.scope.allowed):
+        logger.warning("SCAN proposed out-of-scope file %s — rejected by scope", file_path)
+        return None
+
     # Guard: reject if the model's own check confirms the change is already implemented.
     # The model is asked to quote the specific line(s) that prove existence; if the
     # quoted text is actually found in the file, the proposal is a false-positive.
