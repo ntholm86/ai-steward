@@ -4247,3 +4247,50 @@ index 66f7a4e..96254b1 100644
 
 
 **[!REVERSAL] Operator rejected — 2026-06-22:** Dead-field documentation. lenses field is still not consumed by scan.py. Documenting intended-but-not-implemented behavior is misleading, not progress. Pending substantive work: (1) wire lenses into scan.py, (2) wire acm_scope_depth+destination_budget_chars into scan.py, (3) add acm_scope_depth+destination_budget_chars to CONFIG_TEMPLATE. Next cycle must choose one of these or declare silence.
+
+---
+
+## 2026-06-22 — ai-steward: Add missing config fields (acm_scope_depth, destination_budget_chars, sandbox) to init template
+
+**[!DECISION]** Proposed: Add missing config fields (acm_scope_depth, destination_budget_chars, sandbox) to init template  
+*Rationale:* These fields are implemented in AiStewardConfig with operator-facing intent (validated, documented) but absent from the init template. Operators running 'ai-steward init' receive an incomplete view of the configuration surface, violating the 'config is the contract' principle from destination.md. Adding them costs three lines and completes the governance interface.  
+*Risk:* low
+
+**Prediction:** This change will surface three config fields (acm_scope_depth, destination_budget_chars, sandbox) in the generated .ai-steward.yaml file for new repos. It will NOT change runtime behavior for existing configurations (defaults already present in AiStewardConfig) and will NOT modify existing .ai-steward.yaml files.  
+
+**Lenses applied:**
+Examined config.py (AiStewardConfig schema), cli.py (_CONFIG_TEMPLATE), and record.py (_build_entry). Found three implemented, operator-tunable config fields (acm_scope_depth, destination_budget_chars, sandbox) present in AiStewardConfig but absent from the init template, creating an incomplete operator-facing contract.
+
+**Blind spot:** src/ai_steward/pipeline/scan.py lines 200-230 (_load_scope_context()) — did not examine whether the ACM scope traversal logic correctly implements the 4-level ceiling or whether the destination_budget_chars split matches the docstring's stated behavior
+
+**Reflection:**
+The prediction held exactly. Three config fields now appear in the template string for `ai-steward init`, their defaults match those already wired into `AiStewardConfig`, and the diff contains no logic changes—only template additions. Existing repos remain untouched, existing runtime behavior remains untouched.
+
+The target is becoming a system that documents its tuning knobs at first contact. New users see `acm_scope_depth`, `destination_budget_chars`, and `sandbox` in their `.ai-steward.yaml` alongside explanatory comments, reducing the discovery tax. The model claim: every config field that affects SCAN or PLAN context assembly now appears in the init template, and none are hidden in code-only defaults. This is falsifiable by grepping `AiStewardConfig` for fields absent from `_CONFIG_TEMPLATE`.
+
+The blind spot named in verification—`_load_scope_context()` in `scan.py`—went unexamined because surfacing a config key in a template does not prove the runtime honors it correctly. The traversal ceiling logic and the character-budget split between destination excerpts may still misbehave. Config visibility is not config correctness, and this cycle chose documentation over runtime validation.
+
+**File:** `src/ai_steward/cli.py`  
+**Tokens:** SCAN 20935/2474 — IMPL 2136/1891 — REFLECT 507/274 — cycle est. $0.14032 USD  
+**Harness sessions:** `.acm/sessions/01KVQ0977ME1W8WE06Z1VJB5WV.jsonl`  
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/cli.py b/src/ai_steward/cli.py
+index bea0fed..135244f 100644
+--- a/src/ai_steward/cli.py
++++ b/src/ai_steward/cli.py
+@@ -111,6 +111,9 @@ max_iterations: 10          # maximum improvement cycles per run
+ budget_usd: 5.0             # cumulative cost cap in USD
+ 
+ allow_dirty: false          # set true to run on repos with uncommitted changes
++acm_scope_depth: 4          # ACM scope traversal depth (org/workspace/team/repo hierarchies)
++destination_budget_chars: 3000  # character budget for destination.md excerpts in SCAN context
++sandbox: "docker"           # execution sandbox: "docker" | "local"
+ """
+ 
+ _DESTINATION_TEMPLATE = """\
+
+```
+
+*Staged for operator review. Not committed.*
