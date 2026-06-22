@@ -81,6 +81,8 @@ Do not edit by hand — re-run the command to refresh.
 | ▸ 74 | 2026-06-22 | ai-steward: Add dedicated reflect model field to ModelAssignment for cost optimization |  |  |
 | ▸ 75 | 2026-06-22 | multi-cycle-convergence-and-scope-gate | CONVERGENCE VALIDATED + SCOPE GATE BUG FOUND AND FIXED |  |
 | ▸ 76 | 2026-06-22 | Retrospect: post-multi-cycle-convergence |  |  |
+| ▸ 77 | 2026-06-22 | feat(reorient): add REORIENT phase for arc-level awareness | CHANGE ACCEPTED — 129 tests pass |  |
+| ▸ 78 | 2026-06-22 | feat(reorient): add REORIENT phase for arc-level awareness | CHANGE ACCEPTED — 129 tests pass |  |
 
 ### Run 1 — 2026-05-14 — Evo analysis and new project decision
 
@@ -435,4 +437,12 @@ Do not edit by hand — re-run the command to refresh.
 
 - **decided:** ** Accept convergence as validated. Three consecutive NOTHING FOUND cycles
 
-**76 runs total — 76 with changes, 0 silence**
+### Run 77 — 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+- **decided:** Add REORIENT phase — the robot's equivalent of the Retrospect skill.
+
+### Run 78 — 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+- **decided:** Add REORIENT phase — the robot's equivalent of the Retrospect skill.
+
+**78 runs total — 78 with changes, 0 silence**
