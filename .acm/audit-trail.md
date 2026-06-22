@@ -1657,7 +1657,7 @@ index 16d54dc..bf41785 100644
 +    lenses_section = (
 +        f"**Lenses applied:**\n"
 +        f"- *Commander's Intent:* Operator destination (`.trail/destination.md`) "
-+        f"loaded â€” improvement selected against stated direction.\n"
++        f"loaded — improvement selected against stated direction.\n"
 +        f"- *Code examination:* Repository files within scope scanned for structural improvements.\n"
 +    )
 +    
@@ -1679,7 +1679,7 @@ index 16d54dc..bf41785 100644
 +    # Build decision section with reversal stub
 +    decision_section = (
 +        f"**[!DECISION]** {finding.description}  \n"
-+        f"**[!REVERSAL]** *stub â€” VERIFY binding pending*\n"
++        f"**[!REVERSAL]** *stub — VERIFY binding pending*\n"
 +    )
 +    
 +    # Build blind spot section
@@ -1700,7 +1700,7 @@ index 16d54dc..bf41785 100644
 -        f"loaded \u2014 improvement selected against stated direction.\n"
 -        f"- *Code examination:* Repository files within scope scanned for structural improvements.\n\n"
 -        f"**Blind spot:** {finding.blind_spot or 'Not identified for this run.'}\n\n"
-+        f"## {today} â€” ai-steward: {finding.description}\n\n"
++        f"## {today} — ai-steward: {finding.description}\n\n"
 +        f"{lenses_section}\n"
 +        f"{reasoning_section}\n"
 +        f"{decision_section}\n"
@@ -1710,8 +1710,8 @@ index 16d54dc..bf41785 100644
          f"SCAN {finding.input_tokens}/{finding.output_tokens} "
 -        f"\u2014 IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
 -        f"\u2014 cycle est. ${cycle_cost:.5f} USD  \n"
-+        f"â€” IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
-+        f"â€” cycle est. ${cycle_cost:.5f} USD  \n"
++        f"— IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
++        f"— cycle est. ${cycle_cost:.5f} USD  \n"
          f"**Harness session:** `{session_line}`  \n\n"
          f"**Diff:**\n```diff\n{diff}\n```\n\n"
          f"*Staged for operator review. Not committed.*\n"
@@ -1826,7 +1826,8 @@ Alternatives: Add a return dataclass (over-engineered for V1; the 5-tuple is alr
 - harness.py:59 - Name "anthropic" is not defined (missing TYPE_CHECKING guard)
 - cli.py:57-59 - Item "None" of "Finding | None" has no attribute ... (null not narrowed)
 
-**[!REALIZATION]** harness.py had the same missing TYPE_CHECKING/anthropic guard that scan.py and implement.py already have. cli.py accessed esult.finding (typed Finding | None) inside a status == "proposed" branch without asserting non-None -- the invariant holds at runtime but is invisible to the type system and would crash with AttributeError if LoopResult were ever mis-constructed.
+**[!REALIZATION]** harness.py had the same missing TYPE_CHECKING/anthropic guard that scan.py and implement.py already have. cli.py accessed 
+esult.finding (typed Finding | None) inside a status == "proposed" branch without asserting non-None -- the invariant holds at runtime but is invisible to the type system and would crash with AttributeError if LoopResult were ever mis-constructed.
 
 **[!DECISION]** Fix all 4 errors as one coherent action ("make codebase mypy-clean"):
 - harness.py: add rom typing import TYPE_CHECKING + if TYPE_CHECKING: import anthropic (matching scan.py/implement.py pattern)
@@ -2066,7 +2067,7 @@ index 71d7de2..9abc5ea 100644
 +    lenses_section = (
 +        "**Lenses applied:**\n"
 +        "- *Commander's Intent:* Operator destination (`.trail/destination.md`) "
-+        "loaded â€” improvement selected against stated direction.\n"
++        "loaded — improvement selected against stated direction.\n"
 +        "- *Code examination:* Repository files within scope scanned for structural improvements.\n"
 +    )
 +    
@@ -2091,7 +2092,7 @@ index 71d7de2..9abc5ea 100644
      return (
          f"\n---\n\n"
 -        f"## {today} \u2014 ai-steward: {finding.description}\n\n"
-+        f"## {today} â€” ai-steward: {finding.description}\n\n"
++        f"## {today} — ai-steward: {finding.description}\n\n"
          f"**[!DECISION]** Proposed: {finding.description}  \n"
          f"*Rationale:* {finding.rationale}  \n"
          f"*Risk:* {finding.risk}\n\n"
@@ -2110,8 +2111,8 @@ index 71d7de2..9abc5ea 100644
          f"SCAN {finding.input_tokens}/{finding.output_tokens} "
 -        f"\u2014 IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
 -        f"\u2014 cycle est. ${cycle_cost:.5f} USD  \n"
-+        f"â€” IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
-+        f"â€” cycle est. ${cycle_cost:.5f} USD  \n"
++        f"— IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
++        f"— cycle est. ${cycle_cost:.5f} USD  \n"
          f"**Harness session:** `{session_line}`  \n\n"
 -        f"**Diff:**\n```diff\n{diff}\n```\n\n"
 +        f"**Diff:**\n```diff\n{diff}\n```\n"
@@ -2248,16 +2249,20 @@ Rejected: prompt instruction for missing destination.md (smaller, doesn't help n
 
 **Ask:** Make ai-steward technology-agnostic by replacing the hardcoded python -m pytest verify call with a configurable erify_command.
 
-**Examination:** un_tests(repo) was called in two places — PRE-FLIGHT (baseline) and VERIFY (Gate 3) — with the pytest invocation baked in. The config.py had no field for an alternative command. This locked ai-steward to Python projects exclusively.
+**Examination:** 
+un_tests(repo) was called in two places — PRE-FLIGHT (baseline) and VERIFY (Gate 3) — with the pytest invocation baked in. The config.py had no field for an alternative command. This locked ai-steward to Python projects exclusively.
 
 **Decision (one logical change):**
-Replace un_tests(repo) with un_verify_command(cmd: str, repo: Path) throughout. Default erify_command = "python -m pytest --tb=no -q" preserves all existing behavior. Empty string disables Gate 3 entirely — correct for doc, markdown, or song targets.
+Replace 
+un_tests(repo) with 
+un_verify_command(cmd: str, repo: Path) throughout. Default erify_command = "python -m pytest --tb=no -q" preserves all existing behavior. Empty string disables Gate 3 entirely — correct for doc, markdown, or song targets.
 
 **Actions:**
 - config.py: added erify_command: str = "python -m pytest --tb=no -q"
 - _utils.py: renamed function, added shlex.split(cmd) for OWASP safety (no shell=True)
 - erify.py: Gate 3 wrapped in if config.verify_command: — skipped when empty
-- loop.py: PRE-FLIGHT uses un_verify_command(config.verify_command, repo); empty → (True, 0)
+- loop.py: PRE-FLIGHT uses 
+un_verify_command(config.verify_command, repo); empty → (True, 0)
 - 	ests/test_loop.py, 	ests/test_verify.py: updated all monkeypatches to 2-arg signature
 - New test: 	est_verify_skips_test_gate_when_verify_command_empty
 
@@ -2403,7 +2408,7 @@ index 31e0351..ba5e00a 100644
      baseline_test_count is 0 when any gate fails before the test run.
      """
 +    if not _is_git_installed():
-+        return False, "git is not installed â€” install git to proceed", 0
++        return False, "git is not installed — install git to proceed", 0
 +
      if not repo.exists():
          return False, f"repo path does not exist: {repo}", 0
@@ -2482,8 +2487,8 @@ index a94dbea..5a2a248 100644
 --- a/src/ai_steward/pipeline/scan.py
 +++ b/src/ai_steward/pipeline/scan.py
 @@ -1,4 +1,4 @@
--ï»¿"""SCAN phase â€” one Anthropic LLM call via harness.
-+"""SCAN phase â€” one Anthropic LLM call via harness.
+-﻿"""SCAN phase — one Anthropic LLM call via harness.
++"""SCAN phase — one Anthropic LLM call via harness.
  
  Combines ANALYZE and PROPOSE: asks the model to identify one improvement
  AND describe the specific change in a single prompt. Returns a Finding,
@@ -2493,7 +2498,7 @@ index a94dbea..5a2a248 100644
  
 +<budget:token_budget>200000</budget:token_budget>
 +
- Respond with a JSON object only â€” no prose, no markdown fences, no explanation:
+ Respond with a JSON object only — no prose, no markdown fences, no explanation:
  {
    "file": "<repo-relative path to the file to change>",
 
@@ -3065,7 +3070,7 @@ index 647513f..58dcf8e 100644
  
  _DESTINATION_TEMPLATE = """\
 @@ -141,4 +143,4 @@ def init(repo: str) -> None:
-     click.echo("  1. Edit .acm/destination.md â€” describe what you want the codebase to become")
+     click.echo("  1. Edit .acm/destination.md — describe what you want the codebase to become")
      click.echo("  2. Set ANTHROPIC_API_KEY")
      click.echo("  3. Start llm-harness-proxy on localhost:8474")
 -    click.echo(f"  4. Run: ai-steward run {repo_path}")
@@ -3389,7 +3394,7 @@ index 5cc5252..e588b3e 100644
 --- a/src/ai_steward/config.py
 +++ b/src/ai_steward/config.py
 @@ -1,4 +1,4 @@
--ï»¿"""Configuration schema for ai-steward.
+-﻿"""Configuration schema for ai-steward.
 +"""Configuration schema for ai-steward.
  
  Every design decision lives here in code:
@@ -4182,7 +4187,7 @@ index b00fbdd..bea0fed 100644
 +  # Example for security audit: add 'security' to focus on attack surface
 +  # Example for performance: use ['overburden'] to focus on hot paths only
 +
- # Safety limits â€” pipeline stops when either is reached.
+ # Safety limits — pipeline stops when either is reached.
  max_iterations: 10          # maximum improvement cycles per run
  budget_usd: 5.0             # cumulative cost cap in USD
 

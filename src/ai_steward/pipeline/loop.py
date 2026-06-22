@@ -1,10 +1,10 @@
 ﻿"""V1 pipeline orchestrator for ai-steward.
 
-One cycle: PRE-FLIGHT â†’ SCAN â†’ IMPLEMENT â†’ VERIFY â†’ RECORD
+One cycle: PRE-FLIGHT → SCAN → IMPLEMENT → VERIFY → RECORD
 Stops before release: the staged change waits for operator review.
 
 Full phase specification, gate conditions, and data types are in:
-  .acm/audit-trail.md  (entry: 2026-06-19 â€” V1 pipeline design)
+  .acm/audit-trail.md  (entry: 2026-06-19 — V1 pipeline design)
 """
 
 from __future__ import annotations
@@ -97,7 +97,7 @@ def _get_diff(repo: Path, rel_path: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# PRE-FLIGHT (tier 0 â€” all gates must pass before first LLM call)
+# PRE-FLIGHT (tier 0 — all gates must pass before first LLM call)
 # ---------------------------------------------------------------------------
 
 
@@ -108,14 +108,14 @@ def preflight(repo: Path, config: AiStewardConfig) -> tuple[bool, str, int]:
     baseline_test_count is 0 when any gate fails before the test run.
     """
     if not _is_git_installed():
-        return False, "git is not installed â€” install git to proceed", 0
+        return False, "git is not installed — install git to proceed", 0
 
     if not repo.exists():
         return False, f"repo path does not exist: {repo}", 0
 
     if not _is_git_repo(repo):
         if not _git_auto_init(repo):
-            return False, "not a git repository and git init failed â€” is git installed?", 0
+            return False, "not a git repository and git init failed — is git installed?", 0
 
     if not _is_git_clean(repo) and not config.allow_dirty:
         return False, "working tree has uncommitted changes", 0
@@ -125,7 +125,7 @@ def preflight(repo: Path, config: AiStewardConfig) -> tuple[bool, str, int]:
 
     passed, count = run_verify_command(config.verify_command, repo)
     if not passed:
-        return False, "baseline verify command failed â€” repo must be green before evolution", 0
+        return False, "baseline verify command failed — repo must be green before evolution", 0
 
     return True, "", count
 
@@ -138,7 +138,7 @@ def preflight(repo: Path, config: AiStewardConfig) -> tuple[bool, str, int]:
 def run(repo: Path, config: AiStewardConfig) -> LoopResult:
     """Run one V1 pipeline cycle.
 
-    PRE-FLIGHT â†’ SCAN â†’ IMPLEMENT â†’ VERIFY â†’ RECORD
+    PRE-FLIGHT → SCAN → IMPLEMENT → VERIFY → RECORD
     Stops before release: the staged change waits for operator review.
     """
     passed, reason, baseline_count = preflight(repo, config)

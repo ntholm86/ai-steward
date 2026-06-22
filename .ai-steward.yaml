@@ -1,4 +1,4 @@
-﻿# AI Steward V1 â€” self-targeting configuration
+﻿# AI Steward V1 — self-targeting configuration
 #
 # This config is used when ai-steward runs against its own repository.
 # Self-targeting is the V1 milestone (destination 2026-06-20).
@@ -6,17 +6,17 @@
 # repo: comes from the CLI argument, not this file.
 
 models:
-  analyze: claude-sonnet-4-5   # SCAN reasoning â€” proposal quality determines acceptance rate
+  analyze: claude-sonnet-4-5   # SCAN reasoning — proposal quality determines acceptance rate
   propose: claude-sonnet-4-5   # same SCAN call
-  implement: claude-sonnet-4-5 # code quality â€” better first-pass â†’ fewer VERIFY failures
-  verify: claude-haiku-4-5     # tier-0 in V1 â€” no LLM call fires here; keep cheap
+  implement: claude-sonnet-4-5 # code quality — better first-pass → fewer VERIFY failures
+  verify: claude-haiku-4-5     # tier-0 in V1 — no LLM call fires here; keep cheap
   judge: claude-opus-4-5       # highest-stakes gate (sparingly used); worth paying for
 
 harness:
   endpoint: "http://localhost:8474"
 
 scope:
-  # Only Python source files in scope â€” tests and trail are off-limits for V1.
+  # Only Python source files in scope — tests and trail are off-limits for V1.
   allowed:
     - "src/**/*.py"
   blocked:
