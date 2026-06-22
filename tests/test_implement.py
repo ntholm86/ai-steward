@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from anthropic import AnthropicError
 
 from ai_steward.config import AiStewardConfig, ModelAssignment
 from ai_steward.pipeline import Finding
@@ -126,7 +127,7 @@ def test_implement_returns_false_on_llm_exception(tmp_path: Path) -> None:
     (tmp_path / "utils.py").write_text(original)
     config = _make_config(tmp_path)
     client = MagicMock()
-    client.messages.create.side_effect = RuntimeError("connection refused")
+    client.messages.create.side_effect = AnthropicError("connection refused")
 
     ok, reason, size, *_ = implement(tmp_path, config, _make_finding(), client=client)
 

@@ -17,6 +17,8 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from anthropic import AnthropicError
+
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
 from ai_steward.pipeline import _prompts
@@ -85,8 +87,8 @@ def implement(
             system=_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
         )
-    except Exception as exc:  # noqa: BLE001
-        logger.exception("IMPLEMENT LLM call failed: %s", exc)
+    except AnthropicError as exc:
+        logger.warning("IMPLEMENT LLM call failed: %s", exc)
         return False, f"LLM call failed: {exc}", 0, 0, 0
 
     # Capture token usage before extracting content

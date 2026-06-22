@@ -140,5 +140,7 @@ def reflect(
         text = getattr(block, "text", "") or ""
         return text.strip(), _in_tok, _out_tok
     except Exception:
+        # reflect() must never raise — it is an optional phase.
+        # Catch covers both the LLM call and any content-extraction edge cases.
         logger.exception("REFLECT LLM call failed — returning empty reflection")
         return "", 0, 0
