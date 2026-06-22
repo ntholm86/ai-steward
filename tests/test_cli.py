@@ -204,3 +204,36 @@ def test_run_loop_escalates_on_failure_streak(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert mock_escalate.call_count == 1
     assert "ESCALATE" in result.output
+
+
+def test_run_loop_shows_allow_dirty_warning_when_false(tmp_path: Path) -> None:
+    """Startup warning appears when allow_dirty is false (the default)."""
+    (tmp_path / ".ai-steward.yaml").write_text(_MINIMAL_CONFIG, encoding="utf-8")
+    nothing_found = LoopResult(
+        status="nothing_found", finding=None, diff=None, acm_entry=""
+    )
+    runner = CliRunner()
+    with patch("ai_steward.cli.pipeline_run", return_value=nothing_found), \
+         patch("ai_steward.cli.graduate_phase", return_value=("proposal", 10, 5)), \
+         patch("ai_steward.cli.write_graduate_proposal", return_value=tmp_path / ".acm" / "graduate_proposal.md"):
+        result = runner.invoke(main, ["run-loop", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    assert "allow_dirty" in result.output
+
+
+def test_run_loop_no_allow_dirty_warning_when_true(tmp_path: Path) -> None:
+    """No startup warning when allow_dirty is explicitly true."""
+    config_text = _MINIMAL_CONFIG + "allow_dirty: true\n"
+    (tmp_path / ".ai-steward.yaml").write_text(config_text, encoding="utf-8")
+    nothing_found = LoopResult(
+        status="nothing_found", finding=None, diff=None, acm_entry=""
+    )
+    runner = CliRunner()
+    with patch("ai_steward.cli.pipeline_run", return_value=nothing_found), \
+         patch("ai_steward.cli.graduate_phase", return_value=("proposal", 10, 5)), \
+         patch("ai_steward.cli.write_graduate_proposal", return_value=tmp_path / ".acm" / "graduate_proposal.md"):
+        result = runner.invoke(main, ["run-loop", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    assert "allow_dirty" not in result.output

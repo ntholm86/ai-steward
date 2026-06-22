@@ -292,6 +292,13 @@ def run_loop(repo: str) -> None:
     failure_streak = 0
     successful_cycles = 0
 
+    if not config.allow_dirty:
+        click.echo(
+            "Note: allow_dirty is false — each PROPOSED cycle stages changes in git.\n"
+            "      PRE-FLIGHT requires a clean tree, so the loop pauses when a change is pending.\n"
+            "      Commit or discard staged changes to continue, or set allow_dirty: true to skip this gate."
+        )
+
     for cycle in range(1, config.max_iterations + 1):
         click.echo(f"\nCycle {cycle}/{config.max_iterations}")
         result = pipeline_run(repo_path, config)
