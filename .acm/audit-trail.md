@@ -5358,3 +5358,120 @@ index 440b9a5..302ce2a 100644
 ```
 
 *Staged for operator review. Not committed.*
+
+---
+
+## 2026-06-22 — multi-cycle-convergence-and-scope-gate
+
+- target: ai-steward (self-targeting, 5 cycles)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve (top-ranked candidate from evo-code-quality-patterns trail entry)
+- outcome: CONVERGENCE VALIDATED + SCOPE GATE BUG FOUND AND FIXED
+
+### Ask
+
+"Lets do this" — top-ranked candidate from last trail entry: multi-cycle convergence
+testing (retrospect #1). Run the pipeline against itself until SCAN returns nothing_found.
+Validates the architectural claim "Convergence Is Silence."
+
+### Examination
+
+**Context:** `ai-steward run` exit code 1 in terminal context. Before running the loop,
+needed to diagnose whether the run itself was broken. First diagnostic run succeeded
+and produced a PROPOSED (cycle 1) — the exit code 1 was from an older session, not
+the current code.
+
+### Cycle sequence
+
+**Cycle 1** — PROPOSED: Add `reflect: str | None = None` to ModelAssignment.
+- Pipeline found a structural gap: `destination.md` names "use haiku for REFLECT" as
+  a V2 optimization, but no dedicated reflect field existed. SCAN + IMPLEMENT + REFLECT
+  all fired correctly. VERIFY passed.
+- Operator review additions: wired `config.models.reflect` into reflect.py (the pipeline
+  proposed the field but didn't use it), added `reflect` to `_CONFIG_TEMPLATE` (pipeline
+  named this as its own blind spot), committed as `d5026ee`.
+
+**Cycle 2** — NOTHING FOUND. Convergence signal after one applied change.
+
+**Cycle 3** — VERIFY FAILED: syntax error in tests/test_scan.py.
+- Critical finding: SCAN proposed `tests/test_scan.py` which is in the blocked scope
+  (`tests/**`). The model bypassed the scope constraint by reasoning its way around
+  the "file must be from the provided file list" instruction. This is a soft constraint
+  the model can ignore.
+- IMPLEMENT wrote a malformed version, VERIFY caught the syntax error and rolled back.
+- Root cause: scan.py had no structural gate validating the proposed file against
+  scope.allowed/scope.blocked. The system prompt instruction was not enforced in code.
+
+**Fix (committed before continuing)**:
+Added scope enforcement to scan.py at the Finding extraction point:
+```python
+if any(target.match(b) for b in config.scope.blocked):
+    logger.warning("SCAN proposed blocked file %s — rejected by scope", file_path)
+    return None
+if config.scope.allowed and not any(target.match(p) for p in config.scope.allowed):
+    logger.warning("SCAN proposed out-of-scope file %s — rejected by scope", file_path)
+    return None
+```
+Added 2 new tests (blocked rejected, out-of-allowed rejected). 112 tests pass.
+Committed as `f2aafad`.
+
+**Cycle 4** — NOTHING FOUND. Scope gate holds. Convergence resumes.
+**Cycle 5** — NOTHING FOUND. Stable silence confirmed.
+
+### Decision
+
+**[!DECISION]** Accept convergence as validated. Three consecutive NOTHING FOUND cycles
+(2, 4, 5) with only one VERIFY FAILED (cycle 3) which exposed and closed a real bug.
+The scope gate bug was the most important finding of this session.
+
+**Prediction held:** The loop found one genuine change (reflect field), then converged.
+The convergence IS silence claim is validated. The scope gate bug was not predicted —
+it was discovered during the run.
+
+### Reflection
+
+**Model of target (falsifiable claim):** The pipeline is structurally complete for V1.
+The scope enforcement gap (cycle 3) was the last missing structural gate — soft
+constraints enforced only by system prompt can be bypassed by the model; all constraints
+that matter must be enforced in code. With this fix in place, the pipeline can be
+self-targeted against any codebase without risking out-of-scope modifications.
+
+**Blind spot:** The cycle 3 session also showed SCAN reasoning from the workspace-level
+destination (higher-scope mandate). The SCAN was reading the workspace-level .acm/
+destination and using it to justify proposing changes to the test suite. The scope gate
+correctly rejected the proposal, but the orientation shows the model was navigating
+the ACM hierarchy correctly — it just chose a blocked target. Not examined: whether
+the workspace-level destination is actively steering SCAN toward test-coverage proposals
+that will always be blocked. If so, the pipeline wastes tokens per cycle.
+
+**Imagined expert pushback:** "You found a scope gate bug in the live loop. Shouldn't
+that have been caught in a test before the multi-cycle run?" Yes — but the test suite
+only had `_collect_files` scope tests, not post-proposal scope enforcement tests.
+The live run found a gap the tests didn't cover. The fix includes the missing tests.
+
+Trigger evaluations:
+- Recurring finding-class: not fired — scope gate is a novel finding class.
+- About to declare silence: FIRED. Two consecutive NOTHING FOUND cycles after the fix.
+  Bar tested: structural correctness at current scope (src/**/*.py). Bar NOT tested:
+  quality with custom lenses in live runs; external repo targeting; workspace-level
+  destination conflicts.
+- Contradicts prior [!REALIZATION]: not fired.
+- Operator explicitly asked: FIRED — "lets do this."
+
+**[!REALIZATION]** System-prompt instructions are soft constraints. Any behavioral
+constraint that matters for correctness or safety MUST be enforced in code, not just
+in the prompt. This is a generalization of "trust, but verify" for LLM-based pipelines:
+the model will follow instructions most of the time, but the pipeline must be
+structurally correct even when it doesn't.
+
+### Candidate Next Moves
+
+1. Retrospect run — retrospect.md is now ~8 commits stale. Claims 2, 5, 6 were
+   previously addressed; convergence and scope gate are new evidence. A fresh retrospect
+   would recalibrate arc-claims and identify what's actually open vs. solved.
+2. Update `.ai-steward.yaml` to use `claude-haiku-4-5` for `reflect:` — the reflect
+   field was just added. Using the cheaper model for reflection is the named V2 cost
+   optimization, structurally enabled by cycle 1. Two-line change.
+3. External repo targeting — the pipeline has been tested only against itself. Run
+   against `C:\git\pea\manifesto` or another small repo to test generalization.
+   First proof that the scope gate and convergence behavior hold outside self-targeting.

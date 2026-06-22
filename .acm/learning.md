@@ -649,6 +649,14 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REVERSAL]** : test_implement.py was raising RuntimeError as the mock exception.
 
+## 2026-06-22 — multi-cycle-convergence-and-scope-gate
+
+**[!REALIZATION]** : not fired.
+
+## 2026-06-22 — multi-cycle-convergence-and-scope-gate
+
+**[!REALIZATION]** ** System-prompt instructions are soft constraints. Any behavioral
+
 ---
 
-**161 markers — 122 realisations, 39 reversals**
+**163 markers — 124 realisations, 39 reversals**

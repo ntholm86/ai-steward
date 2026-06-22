@@ -78,6 +78,8 @@ Do not edit by hand — re-run the command to refresh.
 | ▸ 71 | 2026-06-22 | field-validator-for-unknown-lens-names | CHANGE ACCEPTED — unknown lens names now trigger UserWarning at config load time |  |
 | ▸ 72 | 2026-06-22 | destination-cost-model-correction | CHANGE ACCEPTED — destination.md cost model corrected; retrospect claim #6 falsified |  |
 | ▸ 73 | 2026-06-22 | evo-code-quality-patterns | CHANGE ACCEPTED — 3 code quality patterns from evo applied |  |
+| ▸ 74 | 2026-06-22 | ai-steward: Add dedicated reflect model field to ModelAssignment for cost optimization |  |  |
+| ▸ 75 | 2026-06-22 | multi-cycle-convergence-and-scope-gate | CONVERGENCE VALIDATED + SCOPE GATE BUG FOUND AND FIXED |  |
 
 ### Run 1 — 2026-05-14 — Evo analysis and new project decision
 
@@ -424,4 +426,12 @@ Do not edit by hand — re-run the command to refresh.
 - **decided:** Iteration 3 — from __future__ annotations**
 - **REVERSAL:** : test_implement.py was raising RuntimeError as the mock exception.
 
-**73 runs total — 73 with changes, 0 silence**
+### Run 74 — 2026-06-22 — ai-steward: Add dedicated reflect model field to ModelAssignment for cost optimization
+
+- **decided:** ** Proposed: Add dedicated reflect model field to ModelAssignment for cost optimization
+
+### Run 75 — 2026-06-22 — multi-cycle-convergence-and-scope-gate
+
+- **decided:** ** Accept convergence as validated. Three consecutive NOTHING FOUND cycles
+
+**75 runs total — 75 with changes, 0 silence**
