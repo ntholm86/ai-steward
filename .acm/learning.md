@@ -661,6 +661,46 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** The loop has transitioned from infrastructure building to behavioral validation. 40 entries (36-75) built the governance layer; the multi-cycle run proved it works. The next arc should be breadth: external repos, custom configurations, cost optimizations. The prior retrospect's claim #10 ("the instrument has not been played") is now falsified -- it has been played and passed.
 
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** : not fired
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** and [!REVERSAL] -- the loop's actual learned conclusions. Delivering 500 chars of it means the model operates without most of its own learning history.
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** The ACM memory model has a symmetry requirement: every file written must have a reader at appropriate cognition depth. This is not just a nice-to-have -- it is the structural equivalent of the principle "autonomy without evidence is abdication." Unread memory is wasted evidence.
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** : not fired
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** : not fired
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** recorded during the ACM memory symmetry session:
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** -- Meaningful symmetry, not maximal symmetry
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** : FIRED -- prior realization stated only the "must read" direction. This amendment makes it symmetric: both unread evidence and unnecessary reads are waste.
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** : not fired
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** : not fired
+
 ---
 
-**164 markers — 125 realisations, 39 reversals**
+**174 markers — 135 realisations, 39 reversals**
