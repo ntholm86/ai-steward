@@ -25,6 +25,9 @@ ai-steward = "ai_steward.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"ai_steward" = ["pipeline/prompts/*.md"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 

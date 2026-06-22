@@ -18,19 +18,14 @@ from typing import TYPE_CHECKING
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
+from ai_steward.pipeline import _prompts
 from ai_steward.pipeline._types import Finding
 
 if TYPE_CHECKING:
     import anthropic
 
 
-_SYSTEM_PROMPT = """\
-You are a code editor. You will receive the current contents of a file and a
-description of a change to make.
-
-Return ONLY the complete new file contents — no explanation, no commentary,
-no markdown code fences. The response will be written directly to disk.
-"""
+_SYSTEM_PROMPT = _prompts.IMPLEMENT_SYSTEM
 
 
 def implement(

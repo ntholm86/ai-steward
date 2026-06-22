@@ -21,21 +21,14 @@ from typing import TYPE_CHECKING
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
+from ai_steward.pipeline import _prompts
 from ai_steward.pipeline._types import Finding
 
 if TYPE_CHECKING:
     import anthropic
 
 
-_BASE_REFLECT_SYSTEM = """\
-You are reviewing the outcome of a software improvement cycle.
-Write a concise reflection covering exactly three things:
-1. Prediction accuracy: did the stated prediction hold? Note any mismatch.
-2. Model claim: one falsifiable statement about what the target is now or is becoming.
-3. Blind spot: one specific file or area this cycle did not examine, and why.
-
-Two or three short paragraphs. No headers. No preamble. Write as a trail-entry author.
-"""
+_BASE_REFLECT_SYSTEM = _prompts.REFLECT_SYSTEM
 
 # Additional reflection guidance injected per operator-configured reflect_lens.
 # 'prediction', 'model_claim', and 'blind_spot' are built-in — they map to the three
