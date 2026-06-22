@@ -100,6 +100,12 @@ max_tokens_scan: 4096       # SCAN: 5-step reasoning needs ~4000; 1024 is too sm
 max_tokens_implement: 4096  # IMPLEMENT: full file rewrites can be large
 max_tokens_reflect: 400     # REFLECT: concise post-cycle reflection
 
+lenses:
+  - mandate       # Commander's Intent check (destination.md)
+  - examination   # Code structure and improvement opportunities
+  # Example for security audit: add 'security' to focus on attack surface
+  # Example for performance: use ['overburden'] to focus on hot paths only
+
 # Safety limits — pipeline stops when either is reached.
 max_iterations: 10          # maximum improvement cycles per run
 budget_usd: 5.0             # cumulative cost cap in USD
