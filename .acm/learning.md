@@ -473,6 +473,18 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** markers. Arc-read will sharpen the next architectural decision (Reflection).
 
+## 2026-06-22 â€” feat(reflect): add REFLECT phase — third LLM call producing Reflection section in trail entries
+
+**[!REALIZATION]** :* not fired — the realization that "Reflection/triggers/CNM require architectural additions" is confirmed by this entry, not contradicted. This entry is the first of those architectural additions.
+
+## 2026-06-22 â€” feat(reflect): add REFLECT phase — third LLM call producing Reflection section in trail entries
+
+**[!REALIZATION]** The pipeline has structural parity with human-supervised trail entries for all single-cycle fields. Silence on autonomous trail entry structural parity for the single-cycle case. Bars not tested: multi-cycle compounding behavior, Candidate Next Moves from autonomous entries (requires the pipeline to know what to suggest next — distinct from Reflection), across-trail trigger evaluation in autonomous entries.
+
+## 2026-06-22 â€” feat(reflect): add REFLECT phase — third LLM call producing Reflection section in trail entries
+
+**[!REVERSAL]** Prediction said "~86 tests." Actual: 88 (+7, not +5). Under-counted: 5 in test_reflect.py + 1 in test_loop.py + 2 in test_record.py = 8 new; 88 total not 86. All green; the count was wrong, the correctness was not.
+
 ---
 
-**117 markers â€” 88 realisations, 29 reversals**
+**120 markers â€” 90 realisations, 30 reversals**

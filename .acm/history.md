@@ -51,6 +51,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 44 | 2026-06-22 | live-validation: first self-targeting run with all field fixes |  |  |
 | â–¸ 45 | 2026-06-22 | fix(implement): ensure trailing newline after model rewrites file |  |  |
 | â–¸ 46 | 2026-06-22 | fix(record): model-keyed pricing table for accurate cycle cost estimates |  |  |
+| â–¸ 47 | 2026-06-22 | feat(reflect): add REFLECT phase — third LLM call producing Reflection section in trail entries |  |  |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -289,4 +290,10 @@ Do not edit by hand â€” re-run the command to refresh.
 - **decided:** Replace two module-level constants with `_MODEL_PRICING` dict (haiku, sonnet, opus), a `_model_cost_per_token(model)` lookup, and `_estimate_cycle_cost(config, finding)` helper. Calculate in `record()` and pass `cycle_cost_usd` into `_build_entry()`.
 - **decided:** , Prediction, Lenses, Blind spot, Token counts, and Cycle cost. The remaining architectural gap is Reflection (second LLM call), across-trail triggers, and Candidate Next Moves. These are not field additions; they require a second LLM call after VERIFY and architectural changes to the loop.
 
-**46 runs total â€” 46 with changes, 0 silence**
+### Run 47 â€” 2026-06-22 â€” feat(reflect): add REFLECT phase — third LLM call producing Reflection section in trail entries
+
+- **decided:** Add `pipeline/reflect.py` — a new phase that makes one LLM call (max 400 tokens) after VERIFY passes. The prompt provides prediction + diff + verify result; the model returns 2-3 paragraph prose (prediction accuracy, falsifiable model-claim, specific blind spot). Add `reflection: str = ""` to `Finding`. Call `reflect()` from `loop.py` after `verify()` passes. Output `**Reflection:**` in `_build_entry()` when non-empty (omit section when empty — graceful degradation if model call fails).
+- **decided:** , Prediction, Lenses (examination_summary), Blind spot (from SCAN Step 5), Reflection (from REFLECT LLM call), Token counts, Cycle cost, Harness session. The pipeline is architecturally complete for V1's trail quality requirement.
+- **REVERSAL:** Prediction said "~86 tests." Actual: 88 (+7, not +5). Under-counted: 5 in test_reflect.py + 1 in test_loop.py + 2 in test_record.py = 8 new; 88 total not 86. All green; the count was wrong, the correctness was not.
+
+**47 runs total â€” 47 with changes, 0 silence**

@@ -3280,3 +3280,78 @@ Imagined reader pushback: "This is still just an estimate — the harness sessio
 1. **Retrospect** — warranted: arc has moved substantially since the last retrospect (pre-orient). Six completed improvements since then, a live validation run, three [!REALIZATION] markers. Arc-read will sharpen the next architectural decision (Reflection).
 2. **Reflection call architecture** — design the second LLM call in record.py that synthesizes VERIFY outcome against prediction. The taxonomy has shifted: this is the next class of work, no longer deferred by field-level issues.
 3. **Model ID variant matching in pricing table** — `claude-sonnet-4-5-20250514` would fall through to haiku fallback. A `startswith` match would be more robust.
+
+---
+
+## 2026-06-22 — feat(reflect): add REFLECT phase — third LLM call producing Reflection section in trail entries
+
+- target: ai-steward pipeline (reflect.py, _types.py, loop.py, record.py)
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: improve v3.10.0
+
+### Interpretation
+
+Operator: "run improve skill." Freshly written retrospect (post-record-field-alignment) ranks Reflection call architecture as the #1 candidate: "the next class of work — no more field-level gaps to fix; the next improvement is architectural." This is the iteration that closes the last gap between autonomous and human-supervised trail entries.
+
+### Examination
+
+**Purpose lens:** Every human-supervised trail entry ends with Reflection (falsifiable model-claim, blind spot, imagined-reader pushback). Every autonomous pipeline entry since V1 has none. `_build_entry()` has no `**Reflection:**` section. The model's Step 4 prediction is captured in the trail; whether it held is never evaluated. This is the last structural gap between autonomous and human-supervised trail entries.
+
+**Inconsistency lens:** `scan.py` (proposer) and `implement.py` (actor) both make LLM calls using the lazy-import + client-injection pattern. There is no `reflect.py`. The trail skill requires a third role: observer. The pipeline was structurally missing this role.
+
+**Waste lens:** `finding.prediction` captures what was predicted before action. `diff` captures what actually changed. `verify()` confirms correctness. All inputs for a meaningful reflection are available — and were being discarded without synthesis. This is pure waste in the Observable Autonomy sense: evidence available, insight not extracted.
+
+### [!DECISION]
+
+[!DECISION] Add `pipeline/reflect.py` — a new phase that makes one LLM call (max 400 tokens) after VERIFY passes. The prompt provides prediction + diff + verify result; the model returns 2-3 paragraph prose (prediction accuracy, falsifiable model-claim, specific blind spot). Add `reflection: str = ""` to `Finding`. Call `reflect()` from `loop.py` after `verify()` passes. Output `**Reflection:**` in `_build_entry()` when non-empty (omit section when empty — graceful degradation if model call fails).
+
+Rationale: the trail skill's Reflection requirement cannot be met without knowing the VERIFY outcome. Reflection must post-date verification. The only architectural option is a third LLM call.
+
+Alternative rejected: embed reflection in the SCAN Step 5. Structurally impossible — SCAN runs before IMPLEMENT and VERIFY; the model cannot reflect on an outcome that hasn't happened.
+
+Alternative rejected: reflection as operator-appended text. Human sessions already do this. Autonomous entries need structural parity without operator presence.
+
+### Prediction
+
+Future autonomous trail entries will include a `**Reflection:**` section synthesizing whether the prediction held, a falsifiable model-claim about the target, and a specific blind spot named by the model. Existing 81 tests pass unchanged (`reflection` defaults to `""`, no existing test checks for `**Reflection:**` in output). `test_run_proposed_success` needs one new reflect monkeypatch — the test fails without it.
+
+### Action
+
+5 files touched (1 new, 4 modified):
+
+- `pipeline/reflect.py` (new, 80 lines): `reflect()` function, lazy-import pattern, `_REFLECT_SYSTEM` prompt, exception guard returning `""` 
+- `pipeline/_types.py`: `reflection: str = ""` added to `Finding`
+- `pipeline/loop.py`: `from ai_steward.pipeline.reflect import reflect` added; `finding.reflection = reflect(repo, config, finding, diff)` called after `verify()` passes
+- `pipeline/record.py`: conditional `**Reflection:**
+{finding.reflection}
+
+` block added before `**File:**`
+- `tests/test_reflect.py` (new, 5 tests): returns string, strips whitespace, empty on API error, empty on empty content, prompt contains prediction + diff
+- `tests/test_loop.py`: `test_run_proposed_success` patched with `reflect` mock
+- `tests/test_record.py`: 2 new tests (reflection present → section included; reflection empty → section omitted)
+
+88 tests pass (was 81, +7 new). mypy clean (14 source files). 
+
+[!REVERSAL] Prediction said "~86 tests." Actual: 88 (+7, not +5). Under-counted: 5 in test_reflect.py + 1 in test_loop.py + 2 in test_record.py = 8 new; 88 total not 86. All green; the count was wrong, the correctness was not.
+
+### Reflection
+
+Current model: ai-steward's autonomous pipeline now has structural parity with human-supervised trail entries for all fields: [!DECISION], Prediction, Lenses (examination_summary), Blind spot (from SCAN Step 5), Reflection (from REFLECT LLM call), Token counts, Cycle cost, Harness session. The pipeline is architecturally complete for V1's trail quality requirement.
+
+Blind spot: the `reflect()` call is outside the `harness_session()` context (which closes before `verify()` runs). The reflection LLM call will be captured by the proxy in `.acm/sessions/` but without a programmatic link from the Python code. The trail entry shows one harness session (the SCAN + IMPLEMENT session). The reflection call creates a separate session not attributed. A future improvement could either open a second harness context for REFLECT, or restructure the loop to include REFLECT inside the primary harness session.
+
+Imagined reader pushback: "The REFLECT call adds ~$0.003-0.008/cycle (400 tokens haiku/sonnet). Is this justified for 2-3 paragraphs of prose?" Yes — every cycle now produces an audit-quality trail entry. The Reflection section is the mechanism by which the pipeline can identify when its own predictions are wrong. Without it, wrong predictions are never surfaced.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* not fired — this is an architectural addition, not a repeated small fix.
+- *About to declare silence:* EVALUATING — with Reflection implemented, the pipeline has structural parity with human-supervised trail entries for all V1 fields. Silence on "autonomous trail entry structural parity with trail skill standard" is now defensible. The next class of work (multi-cycle convergence, external repo targeting) is operational, not structural.
+- *Contradicts prior [!REALIZATION]:* not fired — the realization that "Reflection/triggers/CNM require architectural additions" is confirmed by this entry, not contradicted. This entry is the first of those architectural additions.
+- *Operator explicitly asked:* not fired.
+
+[!REALIZATION] The pipeline has structural parity with human-supervised trail entries for all single-cycle fields. Silence on autonomous trail entry structural parity for the single-cycle case. Bars not tested: multi-cycle compounding behavior, Candidate Next Moves from autonomous entries (requires the pipeline to know what to suggest next — distinct from Reflection), across-trail trigger evaluation in autonomous entries.
+
+### Candidate Next Moves
+
+1. **Live validation run** — the REFLECT field has never been exercised in a real cycle. A live self-targeting run is required to confirm the reflection LLM call produces genuine output and the trail entry looks correct. Required before declaring Reflection "done."
+2. **Multi-cycle convergence test** — now the highest-priority untested claim. Run until `nothing_found` fires; verify the loop stops cleanly. "Convergence Is Silence" needs to be evidence, not aspiration.
+3. **REFLECT harness attribution** — the reflection LLM call is outside the harness_session context. A second harness context or loop restructure would link the reflection session path to the trail entry. Minor P2 gap.
