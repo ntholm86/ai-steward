@@ -143,7 +143,11 @@ def _truncate_destination(text: str, char_limit: int) -> str:
     return "[... destination.md truncated for token budget ...]\n\n" + tail
 
 
-def _load_scope_context(repo: Path) -> str | None:
+def _load_scope_context(
+    repo: Path,
+    scope_depth: int = 4,
+    budget_chars: int = 3000,
+) -> str | None:
     """Load Commander's Intent from all applicable ACM scopes (ACM §4).
 
     Traverses parent directories from repo upward, collecting every
@@ -151,13 +155,14 @@ def _load_scope_context(repo: Path) -> str | None:
       1. Filesystem root reached (hard stop, always applies)
       2. .acm-root marker file found in a directory: read that directory's
          .acm/destination.md if present, then stop (operator-declared ceiling)
-      3. Implementation ceiling: 4 levels (session→repo→workspace→org)
+      3. Implementation ceiling: scope_depth levels (operator-configurable via
+         acm_scope_depth in .ai-steward.yaml; default 4 = session→repo→workspace→org)
 
     Higher scopes are listed first and take precedence.
 
-    Total budget: ~3000 chars (~750 tokens). Split as:
-      - Higher scopes (workspace/org): up to 1500 chars total
-      - Repo scope: up to 1500 chars
+    Total budget: budget_chars chars (operator-configurable via destination_budget_chars
+    in .ai-steward.yaml; default 3000 ≈ 750 tokens). Split evenly: half for higher
+    scopes, half for repo scope.
 
     Returns None if no destination.md exists at any scope.
     """
@@ -165,7 +170,7 @@ def _load_scope_context(repo: Path) -> str | None:
     parents: list[tuple[str, str]] = []  # (label, text)
     current = repo.parent
     repo_root = Path(repo.anchor)
-    for _ in range(4):
+    for _ in range(scope_depth):
         if current == repo_root:
             break
         dest = current / ".acm" / "destination.md"
@@ -201,16 +206,17 @@ def _load_scope_context(repo: Path) -> str | None:
     sections: list[str] = []
 
     # Higher scopes: allocate up to 1500 chars total, divided evenly
+    half = budget_chars // 2
     if parents:
-        per_scope = max(300, 1500 // len(parents))
+        per_scope = max(300, half // len(parents))
         # Reverse so outermost (highest authority) is first
         for label, text in reversed(parents):
             truncated = _truncate_destination(text, per_scope)
             sections.append(f"### Higher-scope mandate ({label}):\n\n{truncated}")
 
-    # Repo scope: up to 1500 chars
+    # Repo scope: up to half the total budget
     if repo_text is not None:
-        truncated = _truncate_destination(repo_text, 1500)
+        truncated = _truncate_destination(repo_text, half)
         sections.append(f"### Repo-scope mandate:\n\n{truncated}")
 
     return "\n\n---\n\n".join(sections)
@@ -354,7 +360,11 @@ def scan(
         f"=== {rel} ===\n{content}" for rel, content in files.items()
     )
 
-    destination = _load_scope_context(repo)
+    destination = _load_scope_context(
+        repo,
+        scope_depth=config.acm_scope_depth,
+        budget_chars=config.destination_budget_chars,
+    )
     orient = _load_orient_context(repo)
 
     parts: list[str] = []

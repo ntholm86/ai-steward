@@ -4383,3 +4383,114 @@ Trigger evaluations:
 - Does the change introduce new dependencies or surface area? NO -- pure defensive logic addition, Strategy 0 is identical in structure to Strategy 1
 - Could the change mask a real NOTHING FOUND? NO -- silence ({"nothing":true}) is valid JSON and would be extracted by Strategy 0 correctly, still returning None from scan()
 - Was cycle 8 silence bounded? NO -- it was a false negative, not a convergence declaration
+
+---
+
+## 2026-06-22 — dead-config-wire-scope-context
+
+- target: ai-steward (src/ai_steward/pipeline/scan.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve
+- outcome: CHANGE ACCEPTED — acm_scope_depth and destination_budget_chars wired into _load_scope_context
+
+### Ask
+
+Improve skill run on the ai-steward repo. Open state after the 8-cycle convergence test and
+_extract_json fix: three dead config fields (lenses, acm_scope_depth, destination_budget_chars)
+exist in config.py but are never consumed by scan.py. The destination mandates these be
+operator-configurable.
+
+### Examination
+
+**Purpose lens:** config.py defines acm_scope_depth: int = 4 and destination_budget_chars: int = 3000.
+scan.py's _load_scope_context has hardcoded `range(4)` and two hardcoded 1500-char splits.
+The call site in scan() passes only `repo` to _load_scope_context -- the config object is
+never forwarded. Both defaults match exactly, confirming these were intended to be wired but
+left as stubs.
+
+**Inconsistency lens:** _load_scope_context docstring says "Implementation ceiling: 4 levels" --
+a hard claim that belongs in code only, not docs, once the parameter is wired. Similarly the
+budget split "~3000 chars" is a docstring claim that should come from the config field, not
+be duplicated in text.
+
+**lenses field:** No system prompt machinery exists for applying configurable lenses. Wiring it
+requires designing the lens-application system, not just forwarding a parameter. Left dead
+this iteration.
+
+**_BINARY_HEURISTIC_BYTES / _DEFAULT_SKIP_DIRS:** Valid next target (cycle 8's original finding).
+Lower priority than scope_depth/budget since those control SCAN's context window -- directly
+affecting proposal quality.
+
+### Decision
+
+**[!DECISION]** Wire acm_scope_depth and destination_budget_chars into _load_scope_context.
+Add `scope_depth: int = 4` and `budget_chars: int = 3000` parameters to the function
+(existing hardcoded values as defaults -- backward compatible). Replace `range(4)` with
+`range(scope_depth)`. Replace hardcoded `1500` splits with `budget_chars // 2`. In scan(),
+pass `config.acm_scope_depth` and `config.destination_budget_chars` at the call site.
+
+Previous attempt (cycle 7) took the harder path -- wiring lenses into the system prompt --
+and produced a syntax error. This change is pure parameter forwarding, no string manipulation.
+
+**Prediction:** All 102 tests pass unchanged (defaults unchanged, no behavioral change for
+existing tests). An operator setting `acm_scope_depth: 2` will limit traversal to 2 parent
+levels. An operator setting `destination_budget_chars: 6000` will see 3000 chars per scope.
+The lenses field remains dead (out of scope). _BINARY_HEURISTIC_BYTES remains hardcoded.
+
+### Action
+
+Changed `_load_scope_context(repo: Path)` to
+`_load_scope_context(repo: Path, scope_depth: int = 4, budget_chars: int = 3000)`.
+
+Replaced `range(4)` with `range(scope_depth)`.
+Replaced hardcoded `1500` splits with `half = budget_chars // 2`, used for both parent and
+repo scopes. Updated docstring to name operator-configurable controls.
+
+Call site in `scan()` updated to:
+  `_load_scope_context(repo, scope_depth=config.acm_scope_depth,
+                       budget_chars=config.destination_budget_chars)`
+
+102 tests pass. Prediction held exactly.
+
+### Reflection
+
+**Model of target:** The dead-config pattern is clearing methodically. Two of three fields wired.
+`lenses` is in a different category -- it requires new system prompt machinery, not forwarding.
+The pipeline is converging on the config surface completeness bar; the remaining open item
+(_BINARY_HEURISTIC_BYTES, _DEFAULT_SKIP_DIRS, lenses machinery) are well-bounded.
+
+**Blind spot:** _load_orient_context has its own hardcoded budget values (2000 chars head,
+3000 chars operational rules, 500 chars learning tail). These are not in the config spec and
+may warrant their own operator-configurable fields -- but they were not examined this run.
+
+**Imagined expert pushback:** "Why not add a test that verifies _load_scope_context respects
+the scope_depth parameter?" Valid -- the 102 existing tests do not exercise the parameter
+variation, only the default behavior. A targeted unit test for non-default depth would close
+this gap. Deferred as follow-on.
+
+Trigger evaluations:
+- Recurring finding-class: FIRED -- last 3 entries were all dead-config / encoding / parse-fix
+  (all mechanical correctness cleanups). Macro reflection warranted.
+- About to declare silence: not fired -- change was made.
+- Contradicts prior [!REALIZATION]: not fired -- wiring dead config is consistent with all
+  prior realizations about operator-configurable controls.
+- Operator explicitly asked: fired (improve skill invoked directly).
+
+**Macro reflection [!REALIZATION]:** The 8-cycle autonomous loop plus the manual improve runs
+this session have now cleaned three distinct categories: (1) config surface completeness
+(lenses/scope/budget added to config and template), (2) parse robustness (_extract_json
+Strategy 0), and (3) dead-config wiring (acm_scope_depth, destination_budget_chars now live).
+The pipeline is not yet self-sustaining -- lenses remain unimplemented, _BINARY_HEURISTIC_BYTES
+and _DEFAULT_SKIP_DIRS remain hardcoded, and _load_orient_context has its own hardcoded budgets.
+But the pattern of work has been: config surface first, then correctness, then wiring. The
+natural next loop is to run `ai-steward run` and let SCAN propose the remaining config surface
+work under its own discipline, now that the _extract_json fix ensures proposals surface correctly.
+
+### Candidate Next Moves
+
+1. Wire _BINARY_HEURISTIC_BYTES and _DEFAULT_SKIP_DIRS to new config fields -- same pattern
+   as this change, cycle 8's original finding, low risk, completes the input-filtering surface.
+2. Add a unit test for _load_scope_context with non-default scope_depth -- closes the
+   parameter-variation blind spot named in Reflection above.
+3. Run `ai-steward run` -- let SCAN propose under its own discipline with the _extract_json
+   fix in place; observe whether it finds the binary/skip-dirs surface or something else first.
