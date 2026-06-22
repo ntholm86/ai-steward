@@ -118,6 +118,10 @@ def implement(
     if not new_content.strip():
         return False, "model returned empty content", 0, _in_tok, _out_tok
 
+    # Ensure the file ends with a newline — models sometimes strip it.
+    if not new_content.endswith("\n"):
+        new_content += "\n"
+
     try:
         target.write_text(new_content, encoding="utf-8")
     except OSError as exc:
