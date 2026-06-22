@@ -111,6 +111,9 @@ max_iterations: 10          # maximum improvement cycles per run
 budget_usd: 5.0             # cumulative cost cap in USD
 
 allow_dirty: false          # set true to run on repos with uncommitted changes
+acm_scope_depth: 4          # ACM scope traversal depth (org/workspace/team/repo hierarchies)
+destination_budget_chars: 3000  # character budget for destination.md excerpts in SCAN context
+sandbox: "docker"           # execution sandbox: "docker" | "local"
 """
 
 _DESTINATION_TEMPLATE = """\
