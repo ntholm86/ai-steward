@@ -74,7 +74,7 @@ def reflect(
     try:
         message = client.messages.create(
             model=config.models.analyze,
-            max_tokens=400,
+            max_tokens=config.max_tokens_reflect,
             system=_REFLECT_SYSTEM,
             messages=[{"role": "user", "content": user_content}],
         )
