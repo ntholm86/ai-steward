@@ -4294,3 +4294,13 @@ index bea0fed..135244f 100644
 ```
 
 *Staged for operator review. Not committed.*
+
+---
+
+## 2026-06-22 — ai-steward: VERIFY FAILED — scan.py lenses wiring attempt
+
+**[VERIFY FAILED]** Cycle 7 — pipeline correctly identified that `lenses` config field is never consumed in scan.py. SCAN proposed wiring lenses into the scan.py system prompt. IMPLEMENT produced syntactically invalid Python (unclosed parenthesis at line 389). VERIFY caught the syntax error before the change reached the operator. Working tree auto-rolled-back to committed state. No trail entry written by pipeline (RECORD did not run). This is the VERIFY gate working correctly.
+
+**Harness session:** `.acm/sessions/01KVQ0EJ4TS4CFAYD2P3CBQPZ4.jsonl`
+
+**Finding:** VERIFY gate catches LLM-introduced syntax errors before they reach the operator. Retroactively validates retrospect claim #5: 'unit tests alone are insufficient; live runs required.' The syntax error would not have been caught by any unit test — only by running Python on the modified file.
