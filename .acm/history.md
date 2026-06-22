@@ -58,6 +58,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 51 | 2026-06-22 | fix(cli): CONFIG_TEMPLATE exposes full operator-tunable surface | `ai-steward init` now produces a config that exposes all tunable parameters | _CONFIG_TEMPLATE +10 lines; 1 new test; 94 → 95 tests |
 | â–¸ 52 | 2026-06-22 | fix(scan): orient context delivers operational rules | SCAN now receives operational rules in every call; head budget raised 1000→2000 chars | scan.py _load_orient_context rewritten (+20 lines); 2 new tests; 95→97 |
 | â–¸ 53 | 2026-06-22 | Retrospect: post-governance-layer-completion |  |  |
+| â–¸ 54 | 2026-06-22 | fix(record): model ID prefix matching in _model_cost_per_token | date-versioned model IDs resolve to correct pricing; claude-sonnet-4-6 added to table; 4 contract tests added | record.py +11 lines; test_record.py +37 lines; 97→101 tests |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -323,4 +324,8 @@ Do not edit by hand â€” re-run the command to refresh.
 
 - **REVERSAL:** Prior claim 4 ("ORIENT is implemented; autonomous pipeline reads from same evidence layer as human sessions") was false from entry 40. Corrected: ORIENT context now delivers both arc-claims and rules, via entry 52's header extraction. Contract-tested.
 
-**53 runs total â€” 53 with changes, 0 silence**
+### Run 54 â€” 2026-06-22 â€” fix(record): model ID prefix matching in _model_cost_per_token
+
+- **decided:** Fix with prefix matching: `model == key or model.startswith(key + "-")`. Add `claude-sonnet-4-6` to the table (distinct model, not a date variant of 4-5). Add 4 contract tests.
+
+**54 runs total â€” 54 with changes, 0 silence**

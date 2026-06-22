@@ -3799,3 +3799,68 @@ New claim 10: Governance infrastructure is complete. The target's weight now lie
 2. **Cost model correction in destination.md** — 2-line append. Stale "$0.002" claim contradicts the "efficiency is measured, not claimed" principle.
 3. **Model ID startswith fix in `_model_cost_per_token()`** — low effort, correctness improvement.
 4. **Add scope to `_CONFIG_TEMPLATE`** — first thing operators need after basic config.
+
+---
+
+## 2026-06-22 — fix(record): model ID prefix matching in _model_cost_per_token
+
+- target: ai-steward — src/ai_steward/pipeline/record.py, tests/test_record.py
+- operator: Nils Holmager
+- agent: claude-sonnet-4-6 (GitHub Copilot)
+- skill: improve v3.10.0
+- outcome: date-versioned model IDs resolve to correct pricing; claude-sonnet-4-6 added to table; 4 contract tests added
+- delta: record.py +11 lines; test_record.py +37 lines; 97→101 tests
+
+### Interpretation of the ask
+
+"use improve skill" — underspecified. Applied agent-initiated direction protocol. Selected the model ID prefix matching gap as the prioritized falsifiable question: "Does cost tracking silently produce wrong prices when model IDs carry date suffixes?"
+
+Confirmed falsifiable before acting: `_model_cost_per_token("claude-sonnet-4-5-20250514")` returned haiku fallback pricing ($0.80/$4.00 per million tokens) instead of sonnet pricing ($3.00/$15.00) — a 3.75× underreporting. Zero tests covered this function. Named gap in retrospect.md candidate #3.
+
+### Examination
+
+**Purpose lens:** `_model_cost_per_token()` is the cost measurement mechanism. The destination says "efficiency is measured, not claimed." With `dict.get(model, fallback)` exact-key lookup:
+- `claude-haiku-4-5` → correct (in table)
+- `claude-haiku-4-5-20251001` → haiku fallback (correct by coincidence — fallback IS haiku)
+- `claude-sonnet-4-5-20250514` → haiku fallback (wrong — underreported by 3.75×)
+- `claude-sonnet-4-6` → haiku fallback (wrong — missing from table)
+
+**Inconsistency lens:** evo's `providers/anthropic.py` (committed this session) has 14 model entries. ai-steward `record.py` has 3. Same operator, same model families, inconsistent tables.
+
+**Coverage:** zero tests on `_model_cost_per_token()`. The function is called on every cycle; its correctness had never been verified.
+
+### Decision
+
+[!DECISION] Fix with prefix matching: `model == key or model.startswith(key + "-")`. Add `claude-sonnet-4-6` to the table (distinct model, not a date variant of 4-5). Add 4 contract tests.
+
+Rejected: add many explicit date-versioned entries (fragile, requires ongoing maintenance). The prefix approach is structurally correct: date suffixes are always `<base>-<YYYYMMDD>`, so `startswith(base + "-")` is a safe match.
+
+### Prediction
+
+`_model_cost_per_token("claude-sonnet-4-5-20250514")` → sonnet pricing. `_model_cost_per_token("claude-haiku-4-5-20251001")` → haiku pricing. `_model_cost_per_token("claude-model-99-0")` → fallback. All existing tests pass. 97 → 101 tests.
+
+**What will NOT happen:** no change to any file other than record.py and test_record.py. No change to pricing values.
+
+### Outcome
+
+Prediction held exactly. 101/101 tests pass. mypy clean.
+
+### Reflection
+
+**Current model of target as a falsifiable claim:** ai-steward's cost tracking is now correct for all model IDs in `_MODEL_PRICING` and all date-versioned variants. The remaining gap is that `_MODEL_PRICING` covers only 4 base models — operators who configure `claude-opus-4-5-*` or future model families will still fall through to haiku fallback. The table requires manual maintenance whenever Anthropic releases a new pricing tier.
+
+**Blind spot:** REFLECT phase also uses `config.models.analyze` indirectly (token counts are measured, not priced in reflect.py). If REFLECT had configurable pricing, it would have the same gap. It currently does not track REFLECT token costs separately in `_estimate_cycle_cost()`.
+
+**Imagined reader pushback:** "Why not query the Anthropic pricing API at runtime?" Because it doesn't exist. "Why not use a startswith-only check (no == key)?" Because `model == key` handles the exact match without relying on the `startswith` branch — same result, but explicit about both cases.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* not fired — this is cost-tracking; the prior pattern (contract tests for injection points) is related but distinct.
+- *About to declare silence:* not fired — change made.
+- *Contradicts prior [!REALIZATION]:* not fired — the realization "delivery contract tests are the missing governance mechanism" is confirmed, not contradicted.
+- *Operator explicitly asked:* not fired.
+
+### Candidate Next Moves
+
+1. **Add scope to `_CONFIG_TEMPLATE`** — the scope section (allowed/blocked paths) is the first thing operators need after basic config; named blind spot since entry 51; zero effort risk.
+2. **Cost model correction in destination.md** — 2-line append; destination still says "$0.002/cycle"; the code is correct, the documentation is not; low effort.
+3. **Multi-cycle convergence test** — governance layer complete; all code blockers cleared; this is the live run that validates the whole system.

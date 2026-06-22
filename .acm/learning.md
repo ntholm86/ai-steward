@@ -549,6 +549,10 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REVERSAL]** Prior claim 4 ("ORIENT is implemented; autonomous pipeline reads from same evidence layer as human sessions") was false from entry 40. Corrected: ORIENT context now delivers both arc-claims and rules, via entry 52's header extraction. Contract-tested.
 
+## 2026-06-22 â€” fix(record): model ID prefix matching in _model_cost_per_token
+
+**[!REALIZATION]** :* not fired — the realization "delivery contract tests are the missing governance mechanism" is confirmed, not contradicted.
+
 ---
 
-**136 markers â€” 104 realisations, 32 reversals**
+**137 markers â€” 105 realisations, 32 reversals**

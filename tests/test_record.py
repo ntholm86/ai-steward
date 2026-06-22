@@ -11,6 +11,12 @@ from ai_steward.config import AiStewardConfig, ModelAssignment
 from ai_steward.pipeline import Finding
 from ai_steward.pipeline.record import record
 
+from ai_steward.pipeline.record import (
+    _FALLBACK_PRICING,
+    _MODEL_PRICING,
+    _model_cost_per_token,
+)
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -128,6 +134,41 @@ def test_record_entry_shows_not_captured_when_no_sessions(tmp_path: Path) -> Non
                    harness_session_paths=None)
 
     assert "not captured" in entry
+
+
+# ---------------------------------------------------------------------------
+# Pricing: _model_cost_per_token contract tests
+# ---------------------------------------------------------------------------
+
+
+def test_model_cost_per_token_exact_match() -> None:
+    """Exact base-name IDs resolve to their table entry."""
+    for key, pricing in _MODEL_PRICING.items():
+        assert _model_cost_per_token(key) == pricing
+
+
+def test_model_cost_per_token_date_versioned_haiku() -> None:
+    """Date-versioned haiku ID resolves to haiku pricing, not the fallback."""
+    result = _model_cost_per_token("claude-haiku-4-5-20251001")
+    assert result == _MODEL_PRICING["claude-haiku-4-5"]
+
+
+def test_model_cost_per_token_date_versioned_sonnet_not_haiku_fallback() -> None:
+    """Date-versioned sonnet ID resolves to sonnet pricing — not haiku fallback.
+
+    This is the primary regression guard: before the prefix-matching fix,
+    'claude-sonnet-4-5-20250514' fell through to FALLBACK_PRICING (haiku),
+    underreporting sonnet cycle costs by 3.75x.
+    """
+    result = _model_cost_per_token("claude-sonnet-4-5-20250514")
+    assert result == _MODEL_PRICING["claude-sonnet-4-5"]
+    assert result != _FALLBACK_PRICING, "sonnet must not resolve to haiku fallback"
+
+
+def test_model_cost_per_token_unknown_falls_back() -> None:
+    """Unrecognised model IDs fall through to the haiku baseline."""
+    assert _model_cost_per_token("claude-model-99-0") == _FALLBACK_PRICING
+
 
 # ---------------------------------------------------------------------------
 # Git staging

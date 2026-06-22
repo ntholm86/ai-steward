@@ -22,17 +22,29 @@ from ai_steward.pipeline._types import Finding
 # Pricing table (USD / token) for known Anthropic models.
 # Source: https://www.anthropic.com/pricing — update when pricing changes.
 # Unknown models fall back to haiku-4-5 as a conservative baseline estimate.
+# Keys are base model names without date suffixes — _model_cost_per_token()
+# matches by prefix so that date-versioned IDs (e.g. claude-haiku-4-5-20251001)
+# resolve to the correct base tier.
 _MODEL_PRICING: dict[str, tuple[float, float]] = {
-    "claude-haiku-4-5":  (0.80 / 1_000_000,  4.00 / 1_000_000),
-    "claude-sonnet-4-5": (3.00 / 1_000_000, 15.00 / 1_000_000),
-    "claude-opus-4-5":   (15.00 / 1_000_000, 75.00 / 1_000_000),
+    "claude-haiku-4-5":   (0.80 / 1_000_000,  4.00 / 1_000_000),
+    "claude-sonnet-4-5":  (3.00 / 1_000_000, 15.00 / 1_000_000),
+    "claude-sonnet-4-6":  (3.00 / 1_000_000, 15.00 / 1_000_000),
+    "claude-opus-4-5":    (15.00 / 1_000_000, 75.00 / 1_000_000),
 }
 _FALLBACK_PRICING: tuple[float, float] = (0.80 / 1_000_000, 4.00 / 1_000_000)
 
 
 def _model_cost_per_token(model: str) -> tuple[float, float]:
-    """Return (input_cost_per_token, output_cost_per_token) for a model."""
-    return _MODEL_PRICING.get(model, _FALLBACK_PRICING)
+    """Return (input_cost_per_token, output_cost_per_token) for a model.
+
+    Matches by prefix so that date-versioned IDs such as
+    ``claude-haiku-4-5-20251001`` resolve to the correct base-model tier.
+    Unknown models fall back to the haiku-4-5 baseline.
+    """
+    for key, pricing in _MODEL_PRICING.items():
+        if model == key or model.startswith(key + "-"):
+            return pricing
+    return _FALLBACK_PRICING
 
 
 def _estimate_cycle_cost(config: AiStewardConfig, finding: Finding) -> float:
