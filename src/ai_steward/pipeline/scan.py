@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     import anthropic
 
 
-_SYSTEM_PROMPT = """\
+_BASE_SYSTEM_PROMPT = """\
 You are a software improvement assistant examining a repository.
 You must reason visibly before proposing any change. Follow these steps in order.
 
@@ -84,6 +84,62 @@ Do NOT reproduce full file contents in proposed_change.
 
 If nothing survives all five steps, output exactly: {"nothing": true}
 """
+
+# Additional examination guidance injected per operator-configured lens.
+# Keys map to values in config.lenses. 'mandate' and 'examination' are the
+# built-in lenses — they map to Steps 1 and 2 in the base prompt (no injection needed).
+# All other lens names inject additional examination paragraphs into the system prompt.
+_LENS_INSTRUCTIONS: dict[str, str] = {
+    "security": (
+        "When examining in Step 2, also apply a security lens: identify injection "
+        "risks, authentication gaps, authorization bypasses, sensitive data exposure, "
+        "and insecure dependencies. Flag any finding from this lens explicitly."
+    ),
+    "overburden": (
+        "When examining in Step 2, also apply an overburden lens: identify components "
+        "doing too much — functions or classes with too many responsibilities, modules "
+        "with high coupling, or processes that concentrate risk."
+    ),
+    "performance": (
+        "When examining in Step 2, also apply a performance lens: identify O(n²) "
+        "operations, blocking I/O, redundant computation, or unnecessary allocations "
+        "on hot paths."
+    ),
+    "waste": (
+        "When examining in Step 2, also apply a waste lens: identify dead code, "
+        "abstractions with a single consumer, validation that can never fire, or "
+        "documentation that restates the obvious without adding meaning."
+    ),
+}
+
+# Keys that map to base-prompt steps (no additional injection needed)
+_BUILTIN_LENSES = frozenset({"mandate", "examination"})
+
+
+def _build_system_prompt(lenses: list[str]) -> str:
+    """Build the SCAN system prompt, injecting guidance for operator-configured lenses.
+
+    'mandate' and 'examination' are built-in lenses that correspond to Steps 1 and 2
+    in the base prompt — no injection needed. Any other lens name in `lenses` that
+    matches a key in _LENS_INSTRUCTIONS injects additional examination guidance.
+    Unknown lens names are silently ignored (forward-compatible).
+
+    The default config ['mandate', 'examination'] produces the base prompt unchanged.
+    """
+    extras = [
+        _LENS_INSTRUCTIONS[lens]
+        for lens in lenses
+        if lens not in _BUILTIN_LENSES and lens in _LENS_INSTRUCTIONS
+    ]
+    if not extras:
+        return _BASE_SYSTEM_PROMPT
+
+    injection = "\n\n## Additional examination lenses (operator-configured)\n\n" + "\n\n".join(
+        f"- {instruction}" for instruction in extras
+    )
+    # Inject after Step 2 block, before Step 3
+    marker = "\n\n## Step 3 — [!DECISION]"
+    return _BASE_SYSTEM_PROMPT.replace(marker, injection + marker, 1)
 
 def _extract_json(text: str) -> dict | None:
     """Extract a JSON object from model output that may include prose or code fences.
@@ -386,7 +442,7 @@ def scan(
     message = client.messages.create(
         model=config.models.analyze,
         max_tokens=config.max_tokens_scan,
-        system=_SYSTEM_PROMPT,
+        system=_build_system_prompt(config.lenses),
         messages=[
             {
                 "role": "user",

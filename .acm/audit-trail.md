@@ -4741,3 +4741,104 @@ index 7ea4ff5..f82d28e 100644
 ```
 
 *Staged for operator review. Not committed.*
+
+---
+
+## 2026-06-22 — wire-lenses-into-scan-system-prompt
+
+- target: ai-steward (src/ai_steward/pipeline/scan.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve
+- outcome: CHANGE ACCEPTED — lenses config field now live; _build_system_prompt wires custom lenses into SCAN
+
+### Ask
+
+"Lets do this, use improve skill" -- following SCAN's own verdict from the previous autonomous cycle:
+"The next cycle must open scan.py and trace how lenses flows from config into prompt construction."
+The lenses field has been dead config since cycle 2.
+
+### Examination
+
+**Purpose lens:** _SYSTEM_PROMPT is a module-level string constant. config.lenses = ['mandate',
+'examination'] by default. No reference to config.lenses anywhere in scan.py. The two values
+'mandate' and 'examination' correspond exactly to Steps 1 and 2 in _SYSTEM_PROMPT -- but the
+correspondence was implicit and unmaintained. Adding 'security' to lenses had zero effect.
+
+**Inconsistency lens:** The SCAN reflection from the autonomous cycle warned: "if SCAN just
+prints the lens names as labels without actually changing its prompt or logic per lens, then
+reflect_lenses inherits a broken pattern." That warning was correct. lenses was cosmetic.
+
+**Examined and rejected alternatives:**
+- Full dynamic prompt rebuild (approach A): high complexity, risk of syntax errors (cycle 7
+  precedent). Rejected.
+- Config stub documentation only: honest but doesn't advance the destination. Rejected.
+
+### Decision
+
+**[!DECISION]** Additive injection: keep _BASE_SYSTEM_PROMPT as the unchanged base (Steps 1-5).
+Add _LENS_INSTRUCTIONS dict with known lens keys (security, overburden, performance, waste).
+Add _build_system_prompt(lenses) that returns _BASE_SYSTEM_PROMPT unchanged for the default
+['mandate', 'examination'] -- zero behavior change -- and injects additional examination
+paragraphs between Step 2 and Step 3 for any custom lens found in _LENS_INSTRUCTIONS.
+Unknown lens names are silently ignored (forward-compatible).
+
+Change scan() call site from system=_SYSTEM_PROMPT to system=_build_system_prompt(config.lenses).
+
+**Prediction:** Default config ['mandate', 'examination'] produces IDENTICAL system prompt --
+verified by identity check. Custom lenses ('security', 'overburden', 'performance', 'waste')
+inject examination guidance before Step 3. Unknown lenses silently ignored. 104 tests pass.
+What will NOT happen: any change to JSON output format, Steps 3-5 structure, or LLM behavior
+for existing deployments.
+
+### Action
+
+Renamed _SYSTEM_PROMPT to _BASE_SYSTEM_PROMPT (no content change).
+Added _LENS_INSTRUCTIONS: dict[str, str] with 4 lens keys.
+Added _BUILTIN_LENSES: frozenset({'mandate', 'examination'}).
+Added _build_system_prompt(lenses: list[str]) -> str.
+Changed scan() call site to system=_build_system_prompt(config.lenses).
+
+Verified:
+- _build_system_prompt(['mandate', 'examination']) == _BASE_SYSTEM_PROMPT: True
+- Security injection present and before Step 3: True
+- Unknown lens silently ignored: True
+104 tests pass. Prediction held exactly.
+
+### Reflection
+
+**Model of target:** The lenses mechanism is now genuinely non-dead. The architecture is
+additive (injection, not replacement), which means it can extend the reasoning surface without
+risk to the governance gates (Steps 1 and 3-5 always run). The four built-in lens keys
+(security, overburden, performance, waste) match the improve skill's named lenses from
+the PEA skill suite -- the vocabulary is now consistent across manual and autonomous improvement.
+
+**Blind spot:** reflect.py still has dead config (reflect_lenses added last cycle). The
+_LENS_INSTRUCTIONS vocabulary established here doesn't propagate to REFLECT. If an operator
+uses 'security' in lenses and expects both SCAN and REFLECT to apply security focus, they'll
+be surprised when REFLECT ignores it. The wiring is asymmetric.
+
+**Imagined expert pushback:** "Why silently ignore unknown lenses instead of logging a warning?
+An operator who misspells 'security' as 'securty' will see no effect and no error." Valid.
+A validation step in _build_system_prompt or in config.py's field_validator could catch unknown
+lens names. Deferred: adding a validator is a separate change and the forward-compatibility
+argument for silence is also legitimate for early adopters defining custom lenses.
+
+Trigger evaluations:
+- Recurring finding-class: not fired -- this is the final dead-config wiring, not a new class.
+- About to declare silence: not fired -- change was made.
+- Contradicts prior [!REALIZATION]: FIRED -- prior realization "lenses field is dead config"
+  is now reversed. This IS a [!REVERSAL] of that state.
+- Operator explicitly asked: fired (improve skill invoked directly).
+
+**[!REVERSAL]** The lenses config field is no longer dead config. Custom lenses now produce
+different SCAN system prompts. The four built-in lens vocabulary (security, overburden,
+performance, waste) aligns with the PEA skill suite improve skill lenses.
+
+### Candidate Next Moves
+
+1. Wire reflect_lenses into reflect.py -- closes the asymmetry noted in Reflection (SCAN and
+   REFLECT now use different vocabulary; reflect_lenses is still dead). Same pattern as this change.
+2. Add a field_validator for lenses in config.py that warns on unknown lens names -- closes
+   the silent-ignore blind spot. Low risk, catches operator typos.
+3. Run `ai-steward run` -- observe what SCAN proposes now that lenses is functional;
+   the autonomous pipeline has never run with a live lenses mechanism.
