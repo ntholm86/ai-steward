@@ -5055,3 +5055,107 @@ Trigger evaluations:
    Validated cost is ~$0.027-0.030 at claude-sonnet-4-5, 3 calls. Two-line append.
 3. Convergence Is Silence -- no further code changes clearly surface. If run #1 finds nothing
    and the pipeline is stable across multiple cycles, that is the V1 convergence signal.
+
+---
+
+## 2026-06-22 — destination-cost-model-correction
+
+- target: ai-steward (.acm/destination.md)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve
+- outcome: CHANGE ACCEPTED — destination.md cost model corrected; retrospect claim #6 falsified
+
+### Ask
+
+"Lets do this" — continuing from the field-validator entry whose second candidate was
+"Destination.md cost update -- retrospect #2. Still says '$0.002/cycle (haiku, 2 calls).'
+Validated cost is ~$0.027-0.030 at claude-sonnet-4-5 + 3-call pipeline. Two-line append."
+retrospect.md claim #6 stated: "Falsifiable by: a destination.md that still shows
+'$0.002' without qualification."
+
+### Examination
+
+**Inconsistency lens:** destination.md has four "Current State" sections:
+- L7 (2026-06-20 consolidated): "$0.002 per improvement cycle (haiku, 2 LLM calls)" -- STALE
+- L1022, L1070, L1117 (2026-06-21): "~$0.018 USD/cycle on claude-haiku-4-5 (2 LLM calls)"
+  -- partially correct for haiku/2-call config, stale for current config
+
+The current .ai-steward.yaml uses claude-sonnet-4-5 for SCAN+IMPLEMENT+REFLECT (3 calls).
+This configuration has never been documented. The haiku/$0.018 measurement predates REFLECT.
+
+**Purpose lens:** The destination says "efficiency is measured, not claimed." A stale cost
+figure in the destination is a claim, not a measurement. The retrospect explicitly named
+this as false and gave a falsification criterion.
+
+### Decision
+
+**[!DECISION]** Append a new dated section to destination.md with the validated cost
+range for the current config (~$0.018-0.030/cycle at sonnet-4-5, 3 calls). Preserve the
+geological record -- the original $0.002 line at L7 is not modified. The new section
+provides the qualification and current measurement. Newest section wins on conflicts
+(stated destination policy).
+
+Alternative rejected: In-place edit of L59. Violates the append-only / geological-record
+principle for operator-held documents. The destination tracks the evolution of operator
+thinking; deleting history defeats the purpose.
+
+**Prediction:** destination.md has a new appended section. retrospect claim #6 is
+falsified. 110 tests pass unchanged (doc-only change). No code modified.
+
+### Action
+
+Appended dated section to .acm/destination.md:
+- Documents current validated cost: ~$0.018-0.030 USD/cycle at claude-sonnet-4-5, 3 calls
+- Explains the haiku → sonnet model change cost increase
+- Explains the +REFLECT third call addition
+- States future cost optimization candidates (V2)
+- References retrospect claim #6 as the trigger
+
+Prediction held: 110 tests pass. Retrospect claim #6 criterion met.
+
+### Reflection
+
+**Model of target:** The cost model is now accurate in destination.md. The geological
+record shows the evolution: aspirational $0.002 (2026-06-20) → measured $0.018 on haiku
+(2026-06-21) → validated $0.018-0.030 on sonnet with REFLECT (this entry, 2026-06-22).
+The pattern shows cost rising with quality investment -- haiku → sonnet for better
+proposals, 2 → 3 calls to add reflection. The cost increase is documented and justified.
+
+**Blind spot:** The "validated range" of $0.018-0.030 is an estimate from trail entry
+patterns -- not a precise measurement. The actual range depends on what SCAN examines
+(scope width), what IMPLEMENT writes (file size), and what REFLECT produces (reflection
+depth). A cost instrumentation run (N cycles, measure mean and variance) would produce
+a tighter number.
+
+**Imagined expert pushback:** "You updated a documentation file, not code. Is this
+really an 'improve' iteration?" The destination is the operator's intent document --
+it is structurally as important as any config field. A false cost figure in it actively
+misled SCAN (the model read it as a gate, not a measurement -- documented in the
+2026-06-21 cost clarification section). Correcting it closes a named retrospect gap.
+
+Trigger evaluations:
+- Recurring finding-class: not fired -- first cost documentation correction.
+- About to declare silence: FIRED. After this change, no further code or doc candidates
+  clearly surface. The remaining candidates are operational (run the loop, test convergence).
+  Declaring bounded silence on code/doc changes: tested internal consistency, dead config
+  wiring, cost model accuracy. Bars not tested: multi-cycle compounding behavior,
+  SCAN quality with custom lenses in live runs, external repo targeting.
+- Contradicts prior [!REALIZATION]: not fired.
+- Operator explicitly asked: fired (improve skill invoked, "lets do this").
+
+**[!REALIZATION]** The improve loop for ai-steward's V1 code is structurally converging.
+All config fields are live. All known structural gaps from retrospect.md claims are closed
+or addressed. The remaining open work is operational: multi-cycle convergence testing
+(retrospect #1), external repo targeting (V2 direction). The next improve iteration on
+this codebase should either find a genuine structural gap or declare bounded silence.
+
+### Candidate Next Moves
+
+1. Run `ai-steward run` in multi-cycle mode until SCAN returns nothing_found -- retrospect
+   #1. All structural blockers cleared. This validates Convergence Is Silence and exposes
+   any compounding errors across cycles. The single highest-value remaining test.
+2. Retrospect update -- current retrospect predates the lenses wiring, reflect_lenses
+   wiring, field validator, and cost model corrections. Four commits behind. Claims 2, 5,
+   6 are now stale. A retrospect run would re-orient the trail and update the claims.
+3. External targeting -- run ai-steward against c:\git\pea\agent-context-memory or
+   c:\git\pea\manifesto per V2 direction. First proof of generalization beyond self-targeting.

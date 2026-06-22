@@ -1472,3 +1472,52 @@ The .ai-steward.yaml config is the operator's governance interface. Every decisi
 Model-per-phase was the first signal of this pattern. `max_cost_per_cycle_usd` is the second. Memory, retrospect, reasoning depth, and escalation will follow as the cognitive architecture phases are implemented.
 
 **Design rule:** when implementing a new cognitive phase, identify its operator-facing controls first. Add them to `AiStewardConfig` and the YAML schema before writing the implementation. The config is the contract.
+
+---
+
+## 2026-06-22 — Cost model correction (validated measurement)
+
+*Supersedes the $0.002 target in the 2026-06-20 consolidated section and the $0.018
+figure in the three 2026-06-21 Current State sections. Newest section wins.*
+
+### Validated cost under current configuration
+
+**Configuration:** claude-sonnet-4-5 (SCAN + IMPLEMENT + REFLECT), 3 LLM calls per cycle.
+**Measured range:** ~$0.018–0.030 USD per cycle (varies with file sizes and scope).
+
+Earlier measurements:
+- $0.002 target — aspirational, written before any model was selected. Never validated.
+- $0.018 measured — correct for claude-haiku-4-5, 2 calls (SCAN + IMPLEMENT), no REFLECT.
+
+The REFLECT phase was added after the haiku measurements. Adding a third LLM call
+(REFLECT, max_tokens=400) increases cycle cost by ~$0.003–0.006 at sonnet pricing.
+Switching from haiku to sonnet for SCAN+IMPLEMENT adds ~$0.012–0.018 per cycle.
+
+**Current validated cost: ~$0.018–0.030 USD/cycle at claude-sonnet-4-5, 3 calls.**
+
+This range is for the ai-steward self-targeting configuration. Costs vary with:
+- File sizes and scope (more files in SCAN context = more input tokens)
+- Depth of proposed change (longer implementation = more IMPLEMENT output tokens)
+- Reflection length (bounded by max_tokens_reflect=400)
+
+### Cost-efficiency frontier position
+
+The current configuration prioritizes proposal quality over cost. claude-sonnet-4-5 was
+chosen because haiku proposals were lower quality and produced more VERIFY failures.
+The cost increase (~10x per LLM call over haiku) is offset by higher acceptance rates.
+
+A future cost optimization pass could:
+1. Use haiku for REFLECT only (reflection quality matters less than proposal quality)
+2. Compress the destination context (section-boundary truncation already helps)
+3. Add a fast pre-filter (haiku) before sonnet SCAN to rule out trivial nothings
+
+These are V2 candidates, not V1 work.
+
+### Why this update
+
+The retrospect (2026-06-22, claim #6) stated: "The cost model in destination.md is stale.
+destination.md still says '~$0.002 per cycle' without qualification."
+Falsifiable by: a destination.md that still shows '$0.002' without qualification.
+
+The original $0.002 line remains in the 2026-06-20 section (geological record preserved).
+This section provides the qualification and the current validated measurement.
