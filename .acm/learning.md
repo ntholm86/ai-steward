@@ -457,6 +457,10 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** markers, ORIENT done, field alignment complete, live validation run. Arc-read is warranted.
 
+## 2026-06-22 â€” fix(implement): ensure trailing newline after model rewrites file
+
+**[!REALIZATION]** :* not fired.
+
 ---
 
-**113 markers â€” 84 realisations, 29 reversals**
+**114 markers â€” 85 realisations, 29 reversals**

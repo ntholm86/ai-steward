@@ -49,6 +49,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 42 | 2026-06-22 | feat(record): replace hardcoded lenses with examination_summary from SCAN Step 2 |  |  |
 | â–¸ 43 | 2026-06-22 | ai-steward: Add verify_command to the config template to expose test runner control |  |  |
 | â–¸ 44 | 2026-06-22 | live-validation: first self-targeting run with all field fixes |  |  |
+| â–¸ 45 | 2026-06-22 | fix(implement): ensure trailing newline after model rewrites file |  |  |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -278,4 +279,8 @@ Do not edit by hand â€” re-run the command to refresh.
 - **decided:** add max_tokens_scan and max_tokens_implement to AiStewardConfig
 - **decided:** Implement the model’s own proposal: add `max_tokens_scan: int = 4096` and `max_tokens_implement: int = 4096` to AiStewardConfig; wire into scan.py and implement.py; update .ai-steward.yaml self-targeting config.
 
-**44 runs total â€” 44 with changes, 0 silence**
+### Run 45 â€” 2026-06-22 â€” fix(implement): ensure trailing newline after model rewrites file
+
+- **decided:** Add `if not new_content.endswith("\n"): new_content += "\n"` immediately before `target.write_text()`, after the empty-content guard. Applies unconditionally to both the fenced and unfenced paths.
+
+**45 runs total â€” 45 with changes, 0 silence**

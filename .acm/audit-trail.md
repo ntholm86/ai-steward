@@ -3143,3 +3143,75 @@ Proposal accepted and committed.
 1. **Fix IMPLEMENT trailing-newline artifact** — add a newline guard in implement.py after writing the model’s output, or add "preserve trailing newline" to the IMPLEMENT system prompt.
 2. **Cost model correction in destination** — append to destination.md: "$0.002 (haiku)" is wrong; actual self-targeting cost is ~$0.027/cycle (SCAN 16663 tokens, claude-sonnet-4-5).
 3. **Retrospect** — the arc has moved significantly since the last retrospect (pre-orient-implementation). Multiple new [!REALIZATION] markers, ORIENT done, field alignment complete, live validation run. Arc-read is warranted.
+
+---
+
+## 2026-06-22 — fix(implement): ensure trailing newline after model rewrites file
+
+- target: ai-steward pipeline (implement.py)
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: improve v3.10.0
+
+### Interpretation
+
+Top candidate from entry 44 (live-validation): "Fix IMPLEMENT trailing-newline artifact — add a newline guard in implement.py after writing the model’s output." Surfaced by the live validation run where the model rewrote cli.py and stripped its trailing newline.
+
+### Examination
+
+**Code examination:** `implement.py` — after the code-fence strip block (lines ~107–116), `new_content` is written directly with `target.write_text(new_content, encoding="utf-8")`. The code-fence strip path already adds `\n` if the stripped content lacks one. But the unconditional path (`new_content = block.text`) has no such guard. Models reliably strip trailing newlines when regenerating file contents.
+
+Exact gap:
+```python
+if not new_content.strip():
+    return False, "model returned empty content", ...
+
+try:
+    target.write_text(new_content, encoding="utf-8")  # no newline guard here
+```
+
+**Inconsistency:** The code-fence strip path adds `\n` if needed; the direct path does not. Asymmetric handling of the same condition.
+
+### [!DECISION]
+
+[!DECISION] Add `if not new_content.endswith("\n"): new_content += "\n"` immediately before `target.write_text()`, after the empty-content guard. Applies unconditionally to both the fenced and unfenced paths.
+
+Rationale: deterministic code guard is more reliable than prompt instruction for whitespace. The fix is 3 lines, zero-risk, symmetric with the existing fence-strip guard.
+
+Alternative rejected: add "Preserve trailing newline" to the IMPLEMENT system prompt. LLM models are not reliably compliant with whitespace instructions; a code guard is unconditionally correct.
+
+### Prediction
+
+No IMPLEMENT-phase rewrite will produce a file without a trailing newline. The cli.py artifact from the validation run would have been caught automatically. Existing 81 tests pass (implement tests don’t currently check for trailing newlines, but no test breaks).
+
+### Action
+
+```diff
++    # Ensure the file ends with a newline — models sometimes strip it.
++    if not new_content.endswith("\n"):
++        new_content += "\n"
++
+     try:
+         target.write_text(new_content, encoding="utf-8")
+```
+
+1 file, 4 insertions. 81 tests pass. mypy clean.
+
+### Reflection
+
+Current model: implement.py is now defensively correct for the trailing-newline case. The code-fence strip path and the direct path are now symmetric in their newline handling. The remaining structural gap in the pipeline is the Reflection call after VERIFY — but that is a different class of work (second LLM call, architectural change).
+
+Blind spot: did not examine whether `target.write_text(new_content, encoding="utf-8")` correctly handles Windows CRLF line endings. Git is configured to replace LF with CRLF on checkout (warnings seen in commits). If the model returns LF-terminated content and git’s `core.autocrlf` is `true`, the written file may differ from what git tracks after checkout. This is a git config concern, not an implement.py concern, but worth noting.
+
+Imagined reader pushback: "3 lines is trivial — why a full trail entry?" Because the trailing-newline artifact was a live-run finding (entry 44), and closing a named finding deserves a trail entry regardless of size. The trail is the accountability mechanism; small fixes are not exempt.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* not fired — this is a one-shot defensive fix, not a pattern.
+- *About to declare silence:* not fired — Reflection architecture and cost model correction remain.
+- *Contradicts prior [!REALIZATION]:* not fired.
+- *Operator explicitly asked:* not fired.
+
+### Candidate Next Moves
+
+1. **Cost model correction in destination** — append to destination.md: "$0.002 (haiku)" contradicts actual ~$0.027/cycle (validated). Operator-held document; this is the session to write it.
+2. **Retrospect** — warranted: the arc has moved significantly since the last retrospect (pre-orient). Multiple completed phases, a live validation run, three new structural fixes.
+3. **Reflection call architecture** — second LLM call in record.py after VERIFY. Next class of work.
