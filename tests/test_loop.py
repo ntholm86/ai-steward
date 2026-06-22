@@ -268,6 +268,7 @@ def test_run_proposed_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr("ai_steward.pipeline.loop.implement", lambda *_a, **_k: (True, "", 100, 0, 0))
     monkeypatch.setattr("ai_steward.pipeline.loop._get_diff", lambda *_a: "diff text")
     monkeypatch.setattr("ai_steward.pipeline.loop.verify", lambda *_a, **_k: (True, ""))
+    monkeypatch.setattr("ai_steward.pipeline.loop.reflect", lambda *_a, **_k: "reflection text")
     monkeypatch.setattr("ai_steward.pipeline.loop.record", lambda *_a, **_k: "trail entry")
 
     result = run(tmp_path, _reachable_config(tmp_path))

@@ -126,7 +126,12 @@ def _build_entry(
             )
         )
         + f"**Blind spot:** {finding.blind_spot or 'Not identified for this run.'}\n\n"
-        f"**File:** `{finding.file}`  \n"
+        + (
+            f"**Reflection:**\n{finding.reflection}\n\n"
+            if finding.reflection
+            else ""
+        )
+        + f"**File:** `{finding.file}`  \n"
         f"**Tokens:** "
         f"SCAN {finding.input_tokens}/{finding.output_tokens} "
         f"\u2014 IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "

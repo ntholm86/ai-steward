@@ -27,6 +27,7 @@ class Finding:
     blind_spot: str = ""
     prediction: str = ""
     examination_summary: str = ""
+    reflection: str = ""
 
 
 @dataclass

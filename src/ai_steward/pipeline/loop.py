@@ -19,6 +19,7 @@ from ai_steward.pipeline._types import Finding, LoopResult
 from ai_steward.pipeline._utils import run_verify_command
 from ai_steward.pipeline.implement import implement
 from ai_steward.pipeline.record import record
+from ai_steward.pipeline.reflect import reflect
 from ai_steward.pipeline.scan import scan
 from ai_steward.pipeline.verify import verify
 
@@ -186,6 +187,8 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
             diff=diff,
             acm_entry=f"VERIFY FAILED: {reason}",
         )
+
+    finding.reflection = reflect(repo, config, finding, diff)
 
     acm_entry = record(repo, config, finding, diff, harness_session_path=harness_session_path)
 

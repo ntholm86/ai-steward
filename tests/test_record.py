@@ -96,6 +96,23 @@ def test_record_returns_entry_string_matching_file(tmp_path: Path) -> None:
     assert entry in trail_content
 
 
+def test_record_entry_includes_reflection_when_present(tmp_path: Path) -> None:
+    finding = _make_finding()
+    finding.reflection = "The prediction held. The codebase is cleaner."
+    entry = record(tmp_path, _make_config(tmp_path), finding, diff="")
+
+    assert "**Reflection:**" in entry
+    assert finding.reflection in entry
+
+
+def test_record_entry_omits_reflection_section_when_empty(tmp_path: Path) -> None:
+    finding = _make_finding()
+    finding.reflection = ""
+    entry = record(tmp_path, _make_config(tmp_path), finding, diff="")
+
+    assert "**Reflection:**" not in entry
+
+
 # ---------------------------------------------------------------------------
 # Git staging
 # ---------------------------------------------------------------------------
