@@ -225,7 +225,7 @@ def _load_scope_context(
     return "\n\n---\n\n".join(sections)
 
 
-def _load_orient_context(repo: Path) -> str | None:
+def _load_orient_context(repo: Path, learning_budget_chars: int = 5000) -> str | None:
     """Load repo-scoped ORIENT context: retrospect.md and learning.md.
 
     retrospect.md is extracted in two guaranteed parts:
@@ -243,10 +243,11 @@ def _load_orient_context(repo: Path) -> str | None:
        makes delivery invariant to file length.
 
     learning.md carries chronological [!REALIZATION]/[!REVERSAL] markers;
-    the tail is most relevant (most recent markers last).
+    the tail is most relevant (most recent markers last). Budget controlled
+    by learning_budget_chars (default 5000 — covers ~30 recent markers).
 
     Budget: retrospect head ≤ 2000 chars; operational rules ≤ 3000 chars;
-    learning tail ≤ 500 chars.  Returns None if neither file exists.
+    learning tail ≤ learning_budget_chars.  Returns None if neither file exists.
     """
     _RULES_MARKER = "## Active operational rules"
     sections: list[str] = []
@@ -272,8 +273,12 @@ def _load_orient_context(repo: Path) -> str | None:
     if learning.is_file():
         try:
             text = learning.read_text(encoding="utf-8", errors="ignore")
-            excerpt = "[... truncated ...]\n" + text[-500:] if len(text) > 500 else text
-            sections.append(f"### Learning surface (recent markers):\n\n{excerpt}")
+            excerpt = (
+                "[... truncated to most recent entries ...]\n" + text[-learning_budget_chars:]
+                if len(text) > learning_budget_chars
+                else text
+            )
+            sections.append(f"### Learning surface ([!REALIZATION]/[!REVERSAL] markers):\n\n{excerpt}")
         except OSError:
             pass
 
@@ -370,7 +375,7 @@ def scan(
         scope_depth=config.acm_scope_depth,
         budget_chars=config.destination_budget_chars,
     )
-    orient = _load_orient_context(repo)
+    orient = _load_orient_context(repo, learning_budget_chars=config.learning_budget_chars)
 
     parts: list[str] = []
     if destination:

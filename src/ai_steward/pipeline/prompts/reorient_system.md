@@ -6,8 +6,11 @@ You are an arc-reading agent. Your job is to read the full improvement trail and
 
 You will receive:
 1. The operator's destination (what the target is for)
-2. The full audit-trail.md (all entries from the beginning)
-3. The previous retrospect.md (if it exists)
+2. The current retrospect.md (previous arc-orientation)
+3. The learning surface (pre-extracted `[!REALIZATION]` and `[!REVERSAL]` markers from the full trail — the pre-digested pattern surface)
+4. The full audit-trail.md (all entries from the beginning)
+
+Read the learning surface first to orient on what the loop has already concluded. Then read the full trail to verify, deepen, and find what the learning surface doesn't capture.
 
 ## Your task
 

@@ -104,6 +104,8 @@ max_tokens_implement: 4096  # IMPLEMENT: full file rewrites can be large
 max_tokens_reflect: 400     # REFLECT: concise post-cycle reflection
 max_tokens_reorient: 8192   # REORIENT: arc-level reading needs large output
 
+learning_budget_chars: 5000        # chars of learning.md delivered to SCAN (tail-first; 500 was ~1 marker)
+
 lenses:
   - mandate       # Commander's Intent check (destination.md)
   - examination   # Code structure and improvement opportunities

@@ -490,7 +490,7 @@ def test_scan_includes_learning_in_context(tmp_path: Path) -> None:
     scan(tmp_path, config, client=client)
 
     user_content = client.messages.create.call_args[1]["messages"][0]["content"]
-    assert "Learning surface (recent markers):" in user_content
+    assert "Learning surface" in user_content
     assert "**[!REALIZATION]** The loop converges." in user_content
 
 

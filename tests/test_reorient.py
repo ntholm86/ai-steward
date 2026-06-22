@@ -13,6 +13,7 @@ from ai_steward.pipeline.reorient import (
     _load_audit_trail,
     _load_current_retrospect,
     _load_destination,
+    _load_learning,
     reorient,
     write_retrospect,
 )
@@ -118,6 +119,68 @@ class TestLoadCurrentRetrospect:
     def test_returns_placeholder_when_missing(self, tmp_path: Path) -> None:
         result = _load_current_retrospect(tmp_path)
         assert "No previous retrospect.md" in result
+
+
+class TestLoadLearning:
+    def test_loads_learning_md(self, tmp_path: Path) -> None:
+        acm_dir = tmp_path / ".acm"
+        acm_dir.mkdir()
+        (acm_dir / "learning.md").write_text(
+            "# Learning\n\n**[!REALIZATION]** System prompts are soft constraints.",
+            encoding="utf-8",
+        )
+
+        result = _load_learning(tmp_path)
+        assert "soft constraints" in result
+
+    def test_returns_placeholder_when_missing(self, tmp_path: Path) -> None:
+        result = _load_learning(tmp_path)
+        assert "No learning.md found" in result
+
+    def test_truncates_from_tail(self, tmp_path: Path) -> None:
+        acm_dir = tmp_path / ".acm"
+        acm_dir.mkdir()
+        old_entry = "OLD content\n" * 10
+        new_entry = "NEW content\n"
+        (acm_dir / "learning.md").write_text(old_entry + new_entry, encoding="utf-8")
+
+        result = _load_learning(tmp_path, budget_chars=20)
+        assert "NEW content" in result
+        assert "OLD content" not in result
+
+    def test_reorient_includes_learning_in_user_content(self, tmp_path: Path) -> None:
+        """REORIENT passes learning.md content to the model."""
+        acm = tmp_path / ".acm"
+        acm.mkdir()
+        (acm / "audit-trail.md").write_text("# Trail\n", encoding="utf-8")
+        (acm / "learning.md").write_text(
+            "# Learning\n\n**[!REALIZATION]** Never truncate from the head.",
+            encoding="utf-8",
+        )
+        config = AiStewardConfig(
+            repo=tmp_path,
+            models=ModelAssignment(
+                analyze="claude-haiku-4-5",
+                propose="claude-haiku-4-5",
+                implement="claude-haiku-4-5",
+                verify="claude-haiku-4-5",
+                judge="claude-haiku-4-5",
+            ),
+        )
+        mock_content = MagicMock()
+        mock_content.text = "# retrospect.md\n\n## Current claims\n\n1. Claim."
+        mock_message = MagicMock()
+        mock_message.content = [mock_content]
+        mock_message.usage.input_tokens = 100
+        mock_message.usage.output_tokens = 50
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = mock_message
+
+        reorient(tmp_path, config, trigger="test", client=mock_client)
+
+        user_content = mock_client.messages.create.call_args[1]["messages"][0]["content"]
+        assert "Learning surface" in user_content
+        assert "Never truncate from the head" in user_content
 
 
 class TestExtractRetrospectContent:
