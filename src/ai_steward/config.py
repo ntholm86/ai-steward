@@ -76,6 +76,8 @@ class AiStewardConfig(BaseModel):
     max_tokens_scan: int = 4096     # SCAN phase token budget; 1024 was too small for 5-step reasoning
     max_tokens_implement: int = 4096  # IMPLEMENT phase token budget for full file rewrites
     max_tokens_reflect: int = 400   # REFLECT phase token budget for post-implementation reasoning
+    acm_scope_depth: int = 4  # how many parent .acm/ directories to consult (org/workspace/team hierarchies)
+    destination_budget_chars: int = 3000  # total character budget for destination.md excerpts in SCAN context
     sandbox: str = "docker"  # "docker" | "local"
     allow_dirty: bool = False  # skip the clean-tree gate (operator opt-in)
     verify_command: str = "python -m pytest --tb=no -q"  # empty string disables the test gate
