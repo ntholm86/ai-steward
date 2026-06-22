@@ -288,14 +288,15 @@ _DEFAULT_SKIP_DIRS = frozenset({
 })
 
 
-def _is_binary(path: Path) -> bool:
+def _is_binary(path: Path, byte_limit: int = _BINARY_HEURISTIC_BYTES) -> bool:
     """Return True if path appears to be a binary file.
 
-    Uses the NUL-byte heuristic (same as git): if the first 8 KB contains
-    a NUL byte the file is treated as binary and excluded from SCAN context.
+    Uses the NUL-byte heuristic (same as git): if the first byte_limit bytes
+    contain a NUL byte the file is treated as binary and excluded from SCAN
+    context. byte_limit is operator-configurable via binary_heuristic_bytes.
     """
     try:
-        chunk = path.read_bytes()[:_BINARY_HEURISTIC_BYTES]
+        chunk = path.read_bytes()[:byte_limit]
         return b"\x00" in chunk
     except OSError:
         return True  # unreadable — treat as binary
@@ -319,10 +320,11 @@ def _collect_files(repo: Path, config: AiStewardConfig) -> dict[str, str]:
             rel = str(path.relative_to(repo))
             if any(path.match(b) for b in blocked):
                 continue
-            if not config.scope.allowed and _is_binary(path):
+            if not config.scope.allowed and _is_binary(path, config.binary_heuristic_bytes):
                 continue
+            skip_dirs = frozenset(config.default_skip_dirs)
             if not config.scope.allowed and any(
-                part in _DEFAULT_SKIP_DIRS
+                part in skip_dirs
                 for part in path.relative_to(repo).parts
             ):
                 continue

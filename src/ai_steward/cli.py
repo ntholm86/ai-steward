@@ -113,6 +113,23 @@ budget_usd: 5.0             # cumulative cost cap in USD
 allow_dirty: false          # set true to run on repos with uncommitted changes
 acm_scope_depth: 4          # ACM scope traversal depth (org/workspace/team/repo hierarchies)
 destination_budget_chars: 3000  # character budget for destination.md excerpts in SCAN context
+
+# Input filtering — controls which files enter the SCAN context window.
+# binary_heuristic_bytes: first N bytes read to detect binary files (NUL-byte heuristic).
+# default_skip_dirs: directories excluded when scope.allowed is empty; explicit scope overrides this.
+binary_heuristic_bytes: 8192
+default_skip_dirs:
+  - ".acm"
+  - ".git"
+  - ".harness"
+  - "__pycache__"
+  - ".mypy_cache"
+  - ".pytest_cache"
+  - "node_modules"
+  - ".venv"
+  - "venv"
+  - ".tox"
+
 sandbox: "docker"           # execution sandbox: "docker" | "local"
 """
 

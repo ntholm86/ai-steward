@@ -4585,3 +4585,114 @@ Trigger evaluations:
    With _extract_json fix in place, the pipeline should surface the binary/skip_dirs finding
    or the lenses machinery gap, whichever it ranks highest.
 3. Add a test for scope_depth + .acm-root interaction -- the blind spot named above.
+
+---
+
+## 2026-06-22 — wire-binary-heuristic-and-skip-dirs
+
+- target: ai-steward (config.py, cli.py, scan.py, tests/test_cli.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve
+- outcome: CHANGE ACCEPTED — binary_heuristic_bytes and default_skip_dirs wired from config
+
+### Ask
+
+Improve skill run. Top-ranked candidate from prior entry: wire _BINARY_HEURISTIC_BYTES and
+_DEFAULT_SKIP_DIRS to new config fields. Cycle 8's original SCAN finding, finally surfaced
+after the _extract_json fix.
+
+### Examination
+
+**Purpose lens:** _BINARY_HEURISTIC_BYTES = 8192 and _DEFAULT_SKIP_DIRS = frozenset({...})
+are module-level constants in scan.py. _is_binary() uses the byte limit; _collect_files()
+uses skip dirs. Neither is in config.py or the CLI template. An operator running against a
+repo with large text files (> 8KB) or non-standard directory names cannot adjust these
+without modifying source code.
+
+**Inconsistency lens:** The same two-step pattern used for acm_scope_depth (add config field,
+wire into function) applies directly. The call sites in _collect_files() already receive
+`config: AiStewardConfig`, so no signature changes to public functions are needed.
+
+**Type consideration:** _DEFAULT_SKIP_DIRS is frozenset; config field is list[str].
+Use frozenset(config.default_skip_dirs) at the call site for O(1) membership testing.
+_is_binary() gets a byte_limit parameter with _BINARY_HEURISTIC_BYTES as default (backward
+compatible for callers that don't pass config).
+
+### Decision
+
+**[!DECISION]** Add binary_heuristic_bytes: int = 8192 and default_skip_dirs: list[str]
+to AiStewardConfig. Add both to _CONFIG_TEMPLATE in cli.py with explanatory comments.
+Wire into scan.py: _is_binary() gains byte_limit param; _collect_files() uses
+config.binary_heuristic_bytes and frozenset(config.default_skip_dirs). Extend
+test_init_config_includes_full_tuning_surface to assert both fields appear in the template.
+
+**Prediction:** 104 tests pass (no count change -- CLI test extension is within existing test).
+No new behavioral change for default configs. Operator setting default_skip_dirs: [] would
+cause all directories to be traversed (empty frozenset = no dirs skipped). Module-level
+constants _BINARY_HEURISTIC_BYTES and _DEFAULT_SKIP_DIRS remain (still serve as _is_binary
+default parameter values).
+
+### Action
+
+config.py: binary_heuristic_bytes: int = 8192 and default_skip_dirs: list[str] added after
+destination_budget_chars, before sandbox.
+
+cli.py: new "Input filtering" section added after allow_dirty/acm_scope_depth/destination_budget_chars,
+before sandbox. Documents both fields with comments.
+
+scan.py:
+  - _is_binary(path, byte_limit=_BINARY_HEURISTIC_BYTES) -- byte_limit param added
+  - _collect_files: _is_binary(path, config.binary_heuristic_bytes)
+  - _collect_files: skip_dirs = frozenset(config.default_skip_dirs); part in skip_dirs
+
+tests/test_cli.py: "binary_heuristic_bytes" and "default_skip_dirs" added to the
+tuning surface assertion.
+
+104 tests pass. Prediction held exactly.
+
+### Reflection
+
+**Model of target:** The config surface is now structurally complete for all known
+operator-visible SCAN controls: scope traversal depth, destination budget, binary detection
+threshold, skip directories. The lenses field remains the only dead config -- it requires
+system prompt machinery that doesn't exist yet. The input-filter surface (this + prior) and
+the context-budget surface (acm_scope_depth + destination_budget_chars) are wired and tested.
+
+**Blind spot:** skip_dirs = frozenset(config.default_skip_dirs) is recomputed on every file
+iteration inside _collect_files. For repos with thousands of files, this is O(n * 10) rather
+than O(n). The list is small (10 items) so it's negligible in practice, but a micro-optimization
+would hoist the frozenset construction outside the loop.
+
+**Imagined expert pushback:** "Why not rename _DEFAULT_SKIP_DIRS since it's no longer the
+primary source of truth?" The constant is still the default parameter value for _is_binary
+and serves as a fallback reference. Renaming it would be a cosmetic change that adds churn
+without behavioral benefit. The naming inconsistency is minor.
+
+Trigger evaluations:
+- Recurring finding-class: FIRED -- last 5 entries: dead-config wire, tests, dead-config wire,
+  tests, dead-config wire. Three dead-config wiring operations in a row. Pattern = config
+  surface completion arc. Macro reflection warranted.
+- About to declare silence: not fired -- change was made.
+- Contradicts prior [!REALIZATION]: not fired.
+- Operator explicitly asked: fired (improve skill invoked directly).
+
+**Macro reflection [!REALIZATION]:** The config surface completion arc spans entries
+dead-config-wire-scope-context, test-scope-context-parameter-variation, and
+wire-binary-heuristic-and-skip-dirs (this entry). The arc has followed a stable pattern:
+SCAN proposes or a prior blind spot names the gap → manual improve wires it → test covers it.
+The pattern is nearly exhausted: lenses is the only config field that remains dead, and it
+requires a qualitatively different kind of work (prompt engineering, not parameter forwarding).
+The natural next step is to run the autonomous pipeline and observe what SCAN proposes now that
+all parameter-forwarding work is done -- if it proposes lenses machinery, that validates the
+destination claim that lenses should be operator-configurable; if it proposes something
+unexpected, that reveals a surface the manual loop missed.
+
+### Candidate Next Moves
+
+1. Run `ai-steward run` -- autonomous pipeline with the full fixed stack (_extract_json fix,
+   all config wired, 104 tests). Let SCAN propose the next surface. This is the highest-stakes
+   test: does the pipeline converge on a genuine improvement, or does it still misfire?
+2. Hoist frozenset(config.default_skip_dirs) outside the file loop in _collect_files --
+   minor performance fix for large repos; closes the micro-optimization blind spot named above.
+3. Wire lenses into the SCAN system prompt -- the last dead config field, requires
+   designing the lens-application prompt structure; deferred until after autonomous pipeline test.

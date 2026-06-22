@@ -78,6 +78,12 @@ class AiStewardConfig(BaseModel):
     max_tokens_reflect: int = 400   # REFLECT phase token budget for post-implementation reasoning
     acm_scope_depth: int = 4  # how many parent .acm/ directories to consult (org/workspace/team hierarchies)
     destination_budget_chars: int = 3000  # total character budget for destination.md excerpts in SCAN context
+    binary_heuristic_bytes: int = 8192  # first N bytes inspected for NUL byte (binary file detection)
+    default_skip_dirs: list[str] = [  # directories skipped when scope.allowed is empty
+        ".acm", ".git", ".harness",
+        "__pycache__", ".mypy_cache", ".pytest_cache",
+        "node_modules", ".venv", "venv", ".tox",
+    ]
     sandbox: str = "docker"  # "docker" | "local"
     allow_dirty: bool = False  # skip the clean-tree gate (operator opt-in)
     verify_command: str = "python -m pytest --tb=no -q"  # empty string disables the test gate
