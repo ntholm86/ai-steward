@@ -102,6 +102,7 @@ class AiStewardConfig(BaseModel):
     max_tokens_implement: int = 4096  # IMPLEMENT phase token budget for full file rewrites
     max_tokens_reflect: int = 400   # REFLECT phase token budget for post-implementation reasoning
     max_tokens_reorient: int = 8192  # REORIENT phase token budget — needs large context for full trail
+    max_tokens_graduate: int = 4096  # GRADUATE phase token budget — classification + proposal
     reorient_interval: int = 5  # auto-trigger REORIENT every N successful cycles (0 disables)
     reorient_trail_budget_chars: int = 50000  # character budget for audit-trail.md in REORIENT context
     learning_budget_chars: int = 5000  # character budget for learning.md in SCAN orient context (tail-first)

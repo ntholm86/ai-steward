@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from ai_steward.config import AiStewardConfig
 from ai_steward.pipeline import run as pipeline_run
 from ai_steward.pipeline.reorient import reorient as reorient_phase, write_retrospect
+from ai_steward.pipeline.graduate import graduate as graduate_phase, write_proposal as write_graduate_proposal
 
 
 @click.group()
@@ -103,6 +104,7 @@ max_tokens_scan: 4096       # SCAN: 5-step reasoning needs ~4000; 1024 is too sm
 max_tokens_implement: 4096  # IMPLEMENT: full file rewrites can be large
 max_tokens_reflect: 400     # REFLECT: concise post-cycle reflection
 max_tokens_reorient: 8192   # REORIENT: arc-level reading needs large output
+max_tokens_graduate: 4096   # GRADUATE: silence classification + proposal
 
 learning_budget_chars: 5000        # chars of learning.md delivered to SCAN (tail-first; 500 was ~1 marker)
 
@@ -321,8 +323,23 @@ def run_loop(repo: str) -> None:
             click.echo(f"  NOTHING FOUND (streak: {nothing_found_streak})")
             if nothing_found_streak >= 2:
                 click.echo(
-                    "\nConvergence: 2 consecutive NOTHING FOUND. Loop complete."
+                    "\nConvergence: 2 consecutive NOTHING FOUND."
                 )
+                # GRADUATE phase — classify the silence and propose next destination
+                trail_file = repo_path / ".acm" / "audit-trail.md"
+                if trail_file.exists():
+                    click.echo("GRADUATE: classifying silence — reading destination and trail...")
+                    proposal, g_in_tok, g_out_tok = graduate_phase(
+                        repo_path, config, trigger=f"nothing_found_streak_{nothing_found_streak}"
+                    )
+                    proposal_path = write_graduate_proposal(repo_path, proposal)
+                    click.echo(
+                        f"GRADUATE complete ({g_in_tok} in / {g_out_tok} out)\n"
+                        f"  Proposal: {proposal_path}\n"
+                        f"  Review the proposal and decide: update destination, change scope, or continue."
+                    )
+                else:
+                    click.echo("Loop complete.")
                 return
         elif result.status in ("verify_failed", "implement_failed"):
             nothing_found_streak = 0

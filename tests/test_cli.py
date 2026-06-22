@@ -101,7 +101,9 @@ def test_run_loop_converges_on_nothing_found(tmp_path: Path) -> None:
         status="nothing_found", finding=None, diff=None, acm_entry="SCAN: no finding"
     )
     runner = CliRunner()
-    with patch("ai_steward.cli.pipeline_run", return_value=nothing_found):
+    with patch("ai_steward.cli.pipeline_run", return_value=nothing_found), \
+         patch("ai_steward.cli.graduate_phase", return_value=("proposal", 10, 5)), \
+         patch("ai_steward.cli.write_graduate_proposal", return_value=tmp_path / ".acm" / "graduate_proposal.md"):
         result = runner.invoke(main, ["run-loop", str(tmp_path)])
 
     assert result.exit_code == 0, result.output
@@ -164,12 +166,14 @@ def test_run_loop_triggers_reorient_at_interval(tmp_path: Path) -> None:
     nothing_found = LoopResult(
         status="nothing_found", finding=None, diff=None, acm_entry=""
     )
-    # 2 proposed → REORIENT fires → 2 nothing_found → convergence
+    # 2 proposed → REORIENT fires → 2 nothing_found → convergence → GRADUATE fires
     side_effects = [proposed, proposed, nothing_found, nothing_found]
     runner = CliRunner()
     with patch("ai_steward.cli.pipeline_run", side_effect=side_effects), \
          patch("ai_steward.cli.reorient_phase", return_value=("arc claims", 100, 50)) as mock_reorient, \
-         patch("ai_steward.cli.write_retrospect", return_value=acm_dir / "retrospect.md"):
+         patch("ai_steward.cli.write_retrospect", return_value=acm_dir / "retrospect.md"), \
+         patch("ai_steward.cli.graduate_phase", return_value=("proposal", 200, 80)), \
+         patch("ai_steward.cli.write_graduate_proposal", return_value=acm_dir / "graduate_proposal.md"):
         result = runner.invoke(main, ["run-loop", str(tmp_path)])
 
     assert result.exit_code == 0, result.output
