@@ -513,6 +513,42 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** :* not fired — no prior realization argued against template completeness.
 
+## 2026-06-22 â€” fix(scan): orient context delivers operational rules
+
+**[!REALIZATION]** The 1000-char orient window was a silent governance failure. Every autonomous SCAN call since ORIENT was implemented (entry 35) operated without operational constraints. The constraints were written in retrospect.md, the operational rules section was added with care, and none of it reached the model. The trail entries were recording "ORIENT active" while the ORIENT context was delivering less than 12% of the file. This is the class of failure where the documentation says the feature works, the tests say the feature works, and the feature doesn't work.
+
+## 2026-06-22 â€” fix(scan): orient context delivers operational rules
+
+**[!REALIZATION]** :* FIRED — prior realizations stated "ORIENT is implemented" and "the autonomous pipeline now reads from the same evidence layer as human-supervised sessions." Both are demonstrably false for the operational rules section. This is a [!REVERSAL] of claims made in retrospect.md entry 4.
+
+## 2026-06-22 â€” fix(scan): orient context delivers operational rules
+
+**[!REALIZATION]** (arc-level): The pattern across the last three improvements is a single root cause: **the system lacks contract tests that verify inputs reach their consumers.** Session files weren't linked — no test verified all sessions were captured. Config fields weren't in the template — no test verified all fields appeared. Operational rules weren't in SCAN context — no test verified the context contained the rules. Each fix added a contract test. The next retrospect should evaluate whether this pattern persists elsewhere.
+
+## 2026-06-22 â€” fix(scan): orient context delivers operational rules
+
+**[!REALIZATION]** and one [!REVERSAL] this session warrant a full retrospect before the next improve cycle. Retrospect.md is stale relative to entries 74–78.
+
+## 2026-06-22 â€” fix(scan): orient context delivers operational rules
+
+**[!REVERSAL]** Retrospect.md claim #4 ("ORIENT is implemented; the autonomous pipeline now reads from the same evidence layer as human-supervised sessions") is demonstrably false for the operational rules section. It was false from the moment ORIENT was implemented. The claim should be updated in the next retrospect run.
+
+## 2026-06-22 â€” Retrospect: post-governance-layer-completion
+
+**[!REALIZATION]** The loop has been building the instrument rather than using it. 17 iterations building governance primitives is appropriate for V1 — the governance layer had to be trustworthy before it could be trusted to operate autonomously. It is now trustworthy. Continued single-cycle self-targeting sessions have near-zero expected value. The next session should be a multi-cycle run.
+
+## 2026-06-22 â€” Retrospect: post-governance-layer-completion
+
+**[!REALIZATION]** The govern-layer-only focus has created a gap: the "useful and widely adoptable" destination purpose is untested. ai-steward has been run on external repos twice (vectorium, twice) and on itself ~40 times. The proof purpose is closer to validated than the tool purpose.
+
+## 2026-06-22 â€” Retrospect: post-governance-layer-completion
+
+**[!REALIZATION]** The retrospect has been an accurate steering mechanism. Each retrospect (entries 7, 25, 36, 38, 39, 44-era) correctly identified the next structural gap before the loop found it. However, the retrospect itself contained a false claim (claim 4) for 12 iterations. The mechanism works; the claims can still be wrong. Arc-level claims require the same falsifiability discipline as any other.
+
+## 2026-06-22 â€” Retrospect: post-governance-layer-completion
+
+**[!REVERSAL]** Prior claim 4 ("ORIENT is implemented; autonomous pipeline reads from same evidence layer as human sessions") was false from entry 40. Corrected: ORIENT context now delivers both arc-claims and rules, via entry 52's header extraction. Contract-tested.
+
 ---
 
-**127 markers â€” 97 realisations, 30 reversals**
+**136 markers â€” 104 realisations, 32 reversals**

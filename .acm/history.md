@@ -56,6 +56,8 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 49 | 2026-06-22 | live-validation: REFLECT phase first live run |  |  |
 | â–¸ 50 | 2026-06-22 | fix(harness): complete session coverage — all pipeline LLM calls captured | REFLECT moved inside harness context; session_paths list replaces single session_path; X-Harness-Session + HARNESS_SESSION_ID added for future proxy grouping | 88 tests → 92 tests; 6 files changed (+153/−67); mypy clean |
 | â–¸ 51 | 2026-06-22 | fix(cli): CONFIG_TEMPLATE exposes full operator-tunable surface | `ai-steward init` now produces a config that exposes all tunable parameters | _CONFIG_TEMPLATE +10 lines; 1 new test; 94 → 95 tests |
+| â–¸ 52 | 2026-06-22 | fix(scan): orient context delivers operational rules | SCAN now receives operational rules in every call; head budget raised 1000→2000 chars | scan.py _load_orient_context rewritten (+20 lines); 2 new tests; 95→97 |
+| â–¸ 53 | 2026-06-22 | Retrospect: post-governance-layer-completion |  |  |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -312,4 +314,13 @@ Do not edit by hand â€” re-run the command to refresh.
 
 - **decided:** Backfill `_CONFIG_TEMPLATE` with the full operator-tunable surface: `max_tokens_scan`, `max_tokens_implement`, `max_tokens_reflect`, `max_iterations`, `budget_usd`, `allow_dirty`. Add inline comments explaining what each controls and why the default was chosen.
 
-**51 runs total â€” 51 with changes, 0 silence**
+### Run 52 â€” 2026-06-22 â€” fix(scan): orient context delivers operational rules
+
+- **decided:** Fix in two parts:
+- **REVERSAL:** Retrospect.md claim #4 ("ORIENT is implemented; the autonomous pipeline now reads from the same evidence layer as human-supervised sessions") is demonstrably false for the operational rules section. It was false from the moment ORIENT was implemented. The claim should be updated in the next retrospect run.
+
+### Run 53 â€” 2026-06-22 â€” Retrospect: post-governance-layer-completion
+
+- **REVERSAL:** Prior claim 4 ("ORIENT is implemented; autonomous pipeline reads from same evidence layer as human sessions") was false from entry 40. Corrected: ORIENT context now delivers both arc-claims and rules, via entry 52's header extraction. Contract-tested.
+
+**53 runs total â€” 53 with changes, 0 silence**

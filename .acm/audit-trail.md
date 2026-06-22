@@ -3733,3 +3733,69 @@ The two new tests now make this class of failure impossible: `test_scan_delivers
 3. **Add `scope` to `_CONFIG_TEMPLATE`** — named blind spot from entry 77; targeting is the first thing operators need after basics.
 
 *Staged for operator review. Not committed.*
+
+---
+
+## 2026-06-22 — Retrospect: post-governance-layer-completion
+
+- target: ai-steward
+- operator: Nils Holmager
+- agent: claude-sonnet-4-6 (GitHub Copilot)
+- skill: retrospect v1.9.0
+- scope question: Entries 36–52 built the governance layer. Is the governance layer complete? Does the arc reveal any structural gaps invisible in single-cycle testing? What is the most accurate characterization of the target's state?
+
+### Freshness check
+
+- `python record.py history --write` → 52 entries
+- `python record.py learning --write` → 132 markers (101 realisations, 31 reversals)
+- gate: PASS — history.md and learning.md refreshed before arc-read
+
+### Destination read
+
+Read destination.md in full. Dual purpose confirmed: Proof (Observable Autonomy reference implementation) + Tool (genuinely useful, widely adoptable). V1 milestone: self-targeting loop that completes cleanly. Cost constraint: ~$0.002/cycle (now stale; actual ~$0.027–0.030/cycle at claude-sonnet-4-5 + 3-call pipeline).
+
+No parent-scope `.acm/destination.md` found.
+
+### Arc-read
+
+Read full learning.md (132 markers) and history.md (52 entries). Key structural observations:
+
+**Where attention has been concentrated:**
+Entries 36–52 (17 iterations) were exclusively governance-layer work: SCAN reasoning quality, RECORD fields (7 fixes), ORIENT context (injection + budget fix), REFLECT phase, harness session coverage, CONFIG_TEMPLATE surface. Zero external repo work in this span. The loop built its own instrument for 17 consecutive iterations.
+
+**Reversal density:**
+31 reversals across 132 markers — 23% reversal rate. This is within healthy range and higher than a post-hoc rationalized trail would show. Recurring reversal class: test assertions on changed contracts (fired 3 times, documented entry 16/20/22). CRLF/byte-size on Windows (3 occurrences, mitigated). Template drift (CONFIG fields added without template update, 3 silent recurrences, now contract-tested in entry 51).
+
+**The orient context failure (entries 40–52):**
+Prior claim 4 stated ORIENT was implemented and the pipeline "reads from the same evidence layer." Arc-read reveals this was false from day 1: 1000-char window delivered 12% of retrospect.md; operational rules were never in any SCAN context from entry 40 through entry 51. The retrospect was writing operational rules that were consumed by human sessions but invisible to every autonomous cycle. This is the canonical "the instrument used to detect the problem is also the instrument that's broken" failure class.
+
+**Attractor loop (entries 18, 19, 28):**
+The model proposed the same wrong record.py fix three times across three autonomous cycles, each discarded at the operator gate. Root cause: destination.md said "improve-skill-style entries" without a concrete definition, creating an ambiguous mandate that reproduced the same misinterpretation each cycle. The attractor was broken by making the format explicit. This is evidence that vague mandate language creates fix attractors in autonomous operation.
+
+**What the arc reveals that no individual iteration would surface:**
+The governance infrastructure is now complete. 17 iterations in, the loop has built all its governance primitives (SCAN quality, RECORD fidelity, ORIENT delivery, REFLECT, harness coverage, config surface). The "proof" side of the dual purpose is structurally ready. The "tool" side has been tested in 3 live runs, all single-cycle. Convergence Is Silence is the loop's founding claim and has never been demonstrated.
+
+### Arc-claims (written to retrospect.md)
+
+10 claims written. The key claim changes from the prior retrospect:
+
+[!REVERSAL] Prior claim 4 ("ORIENT is implemented; autonomous pipeline reads from same evidence layer as human sessions") was false from entry 40. Corrected: ORIENT context now delivers both arc-claims and rules, via entry 52's header extraction. Contract-tested.
+
+New claim 9: Three consecutive fixes (entries 50–52) shared a root cause — no contract tests verifying inputs reach consumers. Pattern documented; three specific points now contract-tested.
+
+New claim 10: Governance infrastructure is complete. The target's weight now lies in behavioral validation, not governance. Multi-cycle convergence is the only test that matters from here.
+
+### Loop-effectiveness assessment
+
+[!REALIZATION] The loop has been building the instrument rather than using it. 17 iterations building governance primitives is appropriate for V1 — the governance layer had to be trustworthy before it could be trusted to operate autonomously. It is now trustworthy. Continued single-cycle self-targeting sessions have near-zero expected value. The next session should be a multi-cycle run.
+
+[!REALIZATION] The govern-layer-only focus has created a gap: the "useful and widely adoptable" destination purpose is untested. ai-steward has been run on external repos twice (vectorium, twice) and on itself ~40 times. The proof purpose is closer to validated than the tool purpose.
+
+[!REALIZATION] The retrospect has been an accurate steering mechanism. Each retrospect (entries 7, 25, 36, 38, 39, 44-era) correctly identified the next structural gap before the loop found it. However, the retrospect itself contained a false claim (claim 4) for 12 iterations. The mechanism works; the claims can still be wrong. Arc-level claims require the same falsifiability discipline as any other.
+
+### Candidate next moves
+
+1. **Multi-cycle convergence test** — run the loop on a real target until silence. This is the only remaining test that has first-order leverage on the dual-purpose destination. All governance blockers cleared.
+2. **Cost model correction in destination.md** — 2-line append. Stale "$0.002" claim contradicts the "efficiency is measured, not claimed" principle.
+3. **Model ID startswith fix in `_model_cost_per_token()`** — low effort, correctness improvement.
+4. **Add scope to `_CONFIG_TEMPLATE`** — first thing operators need after basic config.
