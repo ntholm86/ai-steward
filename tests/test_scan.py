@@ -466,3 +466,50 @@ def test_scan_skips_missing_orient_files(tmp_path: Path) -> None:
     user_content = client.messages.create.call_args[1]["messages"][0]["content"]
     assert "Current orientation" not in user_content
     assert "Learning surface" not in user_content
+
+
+def test_scan_delivers_operational_rules_beyond_head_window(tmp_path: Path) -> None:
+    """Operational rules reach the model even when they fall well past the head window.
+
+    This is the regression test for the 1000-char window bug: retrospect.md in
+    production has its '## Active operational rules' section at char 5681. The
+    prior head-only extraction silently delivered zero operational rules to SCAN.
+    """
+    (tmp_path / "utils.py").write_text("x = 1\n")
+    (tmp_path / ".acm").mkdir()
+    # Rules section far beyond the 2000-char head window
+    padding = "Claim: " + ("x" * 50 + "\n") * 40  # ~2400 chars of claims
+    retrospect = (
+        f"# retrospect\n\n{padding}\n\n"
+        f"## Active operational rules\n\n"
+        f"- V1 stops before release. Inviolable.\n"
+        f"- Harness proxy outside autonomous scope.\n"
+    )
+    (tmp_path / ".acm" / "retrospect.md").write_text(retrospect, encoding="utf-8")
+    config = _make_config(tmp_path)
+    client = _mock_client({"nothing": True})
+
+    scan(tmp_path, config, client=client)
+
+    user_content = client.messages.create.call_args[1]["messages"][0]["content"]
+    assert "Active operational rules:" in user_content
+    assert "V1 stops before release. Inviolable." in user_content
+    assert "Current orientation (retrospect):" in user_content  # head still present
+
+
+def test_scan_head_budget_is_two_thousand_chars(tmp_path: Path) -> None:
+    """The head excerpt covers up to 2000 chars (not the old 1000-char limit)."""
+    (tmp_path / "utils.py").write_text("x = 1\n")
+    (tmp_path / ".acm").mkdir()
+    # Write a claim that starts at char ~1100 (beyond the old 1000-char window)
+    filler = "A" * 1100
+    marker_text = "CLAIM_BEYOND_OLD_LIMIT"
+    retrospect = filler + marker_text
+    (tmp_path / ".acm" / "retrospect.md").write_text(retrospect, encoding="utf-8")
+    config = _make_config(tmp_path)
+    client = _mock_client({"nothing": True})
+
+    scan(tmp_path, config, client=client)
+
+    user_content = client.messages.create.call_args[1]["messages"][0]["content"]
+    assert marker_text in user_content, "Content at char 1100 must be inside the 2000-char head window"

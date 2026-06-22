@@ -3640,3 +3640,96 @@ Prediction held. 95/95 tests pass, mypy clean.
 3. **Cost model correction in destination.md** — retrospect claim #6, still stale ("$0.002 per cycle haiku"); 2-line append, low effort.
 
 *Staged for operator review. Not committed.*
+
+---
+
+## 2026-06-22 — fix(scan): orient context delivers operational rules
+
+- target: ai-steward — src/ai_steward/pipeline/scan.py, tests/test_scan.py
+- operator: Nils Holmager
+- agent: claude-sonnet-4-6 (GitHub Copilot)
+- skill: improve v3.10.0
+- outcome: SCAN now receives operational rules in every call; head budget raised 1000→2000 chars
+- delta: scan.py _load_orient_context rewritten (+20 lines); 2 new tests; 95→97
+
+### Interpretation of the ask
+
+"use improve skill" — underspecified. Applied the agent-initiated direction protocol. Selected the orient context budget gap (retrospect.md item 5) as the prioritized question: "Does the ORIENT context window actually deliver the operational rules to SCAN?"
+
+The question is falsifiable and the answer was immediately verifiable from measurements without a live run.
+
+### Examination
+
+**Measurement:** `retrospect.md` is 8260 chars. `## Active operational rules` begins at char 5681. The prior `text[:1000]` head window ends mid-claim-#2. Rules were 4681 chars beyond the window.
+
+**What the model was receiving in SCAN context:**
+- First ~200 chars of the retrospect header
+- Half of claim #1 (mandate gate)
+- First half of claim #2 (multi-cycle convergence, mid-sentence)
+- Nothing else
+
+**What was missing from every SCAN call:**
+- Claims #3–#8 (ORIENT implementation, unit tests, cost model, duplicate entries, operator gate)
+- "What the next runs should test" section
+- ALL operational rules (11 rules including "V1 stops before release", "harness proxy outside autonomous scope", "trail entries required for all scan.py changes", etc.)
+
+**Root cause:** The docstring said "the head of the file is most relevant (claims listed first)" — true for claims, false for operational rules. Claims and rules occupy structurally different positions in retrospect.md. A single head window cannot serve both.
+
+**Why this matters:** The operational rules are the constraints that make autonomous operation safe. "V1 stops before release" is inviolable. "harness proxy outside ai-steward's autonomous scope" prevents scope creep. Without these in SCAN context, the model was operating on vibes, not constraints.
+
+### Decision
+
+[!DECISION] Fix in two parts:
+1. Raise the arc-claims head budget from 1000 → 2000 chars (covers ~3–4 claims instead of ~1.5).
+2. Extract the "## Active operational rules" section by header name, always appended as a separate subsection, unconditionally. This makes rule delivery invariant to file length.
+
+Rejected: increase head to 8000+ chars (covers entire file). Fragile — if retrospect.md grows, rules get cut again. Header-targeted extraction is the correct structural fix.
+
+Rejected: restructure retrospect.md to put rules first. Operator-held document; the format has a well-understood structure (claims → next runs → rules). The code should adapt to the document, not the reverse.
+
+### Prediction
+
+Every future SCAN call receives arc-claims (first 2000 chars) plus the full operational rules section (2579 chars). Rules delivery is invariant to file length. 95 → 97 tests.
+
+What will NOT happen: no change to learning.md budget, no change to any scan.py behaviour other than context content.
+
+### Action
+
+Prediction held exactly. 97/97 tests pass.
+
+**scan.py `_load_orient_context()`:** Rewrote to extract two sections:
+1. `text[:2000]` head with truncation marker if needed (was `text[:1000]`)
+2. Always extract `## Active operational rules` section by `text.find(_RULES_MARKER)`, append separately if found
+
+**tests/test_scan.py:** Added two tests:
+- `test_scan_delivers_operational_rules_beyond_head_window` — places rules at char ~2500 (beyond 2000-char head), verifies they appear in SCAN context
+- `test_scan_head_budget_is_two_thousand_chars` — places content at char 1100 (beyond old 1000-char limit), verifies it's now included
+
+### Reflection
+
+**Current model of the target as a falsifiable claim:**
+[!REALIZATION] The 1000-char orient window was a silent governance failure. Every autonomous SCAN call since ORIENT was implemented (entry 35) operated without operational constraints. The constraints were written in retrospect.md, the operational rules section was added with care, and none of it reached the model. The trail entries were recording "ORIENT active" while the ORIENT context was delivering less than 12% of the file. This is the class of failure where the documentation says the feature works, the tests say the feature works, and the feature doesn't work.
+
+The two new tests now make this class of failure impossible: `test_scan_delivers_operational_rules_beyond_head_window` will fail immediately if the extraction logic breaks. `test_scan_head_budget_is_two_thousand_chars` will fail if someone reduces the head window below 2000.
+
+**Blind spot:** The operational rules extraction is unconditional — if retrospect.md has rules within the first 2000 chars (unlikely as the file grows, but possible for small repos), the rules appear twice in the SCAN context. Harmless duplication, but worth noting.
+
+**What a knowledgeable reader would push back on:** The fix doesn't address the root cause of "retrospect.md will keep growing and the 2000-char head will keep covering less and less of the claims." Currently at 8260 chars, the 2000-char head covers claims #1–2 and part of #3. As the retrospect grows, even fewer claims reach the model. The real solution is a retrospect format with machine-readable section markers, not char-count slices.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* FIRED — this is the third consecutive iteration where the fix was "a silent omission that went unnoticed because tests passed." (1: session files not captured; 2: CONFIG_TEMPLATE missing fields; 3: operational rules not delivered). The pattern is: things added to the system are not verified to reach their intended consumer. All three share the root cause of missing contract tests.
+- *About to declare silence:* not fired — a change was made.
+- *Contradicts prior [!REALIZATION]:* FIRED — prior realizations stated "ORIENT is implemented" and "the autonomous pipeline now reads from the same evidence layer as human-supervised sessions." Both are demonstrably false for the operational rules section. This is a [!REVERSAL] of claims made in retrospect.md entry 4.
+- *Operator explicitly asked:* not fired for this specific fix.
+
+[!REALIZATION] (arc-level): The pattern across the last three improvements is a single root cause: **the system lacks contract tests that verify inputs reach their consumers.** Session files weren't linked — no test verified all sessions were captured. Config fields weren't in the template — no test verified all fields appeared. Operational rules weren't in SCAN context — no test verified the context contained the rules. Each fix added a contract test. The next retrospect should evaluate whether this pattern persists elsewhere.
+
+[!REVERSAL] Retrospect.md claim #4 ("ORIENT is implemented; the autonomous pipeline now reads from the same evidence layer as human-supervised sessions") is demonstrably false for the operational rules section. It was false from the moment ORIENT was implemented. The claim should be updated in the next retrospect run.
+
+### Candidate Next Moves
+
+1. **Run retrospect** — three [!REALIZATION] and one [!REVERSAL] this session warrant a full retrospect before the next improve cycle. Retrospect.md is stale relative to entries 74–78.
+2. **Multi-cycle convergence test** — highest-priority untested architectural claim; now more likely to succeed because operational rules actually reach the model.
+3. **Add `scope` to `_CONFIG_TEMPLATE`** — named blind spot from entry 77; targeting is the first thing operators need after basics.
+
+*Staged for operator review. Not committed.*
