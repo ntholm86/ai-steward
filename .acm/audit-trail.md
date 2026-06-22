@@ -4139,3 +4139,53 @@ index 35393c6..66f7a4e 100644
 
 
 **Operator note — 2026-06-22:** Accepted. Real hardcoded constants found (scan.py lines 145, 155, 243-244). Tests pass. Destination pattern (config-before-implementation) satisfied. HOWEVER: REFLECT made a false claim — 'grep for literal 4 or 3000 in scan.py should return zero hits' was wrong at commit time. Constants are still hardcoded in scan.py. REFLECT incorrectly described partial implementation as complete. Cycle-4 must wire these fields into scan.py or they remain dead config.
+
+---
+
+## 2026-06-22 — ai-steward: Add lenses field to _CONFIG_TEMPLATE with operator-facing documentation
+
+**[!DECISION]** Proposed: Add lenses field to _CONFIG_TEMPLATE with operator-facing documentation  
+*Rationale:* The destination states 'These should not be hardcoded' and 'The config is the contract.' The lenses field exists in AiStewardConfig but is invisible to operators because it's missing from the init template. This creates a hidden parameter — operators cannot configure what they cannot see. Adding it to the template costs 4 lines and makes the governance interface complete for the lenses dimension.  
+*Risk:* low
+
+**Prediction:** This will make the lenses config field visible in scaffolded .ai-steward.yaml files with inline documentation of its purpose and example use cases. It will NOT wire the field into SCAN or RECORD — those are separate changes. After this, operators running 'ai-steward init' will see the lenses parameter and understand how to customize it.  
+
+**Lenses applied:**
+Examined config.py (lenses field exists at line 77), cli.py (_CONFIG_TEMPLATE missing the field), scan.py (no consumption of config.lenses), and record.py (hardcoded fallback lens description). The field is structurally orphaned: defined in the schema but invisible in the template and unused by any phase.
+
+**Blind spot:** src/ai_steward/pipeline/scan.py — the mechanism for consuming config.lenses and translating lens names into SCAN prompt sections. This change only adds template visibility; wiring lenses into the reasoning protocol is a separate architectural change.
+
+**Reflection:**
+The prediction held perfectly. The change added `lenses` to the scaffolded YAML with inline documentation and examples, made it visible to operators running `ai-steward init`, and deliberately stopped short of any SCAN or RECORD integration. The verification confirmed this boundary by naming the exact file (`scan.py`) that would need modification to wire the field functionally.
+
+The target is now a configuration surface that advertises capability before that capability exists in the runtime. The `lenses` field sits inert in scaffolded configs—readable, documented, but not yet interpreted by any pipeline stage. This creates a forward contract: operators can write lens lists today, expecting future cycles to honor them. The system is becoming documentation-driven in its evolution, declaring intent in config schema before embedding logic in prompt assembly.
+
+The blind spot is `src/ai_steward/pipeline/record.py`. RECORD generates trail entries and could be influenced by active lenses (for example, a security lens might trigger different reflection questions or tag trail entries with audit markers). This cycle focused exclusively on SCAN's future consumption of lenses, leaving RECORD's potential relationship to lens context completely unexamined. The asymmetry exists because SCAN was named explicitly in the original prediction; RECORD was not, so it fell outside the change's conceptual boundary despite being another natural lens consumer.
+
+**File:** `src/ai_steward/cli.py`  
+**Tokens:** SCAN 20868/1945 — IMPL 2077/1820 — REFLECT 559/290 — cycle est. $0.13134 USD  
+**Harness sessions:** `.acm/sessions/01KVQ001RK3KXZ758SHKWJWBH3.jsonl`  
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/cli.py b/src/ai_steward/cli.py
+index b00fbdd..bea0fed 100644
+--- a/src/ai_steward/cli.py
++++ b/src/ai_steward/cli.py
+@@ -100,6 +100,12 @@ max_tokens_scan: 4096       # SCAN: 5-step reasoning needs ~4000; 1024 is too sm
+ max_tokens_implement: 4096  # IMPLEMENT: full file rewrites can be large
+ max_tokens_reflect: 400     # REFLECT: concise post-cycle reflection
+ 
++lenses:
++  - mandate       # Commander's Intent check (destination.md)
++  - examination   # Code structure and improvement opportunities
++  # Example for security audit: add 'security' to focus on attack surface
++  # Example for performance: use ['overburden'] to focus on hot paths only
++
+ # Safety limits â€” pipeline stops when either is reached.
+ max_iterations: 10          # maximum improvement cycles per run
+ budget_usd: 5.0             # cumulative cost cap in USD
+
+```
+
+*Staged for operator review. Not committed.*
