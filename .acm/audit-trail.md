@@ -5784,3 +5784,50 @@ Trigger evaluations:
 1. **CODIFY phase** -- reads learning.md in full, clusters patterns by class, proposes additions to .acm/rules.md. rules.md read by SCAN at highest priority. The proper ACM-symmetric answer.
 2. **Feed history.md into REORIENT** -- compressed timeline table as fast-orientation layer before reading full trail. Small change, closes the last ACM symmetry gap.
 3. **Measure learning context quality** -- run i-steward run and inspect what SCAN actually receives from learning.md. Validate that 5000 chars contains useful markers, not just boilerplate.
+
+---
+
+## 2026-06-22 -- feat(graduate): add GRADUATE phase
+
+- target: ai-steward (pipeline/graduate.py + cli.py + config.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve v3.10.0
+- outcome: CHANGE ACCEPTED -- 154 tests pass
+
+### Interpretation
+
+Continued from ACM memory symmetry iteration. Top-ranked candidate from retrospect #2 and run-loop trail entry #3: GRADUATE phase. The run-loop exists; its convergence signal was cognitively empty ("Loop complete."). GRADUATE is the structural response to silence.
+
+### Lenses applied
+
+**Purpose lens:** The destination explicitly names GRADUATE as the meta-cognitive phase for destination revision on silence. It compensates for absent human guidance -- the human would naturally notice "this goal is done, time to move on." The robot had no equivalent.
+
+**Waste lens:** The run-loop correctly detected convergence (2 NOTHING FOUND) but produced no artifact for operator decision-making. The detection was wasted -- it fired and vanished.
+
+### [!DECISION]
+
+Add GRADUATE phase. Triggers on run-loop convergence. Reads destination, retrospect, recent trail. Classifies silence as ACHIEVED/STALE/STUCK/PREMATURE. Writes .acm/graduate_proposal.md for operator review.
+
+The proposal file is overwritten each run (not append-only) -- the current assessment supersedes previous ones. History lives in audit-trail.md.
+
+**Prediction:** ~151 tests (137 + 14 new). Actual: 154 (17 graduate + 2 updated CLI tests). Prediction off by 3 -- undercounted the CLI test updates needed because GRADUATE fires on every convergence test, requiring mocks to be updated.
+
+### Reflection
+
+**Model claim:** The convergence signal is no longer empty. When silence is reached, the robot produces a classification and a concrete proposal (e.g., a draft successor destination for ACHIEVED, scope changes for PREMATURE). The operator has something to act on rather than just "nothing found."
+
+**Blind spot:** GRADUATE uses models.reorient or models.analyze -- no dedicated models.graduate. A future operator wanting different models for arc-reading vs silence classification can't configure them separately. Low-impact for V1.
+
+**Imagined expert pushback:** "GRADUATE and REORIENT both read destination + retrospect + trail. They're the same prompt with different framing. Could they be one call?" They have different purposes: REORIENT forms arc-claims for future SCAN orientation; GRADUATE makes a go/no-go classification and produces an operator-facing proposal. Merging them would conflate internal orientation with external proposal. They're appropriately separate.
+
+Trigger evaluations:
+- Recurring finding-class: not fired
+- About to declare silence: not fired
+- Contradicts prior [!REALIZATION]: not fired
+- Operator explicitly asked: FIRED
+
+### Candidate Next Moves
+
+1. **ESCALATE phase** -- the stuck/failure-pattern equivalent of GRADUATE. When the same failure class repeats N times, classify the cause (TOOLING_BROKEN, PIPELINE_BOTTLENECK, DESTINATION_UNREACHABLE, CONTEXT_INSUFFICIENT) and surface to operator.
+2. **allow_dirty warning in run-loop** -- startup check: if allow_dirty is False, warn that staged changes from PROPOSED cycles will block subsequent cycles. Prevents the live surprise.
+3. **history.md into REORIENT** -- last ACM symmetry gap. REORIENT doesn't receive the compressed timeline table. Small mechanical addition.
