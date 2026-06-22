@@ -4042,3 +4042,51 @@ index e588b3e..02a6716 100644
 
 
 **[!REVERSAL] Operator rejected — 2026-06-22:** Dead config (YAGNI). The pipeline predicted the field would be inert yet proposed it as structural prep. A config field that does nothing is waste, not preparation. Unstaged and discarded. Next cycle must find a change that alters behaviour.
+
+---
+
+## 2026-06-22 — ai-steward: Add configurable lenses field to AiStewardConfig with default ['mandate', 'examination']
+
+**[!DECISION]** Proposed: Add configurable lenses field to AiStewardConfig with default ['mandate', 'examination']  
+*Rationale:* The destination explicitly requires lenses to be configurable, not hardcoded. This change makes lens selection operator-visible in the governance interface (AiStewardConfig and .ai-steward.yaml), following the design rule 'add operator-facing controls to config before implementation.' Low maintenance cost (one field, one template line), high alignment with stated direction.  
+*Risk:* low
+
+**Prediction:** This change will add a lenses field to AiStewardConfig and the YAML template, making lens selection operator-configurable. It will NOT change any runtime behavior in SCAN or RECORD — those phases do not yet consume the lenses field. The change is purely structural: it makes the config parameter visible to the operator and available for future consumption by pipeline phases.  
+
+**Lenses applied:**
+Examined config.py (no lenses field exists), cli.py (_CONFIG_TEMPLATE lacks lenses section), and record.py (lenses are hardcoded fallback prose in _build_entry). The destination calls for lenses to be configurable; the config schema does not yet expose this control to operators.
+
+**Blind spot:** src/ai_steward/pipeline/scan.py — SCAN does not yet consume the lenses field to vary its behavior. Adding the config parameter prepares the infrastructure but does not implement lens-aware prompt logic.
+
+**Reflection:**
+The prediction held perfectly. The change added `lenses` to `AiStewardConfig` with a default value, making it operator-configurable through YAML, but introduced zero runtime behavior change. The verification confirmed that `scan.py` does not consume this field, exactly as predicted. The change is purely infrastructural.
+
+The target is now a system with a configuration surface that advertises capabilities not yet implemented in the runtime. The `lenses` field exists as a contract: operators can set it, but no pipeline phase honors it. This creates a gap between operator expectation (configurable lens selection) and actual system behavior (fixed lens usage, if any). The config schema promises more flexibility than the execution engine delivers.
+
+The cycle examined only `config.py` and verified only `scan.py`. It did not inspect `src/ai_steward/pipeline/record.py`, which the prediction explicitly named as another phase that won't consume lenses. If RECORD already has lens-related logic—perhaps hardcoded lens names or filtering—this cycle would miss whether the new config field aligns with that existing implementation. The blind spot exists because verification focused on confirming non-consumption rather than cataloging what lens-related behavior already exists elsewhere in the codebase.
+
+**File:** `src/ai_steward/config.py`  
+**Tokens:** SCAN 20788/1588 — IMPL 1374/1051 — REFLECT 477/272 — cycle est. $0.11158 USD  
+**Harness sessions:** `.acm/sessions/01KVPZN8GWMM3EKW09XXEG25BS.jsonl`  
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/config.py b/src/ai_steward/config.py
+index e588b3e..35393c6 100644
+--- a/src/ai_steward/config.py
++++ b/src/ai_steward/config.py
+@@ -70,6 +70,7 @@ class AiStewardConfig(BaseModel):
+     harness: HarnessConfig = HarnessConfig()
+     models: ModelAssignment
+     scope: ScopeConfig = ScopeConfig()
++    lenses: list[str] = ['mandate', 'examination']
+     max_iterations: int = 10
+     budget_usd: float = 5.0
+     max_tokens_scan: int = 4096     # SCAN phase token budget; 1024 was too small for 5-step reasoning
+
+```
+
+*Staged for operator review. Not committed.*
+
+
+**[!REVERSAL] Operator correction — 2026-06-22:** Cycle-1 YAGNI rejection was wrong. destination.md explicitly mandates lenses be operator-configurable and not hardcoded. SCAN was correctly reading the mandate both cycles. The partial-implementation pattern (config field now, scan.py wiring next cycle) is the correct iterative approach. Cycle-2 proposal accepted and committed as `31f4015`. Cycle-3 should wire the lenses field into scan.py prompt construction.
