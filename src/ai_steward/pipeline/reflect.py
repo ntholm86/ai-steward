@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     import anthropic
 
 
-_REFLECT_SYSTEM = """\
+_BASE_REFLECT_SYSTEM = """\
 You are reviewing the outcome of a software improvement cycle.
 Write a concise reflection covering exactly three things:
 1. Prediction accuracy: did the stated prediction hold? Note any mismatch.
@@ -36,6 +36,60 @@ Write a concise reflection covering exactly three things:
 
 Two or three short paragraphs. No headers. No preamble. Write as a trail-entry author.
 """
+
+# Additional reflection guidance injected per operator-configured reflect_lens.
+# 'prediction', 'model_claim', and 'blind_spot' are built-in — they map to the three
+# numbered items in the base prompt (no injection needed).
+_REFLECT_LENS_INSTRUCTIONS: dict[str, str] = {
+    "security": (
+        "Also briefly note whether the applied change introduced or closed a security risk. "
+        "If the blind spot area includes security-sensitive files (auth, input handling, "
+        "credentials), name them explicitly."
+    ),
+    "overburden": (
+        "Also briefly note whether the changed component now has fewer or more responsibilities "
+        "than before. Is the target converging on simpler, more focused components?"
+    ),
+    "performance": (
+        "Also briefly note any performance implications of the applied change — "
+        "better or worse. If the blind spot includes performance-sensitive paths, flag them."
+    ),
+    "waste": (
+        "Also briefly note whether the change removed dead code or unnecessary abstraction, "
+        "and whether the blind spot area likely contains similar waste worth a future cycle."
+    ),
+}
+
+# Built-in reflect_lenses — they correspond to the three numbered items in the base prompt.
+_BUILTIN_REFLECT_LENSES = frozenset({"prediction", "model_claim", "blind_spot"})
+
+
+def _build_reflect_system_prompt(lenses: list[str]) -> str:
+    """Build the REFLECT system prompt, injecting guidance for operator-configured lenses.
+
+    'prediction', 'model_claim', and 'blind_spot' are built-in — they correspond to the
+    three numbered reflection items in the base prompt. No injection needed for them.
+    Any other lens name in `lenses` that matches a key in _REFLECT_LENS_INSTRUCTIONS
+    injects additional reflection guidance after the three numbered items.
+    Unknown lens names are silently ignored (forward-compatible).
+
+    The default config ['prediction', 'model_claim', 'blind_spot'] returns the base
+    prompt unchanged — zero behavior change for existing deployments.
+    """
+    extras = [
+        _REFLECT_LENS_INSTRUCTIONS[lens]
+        for lens in lenses
+        if lens not in _BUILTIN_REFLECT_LENSES and lens in _REFLECT_LENS_INSTRUCTIONS
+    ]
+    if not extras:
+        return _BASE_REFLECT_SYSTEM
+
+    injection = "\n\nAdditional reflection lenses (operator-configured):\n" + "\n".join(
+        f"- {instruction}" for instruction in extras
+    )
+    # Inject after the three numbered items, before the closing style instructions
+    marker = "\n\nTwo or three short paragraphs."
+    return _BASE_REFLECT_SYSTEM.replace(marker, injection + marker, 1)
 
 
 def reflect(
@@ -76,7 +130,7 @@ def reflect(
         message = client.messages.create(
             model=config.models.analyze,
             max_tokens=config.max_tokens_reflect,
-            system=_REFLECT_SYSTEM,
+            system=_build_reflect_system_prompt(config.reflect_lenses),
             messages=[{"role": "user", "content": user_content}],
         )
         try:

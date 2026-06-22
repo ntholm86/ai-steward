@@ -9,7 +9,11 @@ import pytest
 
 from ai_steward.config import AiStewardConfig, ModelAssignment
 from ai_steward.pipeline._types import Finding
-from ai_steward.pipeline.reflect import reflect
+from ai_steward.pipeline.reflect import (
+    _BASE_REFLECT_SYSTEM,
+    _build_reflect_system_prompt,
+    reflect,
+)
 
 _V1_MODELS = ModelAssignment(
     analyze="claude-haiku-4-5",
@@ -104,3 +108,30 @@ def test_reflect_prompt_contains_prediction_and_diff(tmp_path: Path) -> None:
     user_msg = call_kwargs.kwargs["messages"][0]["content"]
     assert finding.prediction in user_msg
     assert "- import os" in user_msg
+
+
+# ---------------------------------------------------------------------------
+# _build_reflect_system_prompt tests
+# ---------------------------------------------------------------------------
+
+
+def test_build_reflect_system_prompt_default_is_base() -> None:
+    """Default reflect_lenses ['prediction', 'model_claim', 'blind_spot'] -> base prompt unchanged."""
+    result = _build_reflect_system_prompt(["prediction", "model_claim", "blind_spot"])
+    assert result == _BASE_REFLECT_SYSTEM
+
+
+def test_build_reflect_system_prompt_security_lens_injected() -> None:
+    """Adding 'security' to reflect_lenses injects security reflection guidance."""
+    result = _build_reflect_system_prompt(["prediction", "model_claim", "blind_spot", "security"])
+    assert "security" in result.lower()
+    assert "Additional reflection lenses" in result
+    # Three numbered items must still be present
+    assert "1. Prediction accuracy" in result
+    assert "3. Blind spot" in result
+
+
+def test_build_reflect_system_prompt_unknown_lens_ignored() -> None:
+    """Unknown lens names are silently ignored — forward-compatible."""
+    result = _build_reflect_system_prompt(["prediction", "model_claim", "blind_spot", "nonexistent_lens"])
+    assert result == _BASE_REFLECT_SYSTEM

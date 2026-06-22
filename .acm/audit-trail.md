@@ -4842,3 +4842,119 @@ performance, waste) aligns with the PEA skill suite improve skill lenses.
    the silent-ignore blind spot. Low risk, catches operator typos.
 3. Run `ai-steward run` -- observe what SCAN proposes now that lenses is functional;
    the autonomous pipeline has never run with a live lenses mechanism.
+
+---
+
+## 2026-06-22 — wire-reflect-lenses-into-reflect-system-prompt
+
+- target: ai-steward (src/ai_steward/pipeline/reflect.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve
+- outcome: CHANGE ACCEPTED — reflect_lenses config field now live; _build_reflect_system_prompt wires custom lenses into REFLECT
+
+### Ask
+
+"Lets do this, use improve skill" — following the wire-lenses-into-scan-system-prompt entry
+whose top candidate was "Wire reflect_lenses into reflect.py -- closes the asymmetry noted
+in Reflection." reflect_lenses has been dead config since it was added last cycle.
+
+### Examination
+
+**Purpose lens:** _REFLECT_SYSTEM is a static constant in reflect.py. The three numbered
+items in it (prediction accuracy, model claim, blind spot) correspond exactly to the three
+items in config.reflect_lenses's default value ["prediction", "model_claim", "blind_spot"].
+But config.reflect_lenses is not referenced anywhere in reflect.py. The call site was
+system=_REFLECT_SYSTEM — a string constant, not derived from config at all.
+
+**Inconsistency lens:** SCAN now has _build_system_prompt(config.lenses) — lenses are live.
+REFLECT still had system=_REFLECT_SYSTEM — a static constant ignoring config.reflect_lenses.
+An operator who adds 'security' to both lenses and reflect_lenses would see SCAN apply
+security examination focus but REFLECT ignore it. The asymmetry is documented as a known
+defect in the lenses trail entry.
+
+**Waste lens:** config.reflect_lenses exists and is not used. Dead config.
+
+### Decision
+
+**[!DECISION]** Mirror the scan.py lenses architecture in reflect.py:
+- _REFLECT_SYSTEM renamed to _BASE_REFLECT_SYSTEM (no content change)
+- _REFLECT_LENS_INSTRUCTIONS: dict[str, str] with 4 keys (security, overburden, performance, waste)
+  using same vocabulary as _LENS_INSTRUCTIONS in scan.py, but framed as reflection guidance
+  (comment on security implications, responsibilities, performance, waste patterns)
+- _BUILTIN_REFLECT_LENSES = frozenset({'prediction', 'model_claim', 'blind_spot'})
+- _build_reflect_system_prompt(lenses: list[str]) -> str
+  Injects after item 3, before the "Two or three short paragraphs" style instruction
+- Call site updated: system=_REFLECT_SYSTEM -> system=_build_reflect_system_prompt(config.reflect_lenses)
+
+Alternative rejected: Document-only (note that the three default items are already in the
+base prompt). Honest but doesn't close dead config. Same rejection as lenses wiring entry.
+
+**Prediction:** Default ['prediction', 'model_claim', 'blind_spot'] produces IDENTICAL
+system prompt. Custom lenses inject additional reflection guidance after item 3 and before
+the style instructions. Unknown lenses silently ignored. 107 tests pass (104 + 3 new).
+Zero behavior change for existing deployments.
+
+### Action
+
+Renamed _REFLECT_SYSTEM to _BASE_REFLECT_SYSTEM (no content change).
+Added _REFLECT_LENS_INSTRUCTIONS: dict[str, str] with 4 lens keys.
+Added _BUILTIN_REFLECT_LENSES: frozenset({'prediction', 'model_claim', 'blind_spot'}).
+Added _build_reflect_system_prompt(lenses: list[str]) -> str.
+Changed reflect() call site to system=_build_reflect_system_prompt(config.reflect_lenses).
+Added 3 tests in test_reflect.py: default-is-base, security-injection, unknown-ignored.
+
+Verified:
+- _build_reflect_system_prompt(['prediction', 'model_claim', 'blind_spot']) == _BASE_REFLECT_SYSTEM: True
+- Security injection present and before style instructions: True
+- Unknown lens silently ignored: True
+107 tests pass. Prediction held exactly.
+
+### Reflection
+
+**Model of target:** Both lenses mechanisms are now live and symmetric. SCAN applies
+operator-configured lenses during examination (Step 2); REFLECT applies operator-configured
+lenses during post-cycle reflection. An operator who adds 'security' to lenses and
+'security' to reflect_lenses gets security focus in both phases. The vocabulary
+(security, overburden, performance, waste) is now consistent across SCAN, REFLECT, and
+the PEA improve skill lens descriptions.
+
+**Blind spot:** The injection point for reflect_lenses (after item 3, before style
+instructions) was chosen by analogy with scan.py's injection (between Step 2 and Step 3).
+But the reflect prompt is much shorter (~100 chars between item 3 and the marker) -- it's
+possible the model treats the injected guidance as an additional item to cover, or ignores
+it as a trailing note. This has not been tested with a live model call. The unit tests
+verify the string injection; whether the model responds to it well is an empirical question.
+
+**Imagined expert pushback:** "The reflect_lenses and lenses fields are separate config keys
+with separate vocabularies. An operator who wants 'security' in both has to set it twice.
+Why not a single lenses field that governs both phases?" Valid. The current design mirrors
+the scan/reflect separation and keeps the two phases independently tunable. A convenience
+alias or a shared config field could unify them in V2.
+
+Trigger evaluations:
+- Recurring finding-class: FIRED -- lenses wiring in SCAN (previous entry), then reflect_lenses
+  wiring in REFLECT (this entry). Pattern: dead config fields wired in successive improve cycles.
+  The class may now be exhausted (both lenses fields are live). [!REALIZATION] below.
+- About to declare silence: evaluating -- all dead config is now wired. Candidate silence on
+  dead-config class is real. Not fired because this specific change was made.
+- Contradicts prior [!REALIZATION]: FIRED -- prior realization "lenses field is dead config"
+  was reversed last cycle. This entry closes the companion: reflect_lenses was also dead config.
+  Both reversals now complete.
+- Operator explicitly asked: fired (improve skill invoked directly).
+
+**[!REALIZATION]** All operator-configurable fields are now live: lenses, reflect_lenses,
+acm_scope_depth, destination_budget_chars, binary_heuristic_bytes, default_skip_dirs,
+allow_dirty, max_iterations, budget_usd, max_tokens_*, sandbox, scope, verify_command.
+No dead config remains in the V1 surface. The config schema reflects what the pipeline
+actually does.
+
+### Candidate Next Moves
+
+1. Run `ai-steward run` -- first pipeline run with both lenses and reflect_lenses live.
+   The autonomous pipeline has never executed with functional lenses in either phase.
+   This is the highest-value next action: empirical validation of the wiring.
+2. Multi-cycle convergence testing (retrospect #1) -- run the loop until SCAN returns
+   nothing_found. Tests compounding behavior invisible in single-cycle runs. All
+   structural blockers are now cleared.
+3. Add field_validator for lenses/reflect_lenses in config.py -- warns on unknown lens
+   names (e.g., typo 'securty'). Low risk, closes the silent-ignore blind spot in both phases.
