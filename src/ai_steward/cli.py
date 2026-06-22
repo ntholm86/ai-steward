@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from ai_steward.config import AiStewardConfig
 from ai_steward.pipeline import run as pipeline_run
 from ai_steward.pipeline.reorient import reorient as reorient_phase, write_retrospect
+from ai_steward.pipeline.escalate import escalate as escalate_phase, write_report as write_escalate_report
 from ai_steward.pipeline.graduate import graduate as graduate_phase, write_proposal as write_graduate_proposal
 
 
@@ -105,6 +106,9 @@ max_tokens_implement: 4096  # IMPLEMENT: full file rewrites can be large
 max_tokens_reflect: 400     # REFLECT: concise post-cycle reflection
 max_tokens_reorient: 8192   # REORIENT: arc-level reading needs large output
 max_tokens_graduate: 4096   # GRADUATE: silence classification + proposal
+max_tokens_escalate: 2048   # ESCALATE: focused failure diagnosis (smaller budget)
+
+escalate_streak: 3          # auto-ESCALATE after N consecutive failures (0 disables)
 
 learning_budget_chars: 5000        # chars of learning.md delivered to SCAN (tail-first; 500 was ~1 marker)
 
@@ -285,6 +289,7 @@ def run_loop(repo: str) -> None:
         sys.exit(1)
 
     nothing_found_streak = 0
+    failure_streak = 0
     successful_cycles = 0
 
     for cycle in range(1, config.max_iterations + 1):
@@ -297,6 +302,7 @@ def run_loop(repo: str) -> None:
         elif result.status == "proposed":
             assert result.finding is not None
             nothing_found_streak = 0
+            failure_streak = 0
             successful_cycles += 1
             click.echo(
                 f"  PROPOSED: {result.finding.description}\n"
@@ -320,6 +326,7 @@ def run_loop(repo: str) -> None:
                     click.echo(f"REORIENT complete ({in_tok} in / {out_tok} out)")
         elif result.status == "nothing_found":
             nothing_found_streak += 1
+            failure_streak = 0
             click.echo(f"  NOTHING FOUND (streak: {nothing_found_streak})")
             if nothing_found_streak >= 2:
                 click.echo(
@@ -343,6 +350,28 @@ def run_loop(repo: str) -> None:
                 return
         elif result.status in ("verify_failed", "implement_failed"):
             nothing_found_streak = 0
-            click.echo(f"  {result.status.upper()}: {result.acm_entry}")
+            failure_streak += 1
+            click.echo(f"  {result.status.upper()}: {result.acm_entry} (failure streak: {failure_streak})")
+            if config.escalate_streak > 0 and failure_streak >= config.escalate_streak:
+                trail_file = repo_path / ".acm" / "audit-trail.md"
+                if trail_file.exists():
+                    click.echo(
+                        f"\nESCALATE: {failure_streak} consecutive failures"
+                        " — classifying failure pattern..."
+                    )
+                    report, e_in_tok, e_out_tok = escalate_phase(
+                        repo_path, config,
+                        trigger=f"failure_streak_{failure_streak}",
+                        current_error=result.acm_entry,
+                    )
+                    report_path = write_escalate_report(repo_path, report)
+                    click.echo(
+                        f"ESCALATE complete ({e_in_tok} in / {e_out_tok} out)\n"
+                        f"  Report: {report_path}\n"
+                        f"  Review the report and decide: fix tooling, adjust config, or update destination."
+                    )
+                else:
+                    click.echo("Escalation limit reached. Check errors above.")
+                return
 
     click.echo(f"\nMax iterations ({config.max_iterations}) reached.")

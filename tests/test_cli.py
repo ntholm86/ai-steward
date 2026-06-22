@@ -179,3 +179,28 @@ def test_run_loop_triggers_reorient_at_interval(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert mock_reorient.call_count == 1
     assert "REORIENT" in result.output
+
+
+def test_run_loop_escalates_on_failure_streak(tmp_path: Path) -> None:
+    """Three consecutive failures trigger ESCALATE and stop the loop."""
+    config_text = _MINIMAL_CONFIG + "escalate_streak: 3\n"
+    (tmp_path / ".ai-steward.yaml").write_text(config_text, encoding="utf-8")
+    acm_dir = tmp_path / ".acm"
+    acm_dir.mkdir()
+    (acm_dir / "audit-trail.md").write_text("# Trail\n", encoding="utf-8")
+
+    verify_failed = LoopResult(
+        status="verify_failed",
+        finding=_make_finding(),
+        diff="--- a\n+++ b\n",
+        acm_entry="VERIFY FAILED: 3 test errors",
+    )
+    runner = CliRunner()
+    with patch("ai_steward.cli.pipeline_run", return_value=verify_failed), \
+         patch("ai_steward.cli.escalate_phase", return_value=("report", 100, 40)) as mock_escalate, \
+         patch("ai_steward.cli.write_escalate_report", return_value=acm_dir / "escalate_report.md"):
+        result = runner.invoke(main, ["run-loop", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    assert mock_escalate.call_count == 1
+    assert "ESCALATE" in result.output
