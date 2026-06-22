@@ -10,6 +10,7 @@ import yaml
 from pydantic import ValidationError
 
 from ai_steward.config import AiStewardConfig
+from ai_steward.harness import harness_session
 from ai_steward.pipeline import run as pipeline_run
 from ai_steward.pipeline.reorient import reorient as reorient_phase, write_retrospect
 from ai_steward.pipeline.escalate import escalate as escalate_phase, write_report as write_escalate_report
@@ -256,7 +257,8 @@ def reorient(repo: str) -> None:
         sys.exit(1)
 
     click.echo(f"REORIENT: Reading trail and forming arc-claims...")
-    content, in_tok, out_tok = reorient_phase(repo_path, config, trigger="manual")
+    with harness_session(repo_path, config.harness):
+        content, in_tok, out_tok = reorient_phase(repo_path, config, trigger="manual")
     retro_path = write_retrospect(repo_path, content)
 
     click.echo(f"REORIENT complete")
@@ -333,9 +335,10 @@ def run_loop(repo: str) -> None:
                         f"\nREORIENT: {successful_cycles} successful cycles"
                         " — re-reading trail..."
                     )
-                    content, in_tok, out_tok = reorient_phase(
-                        repo_path, config, trigger="auto"
-                    )
+                    with harness_session(repo_path, config.harness):
+                        content, in_tok, out_tok = reorient_phase(
+                            repo_path, config, trigger="auto"
+                        )
                     write_retrospect(repo_path, content)
                     click.echo(f"REORIENT complete ({in_tok} in / {out_tok} out)")
         elif result.status == "nothing_found":
@@ -350,9 +353,10 @@ def run_loop(repo: str) -> None:
                 trail_file = repo_path / ".acm" / "audit-trail.md"
                 if trail_file.exists():
                     click.echo("GRADUATE: classifying silence — reading destination and trail...")
-                    proposal, g_in_tok, g_out_tok = graduate_phase(
-                        repo_path, config, trigger=f"nothing_found_streak_{nothing_found_streak}"
-                    )
+                    with harness_session(repo_path, config.harness):
+                        proposal, g_in_tok, g_out_tok = graduate_phase(
+                            repo_path, config, trigger=f"nothing_found_streak_{nothing_found_streak}"
+                        )
                     proposal_path = write_graduate_proposal(repo_path, proposal)
                     click.echo(
                         f"GRADUATE complete ({g_in_tok} in / {g_out_tok} out)\n"
@@ -373,11 +377,12 @@ def run_loop(repo: str) -> None:
                         f"\nESCALATE: {failure_streak} consecutive failures"
                         " — classifying failure pattern..."
                     )
-                    report, e_in_tok, e_out_tok = escalate_phase(
-                        repo_path, config,
-                        trigger=f"failure_streak_{failure_streak}",
-                        current_error=result.acm_entry,
-                    )
+                    with harness_session(repo_path, config.harness):
+                        report, e_in_tok, e_out_tok = escalate_phase(
+                            repo_path, config,
+                            trigger=f"failure_streak_{failure_streak}",
+                            current_error=result.acm_entry,
+                        )
                     report_path = write_escalate_report(repo_path, report)
                     click.echo(
                         f"ESCALATE complete ({e_in_tok} in / {e_out_tok} out)\n"
