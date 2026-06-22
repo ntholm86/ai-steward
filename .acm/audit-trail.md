@@ -5921,3 +5921,45 @@ Trigger evaluations:
 1. **allow_dirty warning in run-loop** -- startup check: if allow_dirty is False, warn that staged changes from PROPOSED cycles will block subsequent cycles. One guard, prevents the live surprise.
 2. **history.md -> REORIENT** -- last ACM symmetry gap. But test against the new principle: does the compressed timeline table change REORIENT arc-claims? Only if the trail is truncating meaningful early history. Low confidence it passes the cognitive yield test right now.
 3. **Retrospect update** -- claims #4 and #5 are now stale (run-loop exists, GRADUATE and ESCALATE implemented). A retrospect run would refresh them.
+
+---
+
+## 2026-06-22 -- feat(run-loop): allow_dirty startup warning
+
+- target: ai-steward (cli.py run-loop command)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve v3.10.0
+- outcome: CHANGE ACCEPTED -- 177 tests pass
+
+### Interpretation
+
+Agent-initiated direction from underspecified "continue." Three candidates; chose allow_dirty warning as the simplest high-value structural defensive change. Proceeding on assumption: "the allow_dirty footgun is the most actionable next step."
+
+### Lenses applied
+
+**Waste lens:** The run-loop detects the clean-tree failure correctly and reports it correctly. But the operator receives zero advance notice. The detection produces a correct but confusing message at cycle 2. The warning converts a surprising failure into a predicted one -- no logic change, zero cognitive waste.
+
+**Purpose lens:** run-loop's purpose is to run the robot to convergence without requiring human attention between cycles. A cycle-2 PRE-FLIGHT failure breaks that purpose silently. The warning restores operator awareness at startup when it's actionable.
+
+### [!DECISION]
+
+Add a startup warning when allow_dirty is False: "each PROPOSED cycle stages changes -- PRE-FLIGHT requires clean tree -- commit or discard to continue." No behavior change. Purely informational. Suppressed when allow_dirty is True (operator opted in to dirty-tree operation and knows the implications).
+
+**Prediction:** 175 + 1 = 176 tests. Actual: 177. Off by 1 -- wrote positive + negative warning tests rather than just one.
+
+### Reflection
+
+**Model claim:** The operator now receives the behavioral contract of run-loop at startup, not at failure. This is the correct moment: when there is still time to set allow_dirty: true if that is the intended operation mode.
+
+**Blind spot:** The warning fires on every run-loop invocation, including runs where the operator already knows the behavior. It is not suppressed after first run. This is low-friction noise for experienced operators. Acceptable for V1; a future .acm/flags.md could track "operator has seen this warning."
+
+Trigger evaluations:
+- Recurring finding-class: not fired
+- About to declare silence: not fired
+- Contradicts prior [!REALIZATION]: not fired
+- Operator explicitly asked: FIRED
+
+### Candidate Next Moves
+
+1. **Retrospect run** -- claims #4 and #5 are factually stale (run-loop now exists; GRADUATE and ESCALATE implemented). A live retrospect run would refresh them for the next improve session.
+2. **history.md -> REORIENT** -- last ACM symmetry gap. Test against cognitive yield principle before committing budget: does the compressed timeline table change REORIENT arc-claims beyond what the trail itself provides?
