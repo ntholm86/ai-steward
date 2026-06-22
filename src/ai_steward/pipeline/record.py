@@ -95,10 +95,16 @@ def _build_entry(finding: Finding, diff: str, harness_session_path: str | None =
         f"*Risk:* {finding.risk}\n\n"
         f"**Prediction:** {finding.prediction or finding.proposed_change}  \n\n"
         f"**Lenses applied:**\n"
-        f"- *Commander\u2019s Intent:* Operator destination (`.acm/destination.md`) "
-        f"loaded \u2014 improvement selected against stated direction.\n"
-        f"- *Code examination:* Repository files within scope scanned for structural improvements.\n\n"
-        f"**Blind spot:** {finding.blind_spot or 'Not identified for this run.'}\n\n"
+        + (
+            finding.examination_summary + "\n\n"
+            if finding.examination_summary
+            else (
+                f"- *Commander\u2019s Intent:* Operator destination (`.acm/destination.md`) "
+                f"loaded \u2014 improvement selected against stated direction.\n"
+                f"- *Code examination:* Repository files within scope scanned for structural improvements.\n\n"
+            )
+        )
+        + f"**Blind spot:** {finding.blind_spot or 'Not identified for this run.'}\n\n"
         f"**File:** `{finding.file}`  \n"
         f"**Tokens:** "
         f"SCAN {finding.input_tokens}/{finding.output_tokens} "
