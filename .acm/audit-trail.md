@@ -5996,3 +5996,52 @@ Trigger evaluations:
 
 1. **Live multi-cycle run-loop validation** -- requires a reachable harness. The single highest-value unproven behavior. Would exercise REORIENT, GRADUATE, ESCALATE end-to-end and validate retrospect-rewrite quality.
 2. **budget_usd cost-cap enforcement** -- add a cost field to LoopResult and a cumulative check in run-loop. The only safety limit today is max_iterations.
+
+---
+
+## 2026-06-22 -- feat(budget): enforce budget_usd cost cap in run-loop
+
+- target: ai-steward (pipeline/_types.py + loop.py + config.py + cli.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve v3.10.0
+- outcome: CHANGE ACCEPTED -- 180 tests pass
+
+### Interpretation
+
+Agent-initiated from underspecified "use improve." Retrospect claim #5 identified budget_usd as a dead config field. Claim #10 ("no dead config remains") was inconsistent with claim #5. Chose budget_usd enforcement as the highest-value non-harness-dependent structural gap.
+
+### Lenses applied
+
+**Inconsistency lens:** Claim #10 and claim #5 contradicted each other. "No dead config remains" was false because budget_usd had no runtime effect. This is the exact falsification condition for claim #10 -- a config field with no effect on pipeline behavior.
+
+**Purpose lens:** The safety guarantee "stop before spending $X" is a hard operator requirement, not a secondary concern. Without enforcement, the operator's budget_usd setting is a social contract (they trust the loop to stop) rather than a structural guarantee (it will stop). The founding architectural principle says structural guarantees over social contracts.
+
+### [!DECISION]
+
+Add cycle_cost_usd to LoopResult. Compute from Finding tokens (SCAN+IMPLEMENT+REFLECT). Accumulate in run-loop. Stop when cumulative total >= budget_usd.
+
+Config: two per-million-token rate fields with haiku-4-5 defaults. Operator must update for their model -- documented in CONFIG_TEMPLATE.
+
+Known V1 limitation: nothing_found cycles show 0 cost (SCAN tokens not stored when finding is None). This undercounts but is honest -- the cheap cycles are not the cost risk. The expensive cycles (proposed) all track accurately.
+
+Incidental fix: impl token assignment moved before the "not ok" check in implement_failed path. Previously a failed IMPLEMENT cycle lost its token counts.
+
+**Prediction:** 177 + 3 tests = 180. Actual: 180. Exact.
+
+### Reflection
+
+**Model claim:** budget_usd is now a structural guarantee, not a dead field. Claim #10 is no longer inconsistent with claim #5. The operator can set budget_usd: 1.0 and trust the loop will stop near that limit (±1 cycle cost).
+
+**Blind spot:** The per-token rates default to haiku-4-5. If the operator runs with a more expensive model (sonnet, opus) without updating the rates, the budget check fires later than expected. The CONFIG_TEMPLATE comment says "update for your model" but nothing enforces this. A future improvement could compute cost from the harness session's captured token logs rather than estimating from static rates.
+
+Trigger evaluations:
+- Inconsistency (claim #10 vs claim #5): FIRED
+- Operator explicitly asked: FIRED (underspecified "use improve")
+- Recurring finding-class: not fired
+- About to declare silence: not fired
+
+### Candidate Next Moves
+
+1. **Convergence Is Silence check** -- the remaining structural gaps are now small or require live validation. The next improve run may genuinely find nothing. That is the correct outcome if the destination's V1 scope is complete.
+2. **Live multi-cycle run-loop validation** -- requires harness. All structural work is done; behavioral validation is the frontier.
+3. **history.md -> REORIENT** -- last ACM memory symmetry gap. Still worth testing against the cognitive yield principle: does the compressed timeline change REORIENT arc-claims? Evidence needed before committing budget.
