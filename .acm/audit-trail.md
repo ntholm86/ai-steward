@@ -3567,3 +3567,76 @@ Changes made:
 4. **Fix mojibake in loop.py comments** — cosmetic but the file has mixed encodings; a clean pass would write all em dashes as U+2014.
 
 *Staged for operator review. Not committed.*
+
+---
+
+## 2026-06-22 — fix(cli): CONFIG_TEMPLATE exposes full operator-tunable surface
+
+- target: ai-steward — src/ai_steward/cli.py, tests/test_cli.py
+- operator: Nils Holmager
+- agent: claude-sonnet-4-6 (GitHub Copilot)
+- skill: improve v3.10.0
+- outcome: `ai-steward init` now produces a config that exposes all tunable parameters
+- delta: _CONFIG_TEMPLATE +10 lines; 1 new test; 94 → 95 tests
+
+### Interpretation of the ask
+
+"use improve skill" — underspecified. Applied the agent-initiated direction protocol: formed 3 hunches from destination, retrospect.md, and recent trail entries; selected the one falsifiable question with highest discoverability impact: "Does `ai-steward init` expose all operator-tunable parameters?"
+
+Retrospect.md claim #2 (multi-cycle convergence) is the highest-priority untested claim, but it requires a live run that can't be executed in this session without the proxy. Trail entry 48 named `_CONFIG_TEMPLATE` as an explicit blind spot. That's the gap to close.
+
+### Examination
+
+**Purpose lens:** `_CONFIG_TEMPLATE` is the first-contact artefact for new adopters. It's what `ai-steward init` writes. The current template showed only `models` and `verify_command`. Three token budget fields (`max_tokens_scan`, `max_tokens_implement`, `max_tokens_reflect`), two safety caps (`max_iterations`, `budget_usd`), and `allow_dirty` were all added to `AiStewardConfig` after the template was written and never backfilled.
+
+An operator running `ai-steward init` today would not know these parameters exist without reading `config.py` source. This directly contradicts the destination's "widely adoptable" purpose — adoption requires discoverability.
+
+**Inconsistency lens:** The working self-targeting `.ai-steward.yaml` has `max_iterations: 1`, `budget_usd: 1.0`, `max_tokens_scan: 4096`, `max_tokens_implement: 4096`, `allow_dirty: false`. None of these appear in `_CONFIG_TEMPLATE`. The authoritative example config and the generated init config are inconsistent.
+
+**Waste lens:** The new fields in the template add no code — just documentation text with sensible defaults. The cost of omitting them was operators not knowing the tuning surface exists.
+
+### Decision
+
+[!DECISION] Backfill `_CONFIG_TEMPLATE` with the full operator-tunable surface: `max_tokens_scan`, `max_tokens_implement`, `max_tokens_reflect`, `max_iterations`, `budget_usd`, `allow_dirty`. Add inline comments explaining what each controls and why the default was chosen.
+
+Rejected: adding `scope`, `harness`, `sandbox` to the template. These are advanced settings; the defaults are safe and the template should stay focused on the most common tuning needs. Scope restrictions are better added manually when the operator knows their target.
+
+### Prediction
+
+`_CONFIG_TEMPLATE` will expose all six fields with defaults and comments. The existing test (`"claude-haiku-4-5" in config.read_text()`) passes (superset). A new test asserts all six fields appear. 94 → 95 tests. No behaviour change — the template only affects `ai-steward init` output.
+
+What will NOT happen: no change to the working `.ai-steward.yaml`, no change to `config.py` defaults, no change to any runtime behaviour.
+
+### Action
+
+Prediction held. 95/95 tests pass, mypy clean.
+
+`cli.py`: `_CONFIG_TEMPLATE` extended from 9 lines to 19 lines. Added three `max_tokens_*` fields, `max_iterations`, `budget_usd`, `allow_dirty` with explanatory inline comments.
+
+`test_cli.py`: Added `test_init_config_includes_full_tuning_surface` — asserts all six fields appear in generated config. This test would have caught the blind spot at the time each field was added to `config.py`.
+
+### Reflection
+
+**Current model of the target as a falsifiable claim:** The `_CONFIG_TEMPLATE` drift pattern is structural, not accidental. Every time a new config field is added to `AiStewardConfig`, the template must be updated manually. There is no enforcement. This will happen again unless the test added in this iteration is treated as the contract: if a field is added to `AiStewardConfig` and not to `_CONFIG_TEMPLATE`, the test fails.
+
+[!REALIZATION] The template test (`test_init_config_includes_full_tuning_surface`) is itself a governance mechanism — it enforces the invariant that operator-tunable fields are discoverable. The field list in the test should be updated whenever `AiStewardConfig` gains a new user-facing field. Without this test, the drift recurred silently three times (max_tokens_scan, max_tokens_implement, max_tokens_reflect).
+
+**Blind spot:** The `scope` section (`allowed`/`blocked`) is absent from the template. An operator who wants to restrict which files the pipeline touches has to know the YAML key exists. Scope is not a rare need — it prevents the pipeline from touching test files or docs. Whether to add it to the template is a judgment call deferred here.
+
+**What a knowledgeable reader would push back on:** The `scope` omission. The template now surfaces all *cost/safety* parameters but still omits the *targeting* parameter most operators will need once they've run the pipeline for the first time and want to restrict scope.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* FIRED — this is the fourth new config field that was added without updating the template (max_tokens_scan, max_tokens_implement, max_tokens_reflect, now fixed in batch). The test added here is the structural fix for this recurring class.
+- *About to declare silence:* not fired — a change was made.
+- *Contradicts prior [!REALIZATION]:* not fired — no prior realization argued against template completeness.
+- *Operator explicitly asked:* not fired for this specific fix; operator said "use improve skill."
+
+*Across-trail macro:* The recurring-class trigger fired. Arc pattern: every new config field has been added to `config.py` correctly and promptly, but `_CONFIG_TEMPLATE` and `destination.md`'s cost model have both lagged. The code is accurate; the documentation/discoverability layer consistently lags. The new test is the structural intervention.
+
+### Candidate Next Moves
+
+1. **Add `scope` to `_CONFIG_TEMPLATE`** — named blind spot in this entry; targeting is the first thing operators need after the basics.
+2. **Multi-cycle convergence test** — highest-priority untested architectural claim; requires live run with proxy running.
+3. **Cost model correction in destination.md** — retrospect claim #6, still stale ("$0.002 per cycle haiku"); 2-line append, low effort.
+
+*Staged for operator review. Not committed.*

@@ -55,6 +55,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 48 | 2026-06-22 | ai-steward: Add max_tokens_reflect config parameter for REFLECT phase |  |  |
 | â–¸ 49 | 2026-06-22 | live-validation: REFLECT phase first live run |  |  |
 | â–¸ 50 | 2026-06-22 | fix(harness): complete session coverage — all pipeline LLM calls captured | REFLECT moved inside harness context; session_paths list replaces single session_path; X-Harness-Session + HARNESS_SESSION_ID added for future proxy grouping | 88 tests → 92 tests; 6 files changed (+153/−67); mypy clean |
+| â–¸ 51 | 2026-06-22 | fix(cli): CONFIG_TEMPLATE exposes full operator-tunable surface | `ai-steward init` now produces a config that exposes all tunable parameters | _CONFIG_TEMPLATE +10 lines; 1 new test; 94 → 95 tests |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -307,4 +308,8 @@ Do not edit by hand â€” re-run the command to refresh.
 
 - **decided:** **Fix the Observable Autonomy gap in two layers:**
 
-**50 runs total â€” 50 with changes, 0 silence**
+### Run 51 â€” 2026-06-22 â€” fix(cli): CONFIG_TEMPLATE exposes full operator-tunable surface
+
+- **decided:** Backfill `_CONFIG_TEMPLATE` with the full operator-tunable surface: `max_tokens_scan`, `max_tokens_implement`, `max_tokens_reflect`, `max_iterations`, `budget_usd`, `allow_dirty`. Add inline comments explaining what each controls and why the default was chosen.
+
+**51 runs total â€” 51 with changes, 0 silence**

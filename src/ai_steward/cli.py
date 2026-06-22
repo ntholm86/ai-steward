@@ -83,6 +83,17 @@ models:
   judge: claude-haiku-4-5
 
 verify_command: python -m pytest --tb=no -q  # or: make test, npm test, etc.
+
+# Token budgets — raise if the model truncates output; lower to reduce cost.
+max_tokens_scan: 4096       # SCAN: 5-step reasoning needs ~4000; 1024 is too small
+max_tokens_implement: 4096  # IMPLEMENT: full file rewrites can be large
+max_tokens_reflect: 400     # REFLECT: concise post-cycle reflection
+
+# Safety limits — pipeline stops when either is reached.
+max_iterations: 10          # maximum improvement cycles per run
+budget_usd: 5.0             # cumulative cost cap in USD
+
+allow_dirty: false          # set true to run on repos with uncommitted changes
 """
 
 _DESTINATION_TEMPLATE = """\

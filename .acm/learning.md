@@ -505,6 +505,14 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** :* not fired — no prior realization contradicted; the REFLECT harness attribution gap was named as open in the last retrospect (claim 3: "Reflection now also complete. Remaining: multi-cycle convergence, REFLECT harness attribution, external repo testing.").
 
+## 2026-06-22 â€” fix(cli): CONFIG_TEMPLATE exposes full operator-tunable surface
+
+**[!REALIZATION]** The template test (`test_init_config_includes_full_tuning_surface`) is itself a governance mechanism — it enforces the invariant that operator-tunable fields are discoverable. The field list in the test should be updated whenever `AiStewardConfig` gains a new user-facing field. Without this test, the drift recurred silently three times (max_tokens_scan, max_tokens_implement, max_tokens_reflect).
+
+## 2026-06-22 â€” fix(cli): CONFIG_TEMPLATE exposes full operator-tunable surface
+
+**[!REALIZATION]** :* not fired — no prior realization argued against template completeness.
+
 ---
 
-**125 markers â€” 95 realisations, 30 reversals**
+**127 markers â€” 97 realisations, 30 reversals**
