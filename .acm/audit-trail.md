@@ -5831,3 +5831,40 @@ Trigger evaluations:
 1. **ESCALATE phase** -- the stuck/failure-pattern equivalent of GRADUATE. When the same failure class repeats N times, classify the cause (TOOLING_BROKEN, PIPELINE_BOTTLENECK, DESTINATION_UNREACHABLE, CONTEXT_INSUFFICIENT) and surface to operator.
 2. **allow_dirty warning in run-loop** -- startup check: if allow_dirty is False, warn that staged changes from PROPOSED cycles will block subsequent cycles. Prevents the live surprise.
 3. **history.md into REORIENT** -- last ACM symmetry gap. REORIENT doesn't receive the compressed timeline table. Small mechanical addition.
+
+---
+
+## 2026-06-22 -- Principle refinement: meaningful ACM memory symmetry
+
+- target: .acm/destination.md
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve v3.10.0
+- outcome: REALIZATION CAPTURED -- no code change
+
+### Interpretation
+
+Operator correction to the [!REALIZATION] recorded during the ACM memory symmetry session:
+
+> "ACM memory symmetry is a structural requirement -- unread memory is wasted evidence."
+
+This is correct but asymmetric. The operator added: cost-efficiency is an equally structural requirement. Reading without cognitive necessity is also waste. The principle has two sides and the original capture only stated one.
+
+### [!REALIZATION] -- Meaningful symmetry, not maximal symmetry
+
+ACM memory reads must be earned by cognitive necessity. Two constraints hold simultaneously:
+
+1. Memory never read is wasted evidence -- the information never reaches the reasoning that needs it.
+2. Reads that do not change reasoning are wasted tokens -- cost is a structural constraint, not a secondary concern.
+
+The governing rule is therefore not "read everything at the right depth" but:
+**Read what the cognitive phase needs, at the depth that changes its reasoning, within cost bounds.**
+
+A phase that reads 20,000 chars of learning.md when the phase's reasoning does not depend on those accumulated realizations is waste -- even if the read is architecturally "symmetric." Before assigning any token budget to a read, the test is: does this information change what this phase does? If no, the read earns no budget.
+
+This corrects the implicit model: memory symmetry is not about coverage, it is about cognitive yield per token.
+
+### Trigger evaluations
+- Contradicts prior [!REALIZATION]: FIRED -- prior realization stated only the "must read" direction. This amendment makes it symmetric: both unread evidence and unnecessary reads are waste.
+- Operator explicitly asked: FIRED
+- Recurring finding-class: not fired
+- About to declare silence: not fired

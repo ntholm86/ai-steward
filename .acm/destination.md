@@ -1660,3 +1660,22 @@ The skills suite does this manually (Retrospect step 4b: extract operational rul
 
 history.md is a compressed timeline table (46k chars) written by record.py. Nothing reads it. REORIENT could benefit from it as a fast-orientation layer — reading the table before reading the full trail gives a compressed map. This is lower priority than CODIFY but is the remaining ACM symmetry gap.
 
+
+---
+
+## 2026-06-22 - Amendment: meaningful symmetry, not maximal symmetry
+
+The memory symmetry principle stated earlier ("every written file must have a reader at appropriate cognition depth") is correct but one-sided.
+
+**Full corrected principle:**
+
+> Read what the cognitive phase needs, at the depth that changes its reasoning, within cost bounds.
+
+Two constraints hold simultaneously and with equal structural weight:
+
+1. **Unread memory is wasted evidence** -- the information never reaches the reasoning that needs it.
+2. **Reads that do not change reasoning are wasted tokens** -- cost-efficiency is a structural requirement, not a secondary concern.
+
+Before assigning token budget to any read in any phase, the test is: *does this information change what this phase does?* If no, the read earns no budget, regardless of architectural symmetry.
+
+Memory symmetry is not about coverage. It is about cognitive yield per token.
