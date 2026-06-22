@@ -441,6 +441,22 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** `_build_entry()` is now structurally aligned with the trail skill standard for all fields derivable from a single SCAN + IMPLEMENT cycle. The structural boundary is now clear: Prediction, Lenses, Blind spot come from the SCAN model’s JSON. Reflection, trigger evaluation, and Candidate Next Moves require a second reasoning pass after VERIFY. These are architecturally distinct — the first set is free (the model produces them as part of its reasoning); the second set costs an additional LLM call.
 
+## 2026-06-22 â€” live-validation: first self-targeting run with all field fixes
+
+**[!REALIZATION]** The first run’s NOTHING FOUND was caused by max_tokens=1024 being too small for the 5-step reasoning protocol. The model was correct, on-mandate, and reasoning well — it was the pipeline’s own token budget that cut it off. This is a structural failure mode: the reasoning quality upgrade (5-step protocol) was not accompanied by a corresponding token budget upgrade. V1 test suite passed but the live run exposed the gap. Live runs are the gate that unit tests cannot replace.
+
+## 2026-06-22 â€” live-validation: first self-targeting run with all field fixes
+
+**[!REALIZATION]** The second run validates all four field fixes simultaneously. The trail entry is structurally correct: Prediction is a genuine falsifiable statement from Step 4, Lenses applied shows actual file examination findings from Step 2, Blind spot names a specific area with a reason. The trail entry is now indistinguishable in quality from a human-supervised trail skill entry for these fields.
+
+## 2026-06-22 â€” live-validation: first self-targeting run with all field fixes
+
+**[!REALIZATION]** The IMPLEMENT phase strips trailing newlines when it regenerates files. This is a recurring artifact that should be handled: either IMPLEMENT’s prompt should explicitly say "preserve the trailing newline," or RECORD should append a newline if the file doesn’t end with one. Currently it requires operator intervention.
+
+## 2026-06-22 â€” live-validation: first self-targeting run with all field fixes
+
+**[!REALIZATION]** markers, ORIENT done, field alignment complete, live validation run. Arc-read is warranted.
+
 ---
 
-**109 markers â€” 80 realisations, 29 reversals**
+**113 markers â€” 84 realisations, 29 reversals**

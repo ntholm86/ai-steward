@@ -3029,3 +3029,117 @@ Imagined reader pushback: "The examination_summary is just the model summarizing
 1. **Run a live self-targeting scan to validate** — the four field fixes (prediction, orient, expected-outcome removal, examination_summary) have never been tested together in a real cycle. A live run confirms the new fields are populated correctly and the trail entry looks right.
 2. **Cost model correction in destination** — append to destination.md updating "$0.002 (haiku)" to actual ~$0.03/cycle. Operator-held document; human-supervised session.
 3. **Reflection call architecture** — design the second LLM call in `record.py` that synthesizes VERIFY outcome against the prediction. This is the next class of work, architecturally distinct from field additions.
+
+---
+
+## 2026-06-22 — ai-steward: Add verify_command to the config template to expose test runner control
+
+**[!DECISION]** Proposed: Add verify_command to the config template to expose test runner control  
+*Rationale:* The design rule states operator-facing controls belong in the config YAML. The verify command is already runtime-configurable but invisible in the template scaffolded by 'ai-steward init'. Surfacing it costs one line and prevents operators from needing to read source code to discover how to integrate non-pytest test runners.  
+*Risk:* low
+
+**Prediction:** This will make verify_command visible to operators in the scaffolded .ai-steward.yaml file. It will NOT change runtime behavior of existing configs that already set or omit this field.  
+
+**Lenses applied:**
+Examined config.py (verify_command already exists as a field with pytest default), _utils.py (run_verify_command accepts any shell command), and cli.py (_CONFIG_TEMPLATE omits verify_command entirely, making the control invisible to operators who run 'ai-steward init').
+
+**Blind spot:** src/ai_steward/pipeline/loop.py — did not examine whether PRE-FLIGHT/VERIFY error messages clearly distinguish between test failures and missing test commands when using non-default runners
+
+**File:** `src/ai_steward/cli.py`  
+**Tokens:** SCAN 16663/1552 — IMPL 1701/1482 — cycle est. $0.02683 USD  
+**Harness session:** `.acm/sessions/01KVPPTZ7R3BNCTT4GT8A1FE7F.jsonl`  
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/cli.py b/src/ai_steward/cli.py
+index 647513f..58dcf8e 100644
+--- a/src/ai_steward/cli.py
++++ b/src/ai_steward/cli.py
+@@ -81,6 +81,8 @@ models:
+   implement: claude-haiku-4-5
+   verify: claude-haiku-4-5
+   judge: claude-haiku-4-5
++
++verify_command: python -m pytest --tb=no -q  # or: make test, npm test, etc.
+ """
+ 
+ _DESTINATION_TEMPLATE = """\
+@@ -141,4 +143,4 @@ def init(repo: str) -> None:
+     click.echo("  1. Edit .acm/destination.md â€” describe what you want the codebase to become")
+     click.echo("  2. Set ANTHROPIC_API_KEY")
+     click.echo("  3. Start llm-harness-proxy on localhost:8474")
+-    click.echo(f"  4. Run: ai-steward run {repo_path}")
++    click.echo(f"  4. Run: ai-steward run {repo_path}")
+\ No newline at end of file
+
+```
+
+*Staged for operator review. Not committed.*
+
+---
+
+## 2026-06-22 — live-validation: first self-targeting run with all field fixes
+
+- target: ai-steward
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: improve v3.10.0 (live validation run)
+
+### Interpretation
+
+Operator: "lets do this." Context: candidate next move #1 from entry 42 was a live self-targeting scan to validate all four field fixes together (prediction, examination_summary, orient context, Expected outcome removal). This entry covers: first run (failed), root cause identified, fix implemented, second run (succeeded).
+
+### Run 1 — NOTHING FOUND (pipeline failure, not mandate rejection)
+
+Session: `.acm/sessions/01KVPPMZEYK73XWSX21CKMDJVB.jsonl`
+
+The model executed all 5 steps correctly:
+- Step 1: Quoted exact destination sentences about configurable operator controls
+- Step 2: Examined config.py, scan.py (max_tokens=1024), implement.py (max_tokens=4096)
+- Step 3: [!DECISION] add max_tokens_scan and max_tokens_implement to AiStewardConfig
+- Step 4: Falsifiable prediction (defaults preserved, operator-configurable)
+- Step 5: Blind spot named (cli.py init template would need updating)
+
+**Root cause of NOTHING FOUND:** `max_tokens=1024` truncated the model’s response at 3977 chars. The full 5-step reasoning consumed the budget before the JSON proposal was emitted. `_extract_json()` found no valid JSON — returned None — pipeline returned nothing_found.
+
+The model was proposing to fix the exact problem that caused it to fail. Self-demonstrating bug.
+
+### Fix: add max_tokens_scan and max_tokens_implement to AiStewardConfig
+
+[!DECISION] Implement the model’s own proposal: add `max_tokens_scan: int = 4096` and `max_tokens_implement: int = 4096` to AiStewardConfig; wire into scan.py and implement.py; update .ai-steward.yaml self-targeting config.
+
+Rationale: 1024 tokens was demonstrably insufficient for the 5-step reasoning protocol. 4096 is the same budget IMPLEMENT already used. Both defaults preserve existing behavior while enabling operator override.
+
+Alternative rejected: increase hardcoded 1024 to 4096 without making it configurable. Rejected because the destination explicitly requires operator-facing controls to be config parameters. Making it configurable implements the principle correctly.
+
+3 source files + .ai-steward.yaml. 81 tests pass. mypy clean.
+
+### Run 2 — PROPOSED (success)
+
+Session: `.acm/sessions/01KVPPTZ7R3BNCTT4GT8A1FE7F.jsonl`
+Cycle cost: $0.02683 USD. SCAN 16663/1552 tokens.
+
+Proposal: Add `verify_command` to the `_CONFIG_TEMPLATE` in `cli.py`
+
+Trail entry produced (entry 43 in audit-trail.md). Field validation:
+
+- **Prediction field**: "This will make verify_command visible to operators in the scaffolded .ai-steward.yaml file. It will NOT change runtime behavior of existing configs that already set or omit this field." — genuine falsifiable statement ✔
+- **examination_summary**: "Examined config.py (verify_command already exists as a field with pytest default), _utils.py (run_verify_command accepts any shell command), and cli.py (_CONFIG_TEMPLATE omits verify_command entirely, making the control invisible to operators who run 'ai-steward init')." — actual files read, actual findings ✔
+- **Blind spot**: "src/ai_steward/pipeline/loop.py — did not examine whether PRE-FLIGHT/VERIFY error messages clearly distinguish between test failures and missing test commands when using non-default runners" — specific, named, reasoned ✔
+
+One artifact: IMPLEMENT phase stripped trailing newline from cli.py. Restored before commit.
+
+Proposal accepted and committed.
+
+### [!REALIZATION]
+
+[!REALIZATION] The first run’s NOTHING FOUND was caused by max_tokens=1024 being too small for the 5-step reasoning protocol. The model was correct, on-mandate, and reasoning well — it was the pipeline’s own token budget that cut it off. This is a structural failure mode: the reasoning quality upgrade (5-step protocol) was not accompanied by a corresponding token budget upgrade. V1 test suite passed but the live run exposed the gap. Live runs are the gate that unit tests cannot replace.
+
+[!REALIZATION] The second run validates all four field fixes simultaneously. The trail entry is structurally correct: Prediction is a genuine falsifiable statement from Step 4, Lenses applied shows actual file examination findings from Step 2, Blind spot names a specific area with a reason. The trail entry is now indistinguishable in quality from a human-supervised trail skill entry for these fields.
+
+[!REALIZATION] The IMPLEMENT phase strips trailing newlines when it regenerates files. This is a recurring artifact that should be handled: either IMPLEMENT’s prompt should explicitly say "preserve the trailing newline," or RECORD should append a newline if the file doesn’t end with one. Currently it requires operator intervention.
+
+### Candidate Next Moves
+
+1. **Fix IMPLEMENT trailing-newline artifact** — add a newline guard in implement.py after writing the model’s output, or add "preserve trailing newline" to the IMPLEMENT system prompt.
+2. **Cost model correction in destination** — append to destination.md: "$0.002 (haiku)" is wrong; actual self-targeting cost is ~$0.027/cycle (SCAN 16663 tokens, claude-sonnet-4-5).
+3. **Retrospect** — the arc has moved significantly since the last retrospect (pre-orient-implementation). Multiple new [!REALIZATION] markers, ORIENT done, field alignment complete, live validation run. Arc-read is warranted.

@@ -47,6 +47,8 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 40 | 2026-06-21 | feat(orient): inject retrospect.md and learning.md into SCAN context |  |  |
 | â–¸ 41 | 2026-06-22 | fix(record): remove redundant Expected outcome line from trail entry |  |  |
 | â–¸ 42 | 2026-06-22 | feat(record): replace hardcoded lenses with examination_summary from SCAN Step 2 |  |  |
+| â–¸ 43 | 2026-06-22 | ai-steward: Add verify_command to the config template to expose test runner control |  |  |
+| â–¸ 44 | 2026-06-22 | live-validation: first self-targeting run with all field fixes |  |  |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -267,4 +269,13 @@ Do not edit by hand â€” re-run the command to refresh.
 - **decided:** Add `examination_summary: str = ""` to `Finding`, `"examination_summary"` to SCAN JSON schema, extract in `scan()`, and replace the two hardcoded lines in `_build_entry()` with the model’s value (fallback to generic lines if empty).
 - **decided:** (description + rationale + risk), Prediction (Step 4 falsifiable statement), Lenses (Step 2 examination summary), Blind spot (Step 5). The remaining gap is fundamentally different: Reflection (a second LLM call after VERIFY), across-trail trigger evaluation, and Candidate Next Moves. These require architecture changes to the pipeline, not field additions.
 
-**42 runs total â€” 42 with changes, 0 silence**
+### Run 43 â€” 2026-06-22 â€” ai-steward: Add verify_command to the config template to expose test runner control
+
+- **decided:** ** Proposed: Add verify_command to the config template to expose test runner control
+
+### Run 44 â€” 2026-06-22 â€” live-validation: first self-targeting run with all field fixes
+
+- **decided:** add max_tokens_scan and max_tokens_implement to AiStewardConfig
+- **decided:** Implement the model’s own proposal: add `max_tokens_scan: int = 4096` and `max_tokens_implement: int = 4096` to AiStewardConfig; wire into scan.py and implement.py; update .ai-steward.yaml self-targeting config.
+
+**44 runs total â€” 44 with changes, 0 silence**
