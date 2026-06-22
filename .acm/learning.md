@@ -417,6 +417,14 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** :* not fired — the claim that "retrospect.md is invisible to autonomous pipeline" is now resolved, consistent with prior arc.
 
+## 2026-06-22 â€” fix(record): remove redundant Expected outcome line from trail entry
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-22 â€” fix(record): remove redundant Expected outcome line from trail entry
+
+**[!REALIZATION]** The recurring-class trigger fired: three consecutive RECORD format fixes (prediction field, ORIENT context, Expected outcome). The pattern suggests `_build_entry()` was written as a rough first draft and is being incrementally corrected toward the trail skill standard. The remaining gap (Lenses boilerplate) follows the same pattern. One more iteration would complete the structural alignment. After that, the Reflection call (second LLM call) is a different category of work.
+
 ---
 
-**103 markers â€” 74 realisations, 29 reversals**
+**105 markers â€” 76 realisations, 29 reversals**

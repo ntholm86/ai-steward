@@ -2892,3 +2892,69 @@ Imagined reader pushback: "The parts-list join produces `---` separators between
 1. **Tune orient context budget** — run a live self-targeting scan and inspect what appears in the context window. 1000 chars may be too small for retrospect.md; 1500 chars would include operational rules.
 2. **Fix `*Expected outcome:*` semantic error in `_build_entry()`** — 2-line fix, zero-risk. `finding.rationale` is the why; the Expected outcome line should describe the predicted state of the target after the change.
 3. **Cost model correction in destination** — update Current State from "$0.002 (haiku)" to ~$0.03/cycle.
+
+---
+
+## 2026-06-22 — fix(record): remove redundant Expected outcome line from trail entry
+
+- target: ai-steward pipeline (record.py)
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: improve v3.10.0
+
+### Interpretation
+
+Operator: "run improve skill." Memory layer: retrospect.md identifies `*Expected outcome:* {finding.rationale}` as a 2-line zero-risk fix (claim 4, remaining structural errors). Candidate next move #2 from the last improve trail (entry 40, feat-orient). ORIENT is now done; this is the immediate next action from the ranked list.
+
+### Examination
+
+**Purpose lens:** `_build_entry()` produces trail entries. After the prediction field fix (entry 37), `finding.prediction` carries the Step 4 falsifiable statement. The `*Expected outcome:*` sub-line remained. It showed `finding.rationale` — the reason we’re making the change (e.g., "The workspace destination mandates token-efficiency"). 
+
+`*Rationale:* {finding.rationale}` appears three lines earlier in the same entry. The Expected outcome line was:
+1. **Redundant** — same content as Rationale, shown twice
+2. **Mislabeled** — an expected outcome is what will happen; a rationale is why we act
+
+**Waste lens:** a line that duplicates content and carries the wrong label has no justification in the trail format. The trail skill’s standard shows Prediction as a single statement, not a block with sub-fields.
+
+### [!DECISION]
+
+[!DECISION] Remove `f"*Expected outcome:* {finding.rationale}\n\n"` from `_build_entry()`. The Prediction field now carries a clean, single falsifiable statement.
+
+Rationale: the line added no information not already present in the Rationale field or the Prediction field. Removing it makes trail entries match the trail skill’s format standard.
+
+Alternative rejected: replace `finding.rationale` with `finding.prediction` (duplicate display). One clear Prediction statement is better than two. The trail skill shows Prediction as a single block — not a block plus a sub-field.
+
+### Prediction
+
+All 81 tests pass (no test checks for "Expected outcome" in record output). Future autonomous trail entries will have a Prediction section that contains exactly the Step 4 falsifiable statement — no duplicate, no mislabeled sub-field.
+
+### Action
+
+```diff
+-  f"**Prediction:** {finding.prediction or finding.proposed_change}  \n"
+-  f"*Expected outcome:* {finding.rationale}\n\n"
++  f"**Prediction:** {finding.prediction or finding.proposed_change}  \n\n"
+```
+
+1 file, 1 insertion, 2 deletions. 81 tests pass. mypy clean.
+
+### Reflection
+
+Current model: `_build_entry()` is now structurally closer to the trail skill standard. The remaining gap is the Lenses section — it emits two hardcoded generic lines ("Commander’s Intent loaded", "Code examination: Repository files scanned") regardless of what the model actually examined in its 5-step reasoning. The model’s lens application is in its Step 2 prose, which is discarded by `_extract_json()`. Capturing it would require a `lenses` JSON field, similar to how `prediction` was added.
+
+Blind spot: did not examine whether `proposed_change` is still the right fallback in `finding.prediction or finding.proposed_change`. If a model omits the `prediction` field from its JSON (which is now in the schema), the fallback is the change description — which is better than before (when it was always `proposed_change`) but still not a prediction. A future pass could make `prediction` required and fail-fast rather than silently falling back.
+
+Imagined reader pushback: "This is a cosmetic fix. The Lenses section is still boilerplate." Correct — the Lenses section is the next structural gap. But the ranked list is clear: 2-line fixes first (prediction field, Expected outcome line), then significant refactoring (Lenses extraction, Reflection call). Doing them in order prevents large scope from blocking small wins.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* FIRED — entries 37, 40, and 41 are all RECORD structural fixes. The loop has found three consecutive improvements in the trail-entry format. This is a pattern: `_build_entry()` was under-specified when first written and is being corrected field by field.
+- *About to declare silence on RECORD format:* not fired — Lenses boilerplate and Reflection remain.
+- *Contradicts prior [!REALIZATION]:* not fired.
+- *Operator explicitly asked:* not fired.
+
+[!REALIZATION] The recurring-class trigger fired: three consecutive RECORD format fixes (prediction field, ORIENT context, Expected outcome). The pattern suggests `_build_entry()` was written as a rough first draft and is being incrementally corrected toward the trail skill standard. The remaining gap (Lenses boilerplate) follows the same pattern. One more iteration would complete the structural alignment. After that, the Reflection call (second LLM call) is a different category of work.
+
+### Candidate Next Moves
+
+1. **Extract lenses from SCAN model output** — add a `lenses` JSON field to the SCAN prompt schema, extract it into `Finding`, emit it in `_build_entry()` instead of the hardcoded generic lines. Same pattern as the prediction field fix. Completes `_build_entry()`’s structural alignment with the trail skill standard.
+2. **Cost model correction in destination** — append a section to destination.md updating the "$0.002 (haiku)" figure to actual ~$0.03/cycle. Operator-held document; requires a human-supervised session to write.
+3. **Orient context budget tuning** — run a live self-targeting scan to inspect what retrospect.md content lands in the context window; 1000 chars may truncate before operational rules.

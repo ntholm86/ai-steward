@@ -45,6 +45,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 38 | 2026-06-21 | Retrospect: post-prediction-field |  |  |
 | â–¸ 39 | 2026-06-21 | Retrospect: pre-orient-implementation |  |  |
 | â–¸ 40 | 2026-06-21 | feat(orient): inject retrospect.md and learning.md into SCAN context |  |  |
+| â–¸ 41 | 2026-06-22 | fix(record): remove redundant Expected outcome line from trail entry |  |  |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -256,4 +257,8 @@ Do not edit by hand â€” re-run the command to refresh.
 
 - **decided:** Add `_load_orient_context()` helper that reads retrospect.md (first 1000 chars) and learning.md (last 500 chars) from repo `.acm/`, then restructure `scan()` to assemble user_content as a `parts` list joined by `---` separators.
 
-**40 runs total â€” 40 with changes, 0 silence**
+### Run 41 â€” 2026-06-22 â€” fix(record): remove redundant Expected outcome line from trail entry
+
+- **decided:** Remove `f"*Expected outcome:* {finding.rationale}\n\n"` from `_build_entry()`. The Prediction field now carries a clean, single falsifiable statement.
+
+**41 runs total â€” 41 with changes, 0 silence**
