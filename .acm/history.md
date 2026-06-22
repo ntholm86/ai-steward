@@ -52,6 +52,8 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 45 | 2026-06-22 | fix(implement): ensure trailing newline after model rewrites file |  |  |
 | â–¸ 46 | 2026-06-22 | fix(record): model-keyed pricing table for accurate cycle cost estimates |  |  |
 | â–¸ 47 | 2026-06-22 | feat(reflect): add REFLECT phase — third LLM call producing Reflection section in trail entries |  |  |
+| â–¸ 48 | 2026-06-22 | ai-steward: Add max_tokens_reflect config parameter for REFLECT phase |  |  |
+| â–¸ 49 | 2026-06-22 | live-validation: REFLECT phase first live run |  |  |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -296,4 +298,8 @@ Do not edit by hand â€” re-run the command to refresh.
 - **decided:** , Prediction, Lenses (examination_summary), Blind spot (from SCAN Step 5), Reflection (from REFLECT LLM call), Token counts, Cycle cost, Harness session. The pipeline is architecturally complete for V1's trail quality requirement.
 - **REVERSAL:** Prediction said "~86 tests." Actual: 88 (+7, not +5). Under-counted: 5 in test_reflect.py + 1 in test_loop.py + 2 in test_record.py = 8 new; 88 total not 86. All green; the count was wrong, the correctness was not.
 
-**47 runs total â€” 47 with changes, 0 silence**
+### Run 48 â€” 2026-06-22 â€” ai-steward: Add max_tokens_reflect config parameter for REFLECT phase
+
+- **decided:** ** Proposed: Add max_tokens_reflect config parameter for REFLECT phase
+
+**49 runs total â€” 49 with changes, 0 silence**

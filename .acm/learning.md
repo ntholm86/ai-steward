@@ -485,6 +485,18 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REVERSAL]** Prediction said "~86 tests." Actual: 88 (+7, not +5). Under-counted: 5 in test_reflect.py + 1 in test_loop.py + 2 in test_record.py = 8 new; 88 total not 86. All green; the count was wrong, the correctness was not.
 
+## 2026-06-22 â€” live-validation: REFLECT phase first live run
+
+**[!REALIZATION]** The REFLECT phase produced a genuinely structured reflection on its first live run: prediction accuracy assessed, falsifiable model-claim stated, specific blind spot named. The autonomous trail entry is now indistinguishable in structure from a human-supervised trail entry across all sections: [!DECISION], Prediction, Lenses (examination_summary), Blind spot, Reflection, File, Tokens, Harness session, Diff.
+
+## 2026-06-22 â€” live-validation: REFLECT phase first live run
+
+**[!REALIZATION]** The model proposed `max_tokens_reflect` (a config field) but the staged diff only touched `config.py` — it did not wire the new field into `reflect.py`. This is structurally correct pipeline behavior: one change per cycle. The operator's gate is the natural place to complete the wiring atomically. Accepted with reflect.py wired in the same commit. This is the intended workflow.
+
+## 2026-06-22 â€” live-validation: REFLECT phase first live run
+
+**[!REALIZATION]** The blind spot the model named (cli.py `_CONFIG_TEMPLATE` not updated) is the correct next proposal. The model correctly identified it but deferred it as out of scope for this cycle. If the next self-targeting run produces a proposal to update the template, the mandate gate is working as designed.
+
 ---
 
-**120 markers â€” 90 realisations, 30 reversals**
+**123 markers â€” 93 realisations, 30 reversals**
