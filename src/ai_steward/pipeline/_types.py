@@ -28,6 +28,8 @@ class Finding:
     prediction: str = ""
     examination_summary: str = ""
     reflection: str = ""
+    reflect_input_tokens: int = 0
+    reflect_output_tokens: int = 0
 
 
 @dataclass

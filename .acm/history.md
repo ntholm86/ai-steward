@@ -60,6 +60,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 53 | 2026-06-22 | Retrospect: post-governance-layer-completion |  |  |
 | â–¸ 54 | 2026-06-22 | fix(record): model ID prefix matching in _model_cost_per_token | date-versioned model IDs resolve to correct pricing; claude-sonnet-4-6 added to table; 4 contract tests added | record.py +11 lines; test_record.py +37 lines; 97→101 tests |
 | â–¸ 55 | 2026-06-22 | feat(cli): scope section added to CONFIG_TEMPLATE | `ai-steward init` now generates a config with a `scope:` section; operators discover file-targeting on first use | cli.py +9 lines; test assertion widened by 1 field; 101→101 tests (count unchanged; assertion tightened) |
+| â–¸ 56 | 2026-06-22 | fix(reflect): wire REFLECT token cost into Finding and cycle cost estimate | REFLECT token cost now tracked, reported in trail entries, and included in cycle cost estimate | 6 files changed; +2 fields to Finding; reflect() now returns tuple[str, int, int]; 101→102 tests |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -333,4 +334,9 @@ Do not edit by hand â€” re-run the command to refresh.
 
 - **decided:** Add `scope:` section to `_CONFIG_TEMPLATE` with `allowed` and `blocked` example patterns and explanatory comments. Extend test assertion to include `scope` as a required field.
 
-**55 runs total â€” 55 with changes, 0 silence**
+### Run 56 â€” 2026-06-22 â€” fix(reflect): wire REFLECT token cost into Finding and cycle cost estimate
+
+- **decided:** Add `reflect_input_tokens: int = 0` and `reflect_output_tokens: int = 0` to `Finding`. Change `reflect()` return type to `tuple[str, int, int]`. Capture usage in reflect.py (same try/except pattern as implement.py). Update loop.py to unpack. Update `_estimate_cycle_cost()` and the trail tokens line.
+- **REVERSAL:** Entry 46's realization "record.py field-level correctness is now complete for the single-cycle case" was false. REFLECT was added in entry 47 without wiring its cost into record.py. The field-level correctness claim is now accurate: all three LLM phases are tracked.
+
+**56 runs total â€” 56 with changes, 0 silence**

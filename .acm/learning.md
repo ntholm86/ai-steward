@@ -561,6 +561,14 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** (macro — recurring-class trigger fired): The CONFIG_TEMPLATE gap pattern (entries 51, 80, 81) has now been exhausted. All known operator-tunable fields are in the template and the assertion test enforces them. The test `test_init_config_includes_full_tuning_surface` is the governance mechanism preventing silent recurrence. This class of finding is closed.
 
+## 2026-06-22 â€” fix(reflect): wire REFLECT token cost into Finding and cycle cost estimate
+
+**[!REALIZATION]** :* FIRED — prior realization "record.py field-level correctness is now complete for the single-cycle case" (entry 46) was false — REFLECT cost was missing. This is a [!REVERSAL] of that claim.
+
+## 2026-06-22 â€” fix(reflect): wire REFLECT token cost into Finding and cycle cost estimate
+
+**[!REVERSAL]** Entry 46's realization "record.py field-level correctness is now complete for the single-cycle case" was false. REFLECT was added in entry 47 without wiring its cost into record.py. The field-level correctness claim is now accurate: all three LLM phases are tracked.
+
 ---
 
-**139 markers â€” 107 realisations, 32 reversals**
+**141 markers â€” 108 realisations, 33 reversals**

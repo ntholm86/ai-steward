@@ -44,7 +44,7 @@ def reflect(
     finding: Finding,
     diff: str,
     client: "anthropic.Anthropic | None" = None,
-) -> str:
+) -> tuple[str, int, int]:
     """Run the REFLECT phase after VERIFY passes.
 
     Args:
@@ -56,7 +56,8 @@ def reflect(
                 Pass a mock client in tests to avoid real API calls.
 
     Returns:
-        Prose reflection string. Empty string on any failure — never raises.
+        Tuple of (reflection_text, input_tokens, output_tokens).
+        On any failure returns ("", 0, 0) — never raises.
     """
     if client is None:
         import anthropic as _anthropic
@@ -78,10 +79,16 @@ def reflect(
             system=_REFLECT_SYSTEM,
             messages=[{"role": "user", "content": user_content}],
         )
+        try:
+            _in_tok = int(message.usage.input_tokens)
+            _out_tok = int(message.usage.output_tokens)
+        except (AttributeError, TypeError, ValueError):
+            _in_tok = 0
+            _out_tok = 0
         block = message.content[0] if message.content else None
         if block is None:
-            return ""
+            return "", _in_tok, _out_tok
         text = getattr(block, "text", "") or ""
-        return text.strip()
+        return text.strip(), _in_tok, _out_tok
     except Exception:
-        return ""
+        return "", 0, 0

@@ -48,7 +48,11 @@ def _model_cost_per_token(model: str) -> tuple[float, float]:
 
 
 def _estimate_cycle_cost(config: AiStewardConfig, finding: Finding) -> float:
-    """Estimate total cycle cost using model-appropriate pricing."""
+    """Estimate total cycle cost using model-appropriate pricing.
+
+    Covers all three LLM phases: SCAN, IMPLEMENT, and REFLECT.
+    REFLECT uses models.analyze (same model as SCAN).
+    """
     scan_in, scan_out = _model_cost_per_token(config.models.analyze)
     impl_in, impl_out = _model_cost_per_token(config.models.implement)
     return (
@@ -56,6 +60,8 @@ def _estimate_cycle_cost(config: AiStewardConfig, finding: Finding) -> float:
         + finding.output_tokens * scan_out
         + finding.impl_input_tokens * impl_in
         + finding.impl_output_tokens * impl_out
+        + finding.reflect_input_tokens * scan_in   # REFLECT uses models.analyze
+        + finding.reflect_output_tokens * scan_out
     )
 
 
@@ -146,6 +152,7 @@ def _build_entry(
         f"**Tokens:** "
         f"SCAN {finding.input_tokens}/{finding.output_tokens} "
         f"\u2014 IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
+        f"\u2014 REFLECT {finding.reflect_input_tokens}/{finding.reflect_output_tokens} "
         f"\u2014 cycle est. ${cycle_cost:.5f} USD  \n"
         f"**Harness sessions:** {session_line}  \n\n"
         f"**Diff:**\n```diff\n{diff}\n```\n\n"

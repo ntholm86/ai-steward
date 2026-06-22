@@ -3923,3 +3923,74 @@ Prediction held exactly. 101/101 tests pass.
 1. **Multi-cycle convergence test** — all governance blockers cleared; this is the live run that validates the whole system; highest-leverage remaining test.
 2. **Cost model correction in destination.md** — destination still says "$0.002/cycle"; 2-line append; stale documentation; lowest-effort correction.
 3. **REFLECT token cost in `_estimate_cycle_cost()`** — REFLECT has configurable `max_tokens_reflect` but its token counts (`reflect_input_tokens`, `reflect_output_tokens`) are not tracked in `Finding` or costed in `_estimate_cycle_cost()`; a small but real gap in the cost model.
+
+---
+
+## 2026-06-22 — fix(reflect): wire REFLECT token cost into Finding and cycle cost estimate
+
+- target: ai-steward — pipeline/_types.py, reflect.py, loop.py, record.py, tests
+- operator: Nils Holmager
+- agent: claude-sonnet-4-6 (GitHub Copilot)
+- skill: improve v3.10.0
+- outcome: REFLECT token cost now tracked, reported in trail entries, and included in cycle cost estimate
+- delta: 6 files changed; +2 fields to Finding; reflect() now returns tuple[str, int, int]; 101→102 tests
+
+### Interpretation of the ask
+
+"Are we still applying the boundaries of the ai-stewards destination? like kiss, yagni, dry, solve by design? use improve skill."
+
+Applied the destination's development principles as an examination lens:
+- KISS ✓ — each phase does one thing
+- DRY ✓ — shared types in _types.py, shared utils in _utils.py
+- Solve by design ✓ — hard boundary in anthropic_client(), scope config, deletion guard
+- YAGNI ⚠️ — REFLECT was added (operator-accepted, entry 47) but its cost measurement was not. REFLECT adds ~1/3 of cycle cost invisibly. The destination says "efficiency is measured, not claimed." Every trail entry since entry 47 has reported an underestimated cycle cost.
+
+### Examination
+
+**YAGNI / Destination-consistency lens:**
+`_estimate_cycle_cost()` covered SCAN + IMPLEMENT only (2 LLM calls). REFLECT is a 3rd LLM call using `config.models.analyze`. At claude-sonnet-4-5 pricing ($3.00/$15.00 per million tokens), a typical REFLECT call (~500 in / ~200 out tokens) costs ~$0.0045. On a typical cycle costing $0.027, this is a ~16% underreporting. The destination says "efficiency is measured, not claimed." That principle was violated for every REFLECT-enabled run since entry 47.
+
+Additionally: `reflect()` returned `str` but `implement()` returns `tuple[bool, str, int, int, int]` including token counts. REFLECT was architecturally inconsistent with the pattern already established in IMPLEMENT.
+
+**KISS lens:** The fix follows the pattern already in `implement.py` exactly — capture usage, return as part of tuple. No new patterns introduced.
+
+### Decision
+
+[!DECISION] Add `reflect_input_tokens: int = 0` and `reflect_output_tokens: int = 0` to `Finding`. Change `reflect()` return type to `tuple[str, int, int]`. Capture usage in reflect.py (same try/except pattern as implement.py). Update loop.py to unpack. Update `_estimate_cycle_cost()` and the trail tokens line.
+
+Rejected: mutation pattern (reflect mutates Finding directly). Tuple return is consistent with implement() and is explicit.
+
+### Prediction
+
+`reflect()` returns `(text, in_tok, out_tok)`. REFLECT tokens appear in trail entry tokens line. `cycle est.` now includes REFLECT cost (≈+16–33% for sonnet configs). `test_reflect_returns_token_counts` confirms the contract. 101 → 102 tests. No other files change.
+
+**What will NOT happen:** no change to REFLECT behavior (same prompt, same model, same max_tokens). No change to any other pipeline phase.
+
+### Outcome
+
+Prediction held exactly. 102/102 tests pass. mypy clean.
+
+Trail tokens line now reads:
+`SCAN 1234/567 — IMPL 890/123 — REFLECT 456/78 — cycle est. $0.03210 USD`
+
+### Reflection
+
+**Current model of target as a falsifiable claim:** The cost tracking is now complete for all three LLM phases. The "efficiency is measured, not claimed" destination principle is no longer violated by the pipeline's own operations. Remaining gap: destination.md itself still says "$0.002/cycle" — the document is wrong, the code is right.
+
+**Blind spot:** The REFLECT phase uses `config.models.analyze` (same model as SCAN). This is correct for V1 — both are cheap models. If an operator configures a different model for REFLECT in V2, there's no `config.models.reflect` field. The current pricing in `_estimate_cycle_cost()` would silently use the analyze model price for REFLECT even if a different model was used. Not a V1 gap, but worth noting.
+
+**Imagined reader pushback:** "Why not add `config.models.reflect` now?" YAGNI. V1 uses one model for all phases. Adding a fifth model field before V2 proves it's needed is the exact scope creep the destination warns against.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* not fired — this is a cost-tracking gap; distinct from the CONFIG_TEMPLATE gap class (entries 51/80/81) which is now closed.
+- *About to declare silence:* not fired — change made.
+- *Contradicts prior [!REALIZATION]:* FIRED — prior realization "record.py field-level correctness is now complete for the single-cycle case" (entry 46) was false — REFLECT cost was missing. This is a [!REVERSAL] of that claim.
+- *Operator explicitly asked:* FIRED — operator explicitly asked about KISS/YAGNI/DRY/Solve-by-design compliance.
+
+[!REVERSAL] Entry 46's realization "record.py field-level correctness is now complete for the single-cycle case" was false. REFLECT was added in entry 47 without wiring its cost into record.py. The field-level correctness claim is now accurate: all three LLM phases are tracked.
+
+### Candidate Next Moves
+
+1. **Multi-cycle convergence test** — all code blockers cleared; governance and cost measurement complete; this is the live run that validates the system's core claim. No code change required — just run it.
+2. **Cost model correction in destination.md** — 2-line append; destination still says "$0.002/cycle" which is wrong by an order of magnitude. The code is correct; the documentation is not. Low effort.
+3. **Evaluate `sandbox: docker` default** — destination's CONFIG_TEMPLATE now exposes scope/tokens/limits but not `sandbox`. Most operators using V1 will be running locally; the "docker" default will silently fail. A separate concern from current work.

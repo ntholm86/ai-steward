@@ -185,7 +185,10 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
 
         # REFLECT is an LLM call — inside the harness context so its session
         # is captured alongside SCAN and IMPLEMENT.
-        finding.reflection = reflect(repo, config, finding, diff)
+        reflection, refl_in_tok, refl_out_tok = reflect(repo, config, finding, diff)
+        finding.reflection = reflection
+        finding.reflect_input_tokens = refl_in_tok
+        finding.reflect_output_tokens = refl_out_tok
 
     # session_paths populated in harness_session’s finally block — contains
     # all .jsonl files created during this run (SCAN + IMPLEMENT + REFLECT).
