@@ -5963,3 +5963,36 @@ Trigger evaluations:
 
 1. **Retrospect run** -- claims #4 and #5 are factually stale (run-loop now exists; GRADUATE and ESCALATE implemented). A live retrospect run would refresh them for the next improve session.
 2. **history.md -> REORIENT** -- last ACM symmetry gap. Test against cognitive yield principle before committing budget: does the compressed timeline table change REORIENT arc-claims beyond what the trail itself provides?
+
+---
+
+## 2026-06-22 -- retrospect: refresh stale claims
+
+- target: ai-steward (.acm/retrospect.md)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve v3.10.0
+- outcome: ORIENTATION CORRECTED -- no code change, 177 tests still pass
+
+### Interpretation
+
+Operator asked for retrospect. Prepped by regenerating learning.md/history.md (freshness guard), then corrected retrospect.md claims that had gone stale as GRADUATE, ESCALATE, and run-loop were implemented across this session.
+
+### [!DECISION]
+
+Rewrite claims 3-5 in retrospect.md to match reality. Claim 4 ("REORIENT disconnected") and claim 5 ("loop runner does not exist") were both false post-implementation. Stale orientation is a correctness hazard: SCAN reads retrospect.md and would have been steered by false claims. Replaced the completed next-runs items (run-loop/GRADUATE/ESCALATE) with the genuine remaining gaps: live multi-cycle validation, budget_usd enforcement, compounding-error detection.
+
+retrospect.md is the REORIENT-written file (not append-only), so in-place correction is the intended operation -- distinct from the trail/destination append-only rule.
+
+### Reflection
+
+**Blind spot:** This manual edit bridges until the first live REORIENT run, which will rewrite retrospect.md from the trail. If that live arc-read diverges from these manual claims, the divergence is itself signal worth examining -- not a defect.
+
+Trigger evaluations:
+- Operator explicitly asked: FIRED
+- Contradicts prior [!REALIZATION]: not fired
+- About to declare silence: not fired
+
+### Candidate Next Moves
+
+1. **Live multi-cycle run-loop validation** -- requires a reachable harness. The single highest-value unproven behavior. Would exercise REORIENT, GRADUATE, ESCALATE end-to-end and validate retrospect-rewrite quality.
+2. **budget_usd cost-cap enforcement** -- add a cost field to LoopResult and a cumulative check in run-loop. The only safety limit today is max_iterations.
