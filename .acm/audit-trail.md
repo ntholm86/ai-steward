@@ -3994,3 +3994,51 @@ Trail tokens line now reads:
 1. **Multi-cycle convergence test** — all code blockers cleared; governance and cost measurement complete; this is the live run that validates the system's core claim. No code change required — just run it.
 2. **Cost model correction in destination.md** — 2-line append; destination still says "$0.002/cycle" which is wrong by an order of magnitude. The code is correct; the documentation is not. Low effort.
 3. **Evaluate `sandbox: docker` default** — destination's CONFIG_TEMPLATE now exposes scope/tokens/limits but not `sandbox`. Most operators using V1 will be running locally; the "docker" default will silently fail. A separate concern from current work.
+
+---
+
+## 2026-06-22 — ai-steward: Add lenses configuration field to AiStewardConfig
+
+**[!DECISION]** Proposed: Add lenses configuration field to AiStewardConfig  
+*Rationale:* Destination.md mandates that lenses should not be hardcoded and that operator-facing controls should be config parameters. This change makes lens selection explicit and tunable without requiring code changes for each new lens type. It is structural preparation for task-specific reasoning (security audits, performance passes) and closes the gap between the stated design rule and the current implementation.  
+*Risk:* low
+
+**Prediction:** This change will add a `lenses` configuration field to `AiStewardConfig` and expose it in the YAML template. It will NOT change SCAN's current behavior — the field will exist but will not yet be consumed by scan.py. SCAN will continue to apply the same implicit lenses it applies today. This is structural preparation only; lens-based filtering is V2 work.  
+
+**Lenses applied:**
+`config.py` defines `AiStewardConfig` with token budgets, safety limits, and scope controls, but no lens configuration field. `cli.py`'s `_CONFIG_TEMPLATE` scaffolds the YAML with existing parameters but does not mention lenses. `scan.py` applies implicit lenses (destination + code examination) with no operator-facing control.
+
+**Blind spot:** src/ai_steward/pipeline/scan.py — the lens-application logic that would consume this field. This change adds the config surface but does not wire it into SCAN's context-building or prompt. The field will be inert in V1; lens-based filtering is a separate implementation cycle.
+
+**Reflection:**
+The prediction held perfectly. The `lenses` field appeared in `AiStewardConfig` with a sensible default, the diff shows no changes to scan.py, and the verification explicitly confirms the field remains unwired. The change is pure config surface—no behavior shift, no prompt changes, no filtering logic. Structural prep landed cleanly.
+
+SCAN now has a declared lens vocabulary in config, but applies none of it. The model claim: if you remove "code_examination" from the `lenses` list in a live .ai-steward.yaml and run SCAN, the output will be identical to leaving it in. The field exists as dead weight until scan.py grows lens-aware prompt construction or context filtering. This is the classic config-before-consumption pattern—safe, but only valuable once the consumer arrives.
+
+This cycle ignored `src/ai_steward/pipeline/scan.py` entirely, by design. That's where lens semantics live—how each named lens translates into retrieval filters, prompt instructions, or context prioritization. We also skipped schema validation (are these lens names valid? do they map to known perspectives?) and documentation (what does "commander_intent" mean to an operator?). The next cycle will need to open scan.py and define what these strings actually *do*, or this remains architectural theater.
+
+**File:** `src/ai_steward/config.py`  
+**Tokens:** SCAN 20788/1965 — IMPL 1389/1061 — REFLECT 506/291 — cycle est. $0.11780 USD  
+**Harness sessions:** `.acm/sessions/01KVPZDWKCF5PCE26AZBK15EFS.jsonl`  
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/config.py b/src/ai_steward/config.py
+index e588b3e..02a6716 100644
+--- a/src/ai_steward/config.py
++++ b/src/ai_steward/config.py
+@@ -78,6 +78,7 @@ class AiStewardConfig(BaseModel):
+     sandbox: str = "docker"  # "docker" | "local"
+     allow_dirty: bool = False  # skip the clean-tree gate (operator opt-in)
+     verify_command: str = "python -m pytest --tb=no -q"  # empty string disables the test gate
++    lenses: list[str] = ["commander_intent", "code_examination"]  # analytical perspectives SCAN applies
+ 
+     @field_validator("repo")
+     @classmethod
+
+```
+
+*Staged for operator review. Not committed.*
+
+
+**[!REVERSAL] Operator rejected — 2026-06-22:** Dead config (YAGNI). The pipeline predicted the field would be inert yet proposed it as structural prep. A config field that does nothing is waste, not preparation. Unstaged and discarded. Next cycle must find a change that alters behaviour.
