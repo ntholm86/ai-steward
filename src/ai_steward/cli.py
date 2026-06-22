@@ -250,3 +250,80 @@ def reorient(repo: str) -> None:
     click.echo(f"  Wrote:   {retro_path}")
     click.echo("")
     click.echo("The next SCAN will read this fresh orientation.")
+
+
+@main.command("run-loop")
+@click.argument("repo", type=click.Path(exists=True))
+def run_loop(repo: str) -> None:
+    """Run the loop until convergence (Convergence Is Silence).
+
+    Iterates improvement cycles up to max_iterations. Triggers REORIENT
+    every reorient_interval successful cycles. Stops cleanly on two
+    consecutive NOTHING FOUND (convergence signal).
+    """
+    repo_path = Path(repo).resolve()
+    config_file = repo_path / ".ai-steward.yaml"
+
+    if not config_file.exists():
+        click.echo(
+            f"No .ai-steward.yaml found in {repo_path}\n"
+            "Run 'ai-steward init' first.",
+            err=True,
+        )
+        sys.exit(1)
+
+    try:
+        data = yaml.safe_load(config_file.read_text(encoding="utf-8")) or {}
+        data.pop("repo", None)
+        config = AiStewardConfig(repo=repo_path, **data)
+    except (ValidationError, yaml.YAMLError) as exc:
+        click.echo(f"Invalid .ai-steward.yaml: {exc}", err=True)
+        sys.exit(1)
+
+    nothing_found_streak = 0
+    successful_cycles = 0
+
+    for cycle in range(1, config.max_iterations + 1):
+        click.echo(f"\nCycle {cycle}/{config.max_iterations}")
+        result = pipeline_run(repo_path, config)
+
+        if result.status == "preflight_failed":
+            click.echo(f"PREFLIGHT FAILED: {result.preflight_failure}", err=True)
+            sys.exit(1)
+        elif result.status == "proposed":
+            assert result.finding is not None
+            nothing_found_streak = 0
+            successful_cycles += 1
+            click.echo(
+                f"  PROPOSED: {result.finding.description}\n"
+                f"  Staged for review."
+            )
+            # REORIENT trigger — fires when Nth successful cycle completes
+            if (
+                config.reorient_interval > 0
+                and successful_cycles % config.reorient_interval == 0
+            ):
+                trail_file = repo_path / ".acm" / "audit-trail.md"
+                if trail_file.exists():
+                    click.echo(
+                        f"\nREORIENT: {successful_cycles} successful cycles"
+                        " — re-reading trail..."
+                    )
+                    content, in_tok, out_tok = reorient_phase(
+                        repo_path, config, trigger="auto"
+                    )
+                    write_retrospect(repo_path, content)
+                    click.echo(f"REORIENT complete ({in_tok} in / {out_tok} out)")
+        elif result.status == "nothing_found":
+            nothing_found_streak += 1
+            click.echo(f"  NOTHING FOUND (streak: {nothing_found_streak})")
+            if nothing_found_streak >= 2:
+                click.echo(
+                    "\nConvergence: 2 consecutive NOTHING FOUND. Loop complete."
+                )
+                return
+        elif result.status in ("verify_failed", "implement_failed"):
+            nothing_found_streak = 0
+            click.echo(f"  {result.status.upper()}: {result.acm_entry}")
+
+    click.echo(f"\nMax iterations ({config.max_iterations}) reached.")
