@@ -340,7 +340,7 @@ def scan(
 
     message = client.messages.create(
         model=config.models.analyze,
-        max_tokens=1024,
+        max_tokens=config.max_tokens_scan,
         system=_SYSTEM_PROMPT,
         messages=[
             {

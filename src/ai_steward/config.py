@@ -72,6 +72,8 @@ class AiStewardConfig(BaseModel):
     scope: ScopeConfig = ScopeConfig()
     max_iterations: int = 10
     budget_usd: float = 5.0
+    max_tokens_scan: int = 4096     # SCAN phase token budget; 1024 was too small for 5-step reasoning
+    max_tokens_implement: int = 4096  # IMPLEMENT phase token budget for full file rewrites
     sandbox: str = "docker"  # "docker" | "local"
     allow_dirty: bool = False  # skip the clean-tree gate (operator opt-in)
     verify_command: str = "python -m pytest --tb=no -q"  # empty string disables the test gate

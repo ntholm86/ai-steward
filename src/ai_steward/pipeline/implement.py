@@ -84,7 +84,7 @@ def implement(
     try:
         response = client.messages.create(
             model=config.models.implement,
-            max_tokens=4096,
+            max_tokens=config.max_tokens_implement,
             system=_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
         )
