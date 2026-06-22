@@ -70,6 +70,7 @@ class AiStewardConfig(BaseModel):
     harness: HarnessConfig = HarnessConfig()
     models: ModelAssignment
     scope: ScopeConfig = ScopeConfig()
+    lenses: list[str] = ['mandate', 'examination']
     max_iterations: int = 10
     budget_usd: float = 5.0
     max_tokens_scan: int = 4096     # SCAN phase token budget; 1024 was too small for 5-step reasoning
