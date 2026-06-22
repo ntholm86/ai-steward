@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 # Known lens names for the SCAN phase.
 # Built-in lenses correspond to Steps 1–2 in the system prompt; extended lenses
@@ -56,16 +56,19 @@ class ModelAssignment(BaseModel):
         implement: "claude-haiku-4-5"
         verify: "claude-haiku-4-5"
         judge: "claude-haiku-4-5"
+        reflect: "claude-haiku-4-5"
 
     V2 (model-family independence): PROPOSE and VERIFY use different families so the
     judge cannot share the proposer's blind spots. JUDGE should use a third family.
-    No validator enforces this in V1; that constraint is V2 work.
+    REFLECT uses a cheaper model (e.g. haiku) because reflection quality matters less
+    than proposal quality.
 
         analyze: "claude-haiku-4-5"      # fast, cheap analysis
         propose: "claude-opus-4-5"        # high-quality proposal
         implement: "claude-sonnet-4-5"    # balanced implementation
         verify: "gpt-4o"                  # adversarial — different family from propose
         judge: "gemini-2.5-pro"           # third-family gate
+        reflect: "claude-haiku-4-5"       # cheap reflection (quality matters less)
     """
 
     analyze: str
@@ -73,6 +76,7 @@ class ModelAssignment(BaseModel):
     implement: str
     verify: str
     judge: str
+    reflect: str | None = None  # defaults to analyze for backward compatibility
 
 
 class ScopeConfig(BaseModel):
@@ -147,3 +151,10 @@ class AiStewardConfig(BaseModel):
         if v not in ("docker", "local"):
             raise ValueError(f"sandbox must be 'docker' or 'local', got: {v!r}")
         return v
+
+    @model_validator(mode="after")
+    def default_reflect_model(self) -> "AiStewardConfig":
+        """Default models.reflect to models.analyze for backward compatibility."""
+        if self.models.reflect is None:
+            self.models.reflect = self.models.analyze
+        return self

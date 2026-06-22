@@ -81,6 +81,7 @@ models:
   implement: claude-haiku-4-5
   verify: claude-haiku-4-5
   judge: claude-haiku-4-5
+  reflect: claude-haiku-4-5    # optional — defaults to analyze if omitted
 
 verify_command: python -m pytest --tb=no -q  # or: make test, npm test, etc.
 

@@ -123,7 +123,7 @@ def reflect(
 
     try:
         message = client.messages.create(
-            model=config.models.analyze,
+            model=config.models.reflect or config.models.analyze,
             max_tokens=config.max_tokens_reflect,
             system=_build_reflect_system_prompt(config.reflect_lenses),
             messages=[{"role": "user", "content": user_content}],
