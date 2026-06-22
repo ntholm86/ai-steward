@@ -4958,3 +4958,100 @@ actually does.
    structural blockers are now cleared.
 3. Add field_validator for lenses/reflect_lenses in config.py -- warns on unknown lens
    names (e.g., typo 'securty'). Low risk, closes the silent-ignore blind spot in both phases.
+
+---
+
+## 2026-06-22 — field-validator-for-unknown-lens-names
+
+- target: ai-steward (src/ai_steward/config.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve
+- outcome: CHANGE ACCEPTED — unknown lens names now trigger UserWarning at config load time
+
+### Ask
+
+"Lets do this" — continuing from the wire-reflect-lenses entry whose third candidate was
+"Add a field_validator for lenses/reflect_lenses in config.py that warns on unknown lens
+names -- closes the silent-ignore blind spot. Low risk, catches operator typos."
+The imagined-expert pushback from both lenses entries was identical: "An operator who
+misspells 'security' as 'securty' will see no effect and no error."
+
+### Examination
+
+**Inconsistency lens:** scan.py and reflect.py both silently ignore unknown lens names
+(by design -- forward-compatible for early adopters). The silence is correct at runtime.
+But the operator receives no signal at config load time that a lens name is unrecognized.
+The gap is at the config boundary, not in the pipeline.
+
+**Waste lens:** The known-lens frozensets already exist implicitly (_BUILTIN_LENSES in
+scan.py, _BUILTIN_REFLECT_LENSES in reflect.py, _LENS_INSTRUCTIONS and
+_REFLECT_LENS_INSTRUCTIONS dicts). They were not surfaced to the config layer.
+
+**Architecture:** config.py cannot import from scan.py or reflect.py (circular import --
+pipeline imports config). The known-lens frozensets must live in config.py.
+
+### Decision
+
+**[!DECISION]** Add _KNOWN_SCAN_LENSES and _KNOWN_REFLECT_LENSES frozensets to config.py
+(module-level constants, not imported from pipeline). Add field_validator("lenses") and
+field_validator("reflect_lenses") that issue UserWarning for unknown names but always
+return the value unchanged (warn, never reject). Config loads successfully with unknown
+lenses -- only the warning signal changes.
+
+Alternative rejected: ValueError for unknown lenses. This would break deployments where
+an operator uses a custom lens name not yet in the known set. The forward-compatibility
+argument for silence applies to config loading too -- but warnings are recoverable.
+
+**Prediction:** 3 tests added: unknown-lenses-warns, unknown-reflect_lenses-warns,
+known-security-no-warning. 107 + 3 = 110 tests pass. Value always preserved. No existing
+test breaks (validators return unchanged value).
+
+### Action
+
+Added `import warnings` to config.py.
+Added _KNOWN_SCAN_LENSES frozenset (mandate, examination, security, overburden, performance, waste).
+Added _KNOWN_REFLECT_LENSES frozenset (prediction, model_claim, blind_spot, security, overburden, performance, waste).
+Added field_validator("lenses") -> lenses_known_names: warns on unknowns.
+Added field_validator("reflect_lenses") -> reflect_lenses_known_names: warns on unknowns.
+Added 3 tests in test_config.py.
+110 tests pass. Prediction held exactly.
+
+### Reflection
+
+**Model of target:** The config schema is now self-documenting at the validation layer.
+An operator who misconfigures a lens name will see a warning on the first pipeline invocation.
+The silence at runtime (scan.py/reflect.py silently ignoring unknown names) is the correct
+forward-compatible behavior for custom lenses; the warning at the config boundary is the
+correct observable-autonomy behavior for catching operator typos.
+
+**Blind spot:** _KNOWN_SCAN_LENSES and _KNOWN_REFLECT_LENSES in config.py are now
+decoupled from _LENS_INSTRUCTIONS and _REFLECT_LENS_INSTRUCTIONS in the pipeline modules.
+If a new lens is added to scan.py but not to _KNOWN_SCAN_LENSES in config.py, operators
+will get false-positive warnings. The two sets can drift. A shared constants file
+(_lens_constants.py) would prevent drift but adds structure for V1 scope.
+
+**Imagined expert pushback:** "The warning stacklevel=2 will point to wherever pydantic
+calls the validator, not to the operator's YAML loading call. The warning location in the
+output may be confusing." Valid. Pydantic's internal validator dispatch makes the ideal
+stacklevel non-trivial. For V1, UserWarning with a clear message text is sufficient.
+
+Trigger evaluations:
+- Recurring finding-class: FIRED (mild) -- three consecutive lenses-related changes
+  (scan wiring, reflect wiring, config validator). Pattern is converging (no more lenses
+  dead config to wire). This entry closes the class.
+- About to declare silence: evaluating. After this change, the remaining code candidates
+  from retrospect are: (1) destination.md cost update (doc), (2) run multi-cycle convergence
+  (operational). No further code changes clearly surface. Silence on code changes is
+  approaching but not yet declared.
+- Contradicts prior [!REALIZATION]: not fired.
+- Operator explicitly asked: fired (improve skill invoked, "lets do this").
+
+### Candidate Next Moves
+
+1. Run `ai-steward run` (multi-cycle convergence) -- retrospect #1. All structural work
+   is done. Both lenses and reflect_lenses are live. Warning infrastructure is in place.
+   The loop has never run with all config fields functional. This is the next validation.
+2. Destination.md cost update -- retrospect #2. Still says "$0.002/cycle (haiku, 2 calls)."
+   Validated cost is ~$0.027-0.030 at claude-sonnet-4-5, 3 calls. Two-line append.
+3. Convergence Is Silence -- no further code changes clearly surface. If run #1 finds nothing
+   and the pipeline is stable across multiple cycles, that is the V1 convergence signal.

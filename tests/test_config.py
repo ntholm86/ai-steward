@@ -48,3 +48,30 @@ def test_scope_defaults_empty(tmp_path: Path) -> None:
     cfg = AiStewardConfig(repo=tmp_path, models=MINIMAL_MODELS)
     assert cfg.scope.allowed == []
     assert cfg.scope.blocked == []
+
+
+def test_lenses_warns_on_unknown_name(tmp_path: Path) -> None:
+    """Unknown lens name triggers UserWarning but the value is preserved."""
+    with pytest.warns(UserWarning, match="Unknown lenses"):
+        cfg = AiStewardConfig(repo=tmp_path, models=MINIMAL_MODELS, lenses=["mandate", "typo_lens"])
+    assert cfg.lenses == ["mandate", "typo_lens"]
+
+
+def test_reflect_lenses_warns_on_unknown_name(tmp_path: Path) -> None:
+    """Unknown reflect_lens name triggers UserWarning but the value is preserved."""
+    with pytest.warns(UserWarning, match="Unknown reflect_lenses"):
+        cfg = AiStewardConfig(repo=tmp_path, models=MINIMAL_MODELS, reflect_lenses=["prediction", "unknown"])
+    assert cfg.reflect_lenses == ["prediction", "unknown"]
+
+
+def test_lenses_known_custom_no_warning(tmp_path: Path) -> None:
+    """Known custom lenses (e.g. 'security') do not trigger a warning."""
+    import warnings as _warnings
+    with _warnings.catch_warnings():
+        _warnings.simplefilter("error")
+        cfg = AiStewardConfig(
+            repo=tmp_path,
+            models=MINIMAL_MODELS,
+            lenses=["mandate", "examination", "security"],
+        )
+    assert "security" in cfg.lenses

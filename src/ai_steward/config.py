@@ -7,8 +7,25 @@ Every design decision lives here in code:
 - Safety budget (iteration cap and cost cap)
 """
 
+import warnings
 from pathlib import Path
 from pydantic import BaseModel, field_validator
+
+# Known lens names for the SCAN phase.
+# Built-in lenses correspond to Steps 1–2 in the system prompt; extended lenses
+# are injected between Step 2 and Step 3 by _build_system_prompt() in scan.py.
+_KNOWN_SCAN_LENSES: frozenset[str] = frozenset({
+    "mandate", "examination",          # built-in
+    "security", "overburden", "performance", "waste",  # extended
+})
+
+# Known lens names for the REFLECT phase.
+# Built-in lenses correspond to the three numbered reflection items;
+# extended lenses are injected after item 3 by _build_reflect_system_prompt().
+_KNOWN_REFLECT_LENSES: frozenset[str] = frozenset({
+    "prediction", "model_claim", "blind_spot",          # built-in
+    "security", "overburden", "performance", "waste",  # extended
+})
 
 
 class HarnessConfig(BaseModel):
@@ -88,6 +105,32 @@ class AiStewardConfig(BaseModel):
     sandbox: str = "docker"  # "docker" | "local"
     allow_dirty: bool = False  # skip the clean-tree gate (operator opt-in)
     verify_command: str = "python -m pytest --tb=no -q"  # empty string disables the test gate
+
+    @field_validator("lenses")
+    @classmethod
+    def lenses_known_names(cls, v: list[str]) -> list[str]:
+        unknown = [ln for ln in v if ln not in _KNOWN_SCAN_LENSES]
+        if unknown:
+            warnings.warn(
+                f"Unknown lenses will be silently ignored by SCAN: {unknown}. "
+                f"Known lenses: {sorted(_KNOWN_SCAN_LENSES)}",
+                UserWarning,
+                stacklevel=2,
+            )
+        return v
+
+    @field_validator("reflect_lenses")
+    @classmethod
+    def reflect_lenses_known_names(cls, v: list[str]) -> list[str]:
+        unknown = [ln for ln in v if ln not in _KNOWN_REFLECT_LENSES]
+        if unknown:
+            warnings.warn(
+                f"Unknown reflect_lenses will be silently ignored by REFLECT: {unknown}. "
+                f"Known reflect_lenses: {sorted(_KNOWN_REFLECT_LENSES)}",
+                UserWarning,
+                stacklevel=2,
+            )
+        return v
 
     @field_validator("repo")
     @classmethod
