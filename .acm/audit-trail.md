@@ -3215,3 +3215,68 @@ Imagined reader pushback: "3 lines is trivial — why a full trail entry?" Becau
 1. **Cost model correction in destination** — append to destination.md: "$0.002 (haiku)" contradicts actual ~$0.027/cycle (validated). Operator-held document; this is the session to write it.
 2. **Retrospect** — warranted: the arc has moved significantly since the last retrospect (pre-orient). Multiple completed phases, a live validation run, three new structural fixes.
 3. **Reflection call architecture** — second LLM call in record.py after VERIFY. Next class of work.
+
+---
+
+## 2026-06-22 — fix(record): model-keyed pricing table for accurate cycle cost estimates
+
+- target: ai-steward pipeline (record.py)
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: improve v3.10.0
+
+### Interpretation
+
+Candidates from entry 45: cost model correction, retrospect, Reflection architecture. The cost model is also a code issue — `record.py` hardcodes haiku pricing regardless of which model runs. The cost estimate in trail entries was 4× wrong for the live validation run ($0.027 shown vs. ~$0.10 actual for sonnet-4-5). This is a code fix with direct impact on every future trail entry.
+
+### Examination
+
+**Inconsistency lens:** `record.py` declared `_INPUT_COST_PER_TOKEN = 0.80 / 1_000_000` (haiku) and used it for both SCAN and IMPLEMENT regardless of the model. The `config` parameter was present but the docstring said "reserved for future use." `config.models.analyze` and `config.models.implement` were available but unused. The cost line in every trail entry since the move to sonnet-4-5 has been a 4× underestimate.
+
+**Purpose lens:** Cost estimates exist so operators can track spend against `budget_usd` and make informed decisions about model tier. A 4× underestimate defeats this purpose.
+
+Exact wrong lines (before fix):
+```python
+_INPUT_COST_PER_TOKEN = 0.80 / 1_000_000   # haiku hardcoded
+_OUTPUT_COST_PER_TOKEN = 4.00 / 1_000_000
+scan_cost = finding.input_tokens * _INPUT_COST_PER_TOKEN + ...
+```
+
+### [!DECISION]
+
+[!DECISION] Replace two module-level constants with `_MODEL_PRICING` dict (haiku, sonnet, opus), a `_model_cost_per_token(model)` lookup, and `_estimate_cycle_cost(config, finding)` helper. Calculate in `record()` and pass `cycle_cost_usd` into `_build_entry()`.
+
+Rationale: the model is known from config; using it is unambiguously more correct than a hardcoded constant. The fallback to haiku pricing for unknown models is conservative and explicit.
+
+Alternative rejected: single update to sonnet pricing. Wrong the moment the operator switches models; treats a configurable parameter as a constant.
+
+### Prediction
+
+Future trail entries will show accurate cycle costs for haiku, sonnet, and opus. The live validation run's $0.027 estimate would have shown ~$0.10 (the actual). Unknown models fall back to haiku-baseline with no regression. The `config` docstring no longer says "reserved for future use." 81 tests pass unchanged.
+
+### Action
+
+`record.py`: +36 lines, -15 lines. Added `_MODEL_PRICING`, `_FALLBACK_PRICING`, `_model_cost_per_token()`, `_estimate_cycle_cost()`. Updated `record()` to calculate cost and pass to `_build_entry()`. Updated `_build_entry()` signature to accept `cycle_cost_usd: float = 0.0`. Updated docstring.
+
+81 tests pass. mypy clean.
+
+### Reflection
+
+Current model: `record.py` is now structurally correct for all V1 fields — [!DECISION], Prediction, Lenses, Blind spot, Token counts, and Cycle cost. The remaining architectural gap is Reflection (second LLM call), across-trail triggers, and Candidate Next Moves. These are not field additions; they require a second LLM call after VERIFY and architectural changes to the loop.
+
+Blind spot: did not examine whether the `_MODEL_PRICING` table needs to account for model variants (e.g., `claude-sonnet-4-5-20250514`). Anthropic sometimes exposes model IDs with date suffixes. The current lookup uses exact match; a model ID with a date suffix would fall through to haiku fallback. A prefix match might be more robust.
+
+Imagined reader pushback: "This is still just an estimate — the harness session JSONL has the actual API costs if the provider includes them." Correct. A future improvement could extract the cost from the harness JSONL instead. But the pricing table is immediately correct for the three known models and handles the model-switching case that the hardcoded constant didn't.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* not fired — this is a one-shot accuracy fix.
+- *About to declare silence on record.py fields:* FIRED — all V1 fields are now structurally correct. Silence on field-level correctness for the single-cycle case. Reflection/triggers/CNM require architectural work beyond field additions.
+- *Contradicts prior [!REALIZATION]:* not fired.
+- *Operator explicitly asked:* not fired.
+
+[!REALIZATION] `record.py` field-level correctness is now complete for the single-cycle case. The gap between the current trail entries and the trail skill standard is no longer in the fields — it’s in the absence of Reflection (which requires a second LLM call) and the absence of Candidate Next Moves in autonomous entries (which requires the pipeline to know what to suggest next). These are architectural additions, not field additions. The taxonomy of remaining work has shifted.
+
+### Candidate Next Moves
+
+1. **Retrospect** — warranted: arc has moved substantially since the last retrospect (pre-orient). Six completed improvements since then, a live validation run, three [!REALIZATION] markers. Arc-read will sharpen the next architectural decision (Reflection).
+2. **Reflection call architecture** — design the second LLM call in record.py that synthesizes VERIFY outcome against prediction. The taxonomy has shifted: this is the next class of work, no longer deferred by field-level issues.
+3. **Model ID variant matching in pricing table** — `claude-sonnet-4-5-20250514` would fall through to haiku fallback. A `startswith` match would be more robust.

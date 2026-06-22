@@ -461,6 +461,18 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** :* not fired.
 
+## 2026-06-22 â€” fix(record): model-keyed pricing table for accurate cycle cost estimates
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-22 â€” fix(record): model-keyed pricing table for accurate cycle cost estimates
+
+**[!REALIZATION]** `record.py` field-level correctness is now complete for the single-cycle case. The gap between the current trail entries and the trail skill standard is no longer in the fields — it’s in the absence of Reflection (which requires a second LLM call) and the absence of Candidate Next Moves in autonomous entries (which requires the pipeline to know what to suggest next). These are architectural additions, not field additions. The taxonomy of remaining work has shifted.
+
+## 2026-06-22 â€” fix(record): model-keyed pricing table for accurate cycle cost estimates
+
+**[!REALIZATION]** markers. Arc-read will sharpen the next architectural decision (Reflection).
+
 ---
 
-**114 markers â€” 85 realisations, 29 reversals**
+**117 markers â€” 88 realisations, 29 reversals**

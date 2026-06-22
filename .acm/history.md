@@ -50,6 +50,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 43 | 2026-06-22 | ai-steward: Add verify_command to the config template to expose test runner control |  |  |
 | â–¸ 44 | 2026-06-22 | live-validation: first self-targeting run with all field fixes |  |  |
 | â–¸ 45 | 2026-06-22 | fix(implement): ensure trailing newline after model rewrites file |  |  |
+| â–¸ 46 | 2026-06-22 | fix(record): model-keyed pricing table for accurate cycle cost estimates |  |  |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -283,4 +284,9 @@ Do not edit by hand â€” re-run the command to refresh.
 
 - **decided:** Add `if not new_content.endswith("\n"): new_content += "\n"` immediately before `target.write_text()`, after the empty-content guard. Applies unconditionally to both the fenced and unfenced paths.
 
-**45 runs total â€” 45 with changes, 0 silence**
+### Run 46 â€” 2026-06-22 â€” fix(record): model-keyed pricing table for accurate cycle cost estimates
+
+- **decided:** Replace two module-level constants with `_MODEL_PRICING` dict (haiku, sonnet, opus), a `_model_cost_per_token(model)` lookup, and `_estimate_cycle_cost(config, finding)` helper. Calculate in `record()` and pass `cycle_cost_usd` into `_build_entry()`.
+- **decided:** , Prediction, Lenses, Blind spot, Token counts, and Cycle cost. The remaining architectural gap is Reflection (second LLM call), across-trail triggers, and Candidate Next Moves. These are not field additions; they require a second LLM call after VERIFY and architectural changes to the loop.
+
+**46 runs total â€” 46 with changes, 0 silence**
