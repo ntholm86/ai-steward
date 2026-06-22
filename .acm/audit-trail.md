@@ -5868,3 +5868,56 @@ This corrects the implicit model: memory symmetry is not about coverage, it is a
 - Operator explicitly asked: FIRED
 - Recurring finding-class: not fired
 - About to declare silence: not fired
+
+---
+
+## 2026-06-22 -- feat(escalate): add ESCALATE phase
+
+- target: ai-steward (pipeline/escalate.py + cli.py + config.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve v3.10.0
+- outcome: CHANGE ACCEPTED -- 175 tests pass
+
+### Interpretation
+
+Agent-initiated direction from underspecified "continue." Three candidates from retrospect + trail: ESCALATE (retrospect #3), allow_dirty warning (trail #2), history.md -> REORIENT (trail #3). Chose ESCALATE.
+
+Falsifiable question verified: run-loop had no failure-streak counter. verify_failed and implement_failed reset nothing_found_streak but accumulated silently to max_iterations. Confirmed before coding.
+
+### Lenses applied
+
+**Purpose lens:** Retrospect claim #5 states "ESCALATE (trigger on failure patterns) designed in destination but not implemented." The falsifiability condition: "an autonomous run that triggers GRADUATE or ESCALATE without human invocation." GRADUATE is done. ESCALATE is the remaining falsifier.
+
+**Waste lens:** The failure path was a silent sink. The loop detected failure, printed a message, reset the streak counter, and continued. The detection was wasted -- it fired and vanished with no diagnosis.
+
+**Inconsistency lens:** Convergence (silence) had GRADUATE. Persistent failure had nothing. Symmetric failure handling was absent.
+
+### [!DECISION]
+
+Add ESCALATE phase. Triggers when failure_streak reaches escalate_streak (default 3). Classifies the pattern as TOOLING_BROKEN / PIPELINE_BOTTLENECK / DESTINATION_UNREACHABLE / CONTEXT_INSUFFICIENT. Writes .acm/escalate_report.md and stops the loop cleanly.
+
+Token budget: 8000 chars (vs GRADUATE 15000). Justification: failure messages are dense error text. Retrospect omitted entirely -- concrete failure diagnosis does not depend on arc-claims. This is the "cognitive yield per token" principle applied: does retrospect change what ESCALATE does? No. Budget omitted.
+
+Bug caught during reflection: failure_streak was incremented on failure but never reset on proposed or nothing_found -- making it cumulative rather than consecutive. Fixed before commit: proposed and nothing_found now reset failure_streak to 0.
+
+**Prediction:** ~169 tests (154 + 14 + 1 cli). Actual: 175 (154 + 20 escalate + 1 cli). Off by 6 -- underestimated test coverage depth in test_escalate.py.
+
+### Reflection
+
+**Model claim:** The loop can now respond to both cognitive outcomes: silence (GRADUATE) and persistent failure (ESCALATE). The operator always receives a classified artifact to act on rather than a silent timeout. The robot knows when to stop.
+
+**Blind spot:** ESCALATE fires after N consecutive failures of the *same type* (verify_failed/implement_failed). But what if the pattern is alternating (verify_failed, proposed, verify_failed, proposed...)?  The reset-on-proposed means this is invisible to the streak counter. This is probably correct: a mixed pattern doesn't indicate a structural failure; a strict streak does. Documenting for future review.
+
+**Imagined expert pushback:** "ESCALATE uses models.reorient for the LLM call. That model is configured for arc-level reading. A smaller, faster model (analyze) would be more appropriate for failure diagnosis." Valid -- but models.reorient defaults to models.analyze anyway, and ESCALATE is only called after 3+ failures (rare). Low-impact for V1. Could add models.escalate in V2.
+
+Trigger evaluations:
+- Recurring finding-class: not fired
+- About to declare silence: not fired
+- Contradicts prior [!REALIZATION]: not fired
+- Operator explicitly asked: FIRED
+
+### Candidate Next Moves
+
+1. **allow_dirty warning in run-loop** -- startup check: if allow_dirty is False, warn that staged changes from PROPOSED cycles will block subsequent cycles. One guard, prevents the live surprise.
+2. **history.md -> REORIENT** -- last ACM symmetry gap. But test against the new principle: does the compressed timeline table change REORIENT arc-claims? Only if the trail is truncating meaningful early history. Low confidence it passes the cognitive yield test right now.
+3. **Retrospect update** -- claims #4 and #5 are now stale (run-loop exists, GRADUATE and ESCALATE implemented). A retrospect run would refresh them.
