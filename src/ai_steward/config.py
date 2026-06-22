@@ -105,6 +105,8 @@ class AiStewardConfig(BaseModel):
     max_tokens_graduate: int = 4096  # GRADUATE phase token budget — classification + proposal
     max_tokens_escalate: int = 2048  # ESCALATE phase token budget — focused failure diagnosis
     escalate_streak: int = 3  # auto-ESCALATE after N consecutive failures (0 disables)
+    input_cost_per_million_tokens: float = 0.80   # $/1M input tokens; default matches claude-haiku-4-5
+    output_cost_per_million_tokens: float = 4.00  # $/1M output tokens; default matches claude-haiku-4-5
     reorient_interval: int = 5  # auto-trigger REORIENT every N successful cycles (0 disables)
     reorient_trail_budget_chars: int = 50000  # character budget for audit-trail.md in REORIENT context
     learning_budget_chars: int = 5000  # character budget for learning.md in SCAN orient context (tail-first)

@@ -42,3 +42,4 @@ class LoopResult:
     acm_entry: str
     preflight_failure: str | None = None
     harness_session_paths: list[str] | None = None
+    cycle_cost_usd: float = 0.0  # estimated LLM cost; 0 when finding is None (nothing_found)

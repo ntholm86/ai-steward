@@ -88,6 +88,32 @@ def _is_git_clean(repo: Path) -> bool:
 # Test-running logic extracted to _utils.py (DRY principle)
 
 
+def _estimate_cycle_cost(finding: "Finding", config: "AiStewardConfig") -> float:
+    """Estimate LLM cost for one cycle from Finding token counts.
+
+    Sums SCAN + IMPLEMENT + REFLECT tokens (input and output separately).
+    nothing_found cycles return 0 because their SCAN tokens are not stored
+    on Finding (finding is None in that case) — a known V1 undercount.
+    """
+    total_in = (
+        finding.input_tokens
+        + finding.impl_input_tokens
+        + finding.reflect_input_tokens
+    )
+    total_out = (
+        finding.output_tokens
+        + finding.impl_output_tokens
+        + finding.reflect_output_tokens
+    )
+    return (
+        total_in * config.input_cost_per_million_tokens / 1_000_000
+        + total_out * config.output_cost_per_million_tokens / 1_000_000
+    )
+
+
+# Test-running logic extracted to _utils.py (DRY principle)
+
+
 def _get_diff(repo: Path, rel_path: str) -> str:
     """Capture unstaged diff of a file vs HEAD."""
     result = subprocess.run(
@@ -165,15 +191,16 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
             )
 
         ok, reason, original_size, impl_in_tok, impl_out_tok = implement(repo, config, finding)
+        finding.impl_input_tokens = impl_in_tok
+        finding.impl_output_tokens = impl_out_tok
         if not ok:
             return LoopResult(
                 status="implement_failed",
                 finding=finding,
                 diff=None,
                 acm_entry=f"IMPLEMENT FAILED: {reason}",
+                cycle_cost_usd=_estimate_cycle_cost(finding, config),
             )
-        finding.impl_input_tokens = impl_in_tok
-        finding.impl_output_tokens = impl_out_tok
 
         diff = _get_diff(repo, finding.file)
         changed_file = repo / finding.file
@@ -184,6 +211,7 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
                 finding=finding,
                 diff=diff,
                 acm_entry=f"VERIFY FAILED: {reason}",
+                cycle_cost_usd=_estimate_cycle_cost(finding, config),
             )
 
         # REFLECT is an LLM call — inside the harness context so its session
@@ -208,4 +236,5 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
         diff=diff,
         acm_entry=acm_entry,
         harness_session_paths=harness_session_paths,
+        cycle_cost_usd=_estimate_cycle_cost(finding, config),
     )

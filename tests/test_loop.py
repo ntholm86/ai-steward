@@ -277,3 +277,51 @@ def test_run_proposed_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     assert result.finding is _FINDING
     assert result.diff == "diff text"
     assert result.acm_entry == "trail entry"
+
+
+# ---------------------------------------------------------------------------
+# cycle cost estimation
+# ---------------------------------------------------------------------------
+
+
+def test_cycle_cost_zero_for_nothing_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """nothing_found result carries zero cost (no finding, SCAN tokens untracked)."""
+    _pass_preflight(monkeypatch)
+    monkeypatch.setattr("ai_steward.pipeline.loop.scan", lambda *_a, **_k: None)
+
+    result = run(tmp_path, _reachable_config(tmp_path))
+
+    assert result.status == "nothing_found"
+    assert result.cycle_cost_usd == 0.0
+
+
+def test_cycle_cost_nonzero_for_proposed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """proposed result computes cost from SCAN + IMPLEMENT + REFLECT tokens."""
+    _pass_preflight(monkeypatch)
+    # SCAN returns 1000 input + 200 output tokens
+    finding = Finding(
+        file="src/foo.py",
+        description="fix",
+        proposed_change="x: int",
+        rationale="types",
+        risk="low",
+        input_tokens=1000,
+        output_tokens=200,
+    )
+    monkeypatch.setattr("ai_steward.pipeline.loop.scan", lambda *_a, **_k: finding)
+    # IMPLEMENT returns 800 input + 300 output tokens
+    monkeypatch.setattr("ai_steward.pipeline.loop.implement", lambda *_a, **_k: (True, "", 100, 800, 300))
+    monkeypatch.setattr("ai_steward.pipeline.loop._get_diff", lambda *_a: "diff")
+    monkeypatch.setattr("ai_steward.pipeline.loop.verify", lambda *_a, **_k: (True, ""))
+    # REFLECT returns 400 input + 100 output tokens
+    monkeypatch.setattr("ai_steward.pipeline.loop.reflect", lambda *_a, **_k: ("reflection", 400, 100))
+    monkeypatch.setattr("ai_steward.pipeline.loop.record", lambda *_a, **_k: "entry")
+
+    config = _reachable_config(tmp_path)
+    result = run(tmp_path, config)
+
+    assert result.status == "proposed"
+    # total_in = 1000 + 800 + 400 = 2200; total_out = 200 + 300 + 100 = 600
+    # cost = 2200 * 0.80/1e6 + 600 * 4.00/1e6 = 0.00176 + 0.0024 = 0.00416
+    expected = 2200 * 0.80 / 1_000_000 + 600 * 4.00 / 1_000_000
+    assert abs(result.cycle_cost_usd - expected) < 1e-9

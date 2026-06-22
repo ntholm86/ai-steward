@@ -110,6 +110,12 @@ max_tokens_escalate: 2048   # ESCALATE: focused failure diagnosis (smaller budge
 
 escalate_streak: 3          # auto-ESCALATE after N consecutive failures (0 disables)
 
+# Per-token cost rates for budget_usd enforcement (dollars per 1 million tokens).
+# Default matches claude-haiku-4-5 pricing. Update for your model.
+# See https://www.anthropic.com/pricing for current rates.
+input_cost_per_million_tokens: 0.80
+output_cost_per_million_tokens: 4.00
+
 learning_budget_chars: 5000        # chars of learning.md delivered to SCAN (tail-first; 500 was ~1 marker)
 
 lenses:
@@ -291,6 +297,7 @@ def run_loop(repo: str) -> None:
     nothing_found_streak = 0
     failure_streak = 0
     successful_cycles = 0
+    total_cost_usd = 0.0
 
     if not config.allow_dirty:
         click.echo(
@@ -381,4 +388,13 @@ def run_loop(repo: str) -> None:
                     click.echo("Escalation limit reached. Check errors above.")
                 return
 
-    click.echo(f"\nMax iterations ({config.max_iterations}) reached.")
+        total_cost_usd += result.cycle_cost_usd
+        if config.budget_usd > 0 and total_cost_usd >= config.budget_usd:
+            click.echo(
+                f"\nBudget limit reached: ${total_cost_usd:.4f} spent"
+                f" >= ${config.budget_usd:.2f} limit. Stopping."
+            )
+            return
+
+    click.echo(f"\nMax iterations ({config.max_iterations}) reached."
+               f" Total cost: ${total_cost_usd:.4f}.")

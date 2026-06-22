@@ -237,3 +237,24 @@ def test_run_loop_no_allow_dirty_warning_when_true(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     assert "allow_dirty" not in result.output
+
+
+def test_run_loop_stops_on_budget_limit(tmp_path: Path) -> None:
+    """Loop stops cleanly when cumulative cost reaches budget_usd."""
+    config_text = _MINIMAL_CONFIG + "budget_usd: 0.05\n"
+    (tmp_path / ".ai-steward.yaml").write_text(config_text, encoding="utf-8")
+
+    expensive_cycle = LoopResult(
+        status="proposed",
+        finding=_make_finding(),
+        diff="--- a\n+++ b\n",
+        acm_entry="entry",
+        cycle_cost_usd=0.03,
+    )
+    runner = CliRunner()
+    with patch("ai_steward.cli.pipeline_run", return_value=expensive_cycle):
+        result = runner.invoke(main, ["run-loop", str(tmp_path)])
+
+    # After 2 cycles: 0.03 + 0.03 = 0.06 >= 0.05 → stops
+    assert result.exit_code == 0, result.output
+    assert "Budget limit" in result.output
