@@ -5714,3 +5714,73 @@ Trigger evaluations:
 1. **Warn on allow_dirty=False in run-loop** — add a startup check: if not config.allow_dirty, emit a warning that run-loop with staged changes requires allow_dirty: true. Low-risk, prevents the live surprise.
 2. **budget_usd enforcement** — requires adding a cycle_cost_usd field to LoopResult (parse from trail entry or compute from token counts in Finding). Then run-loop accumulates and stops when budget exceeded.
 3. **GRADUATE phase** — now has activation path. When run-loop detects 2 consecutive NOTHING FOUND, instead of just printing "Convergence," it could trigger a GRADUATE phase that classifies the silence and proposes a successor destination.
+
+---
+
+## 2026-06-22 -- feat(acm-symmetry): expand learning.md utilization
+
+- target: ai-steward (config.py, scan.py, reorient.py, reorient_system.md, cli.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve v3.10.0
+- outcome: CHANGE ACCEPTED -- 137 tests pass
+
+### Ask
+
+Operator identified ACM memory symmetry gap: "if something writes to learning.md, something must also read it at the right time with highest quality cognition and reasoning -- this goes for everything."
+
+### Examination
+
+**ACM file read/write inventory:**
+
+| File | Written | Read (before) | Read (after) |
+|------|---------|---------------|--------------|
+| destination.md | Operator | SCAN 3000 chars, REORIENT | unchanged |
+| retrospect.md | REORIENT | SCAN head+rules | unchanged |
+| learning.md | record.py | SCAN 500 chars (~1 of 164 markers) | SCAN 5000 chars + REORIENT full |
+| history.md | record.py | nothing | still nothing (gap named) |
+| audit-trail.md | RECORD | REORIENT full | unchanged |
+
+learning.md has 48k chars / 164 markers. 500 chars = 1% of the file. The pre-digested pattern surface was functionally invisible to both SCAN and REORIENT.
+
+**Purpose lens:** learning.md exists precisely to be read efficiently. It is the compact extraction of every [!REALIZATION] and [!REVERSAL] -- the loop's actual learned conclusions. Delivering 500 chars of it means the model operates without most of its own learning history.
+
+**Waste lens:** record.py writes 48k chars of learned wisdom per run. 47.5k chars of it were never consumed by any reasoning phase. This is structural waste at the architecture level.
+
+### [!DECISION]
+
+Three tightly coupled changes as one iteration (all part of the same ACM symmetry fix):
+
+1. config.py: Add learning_budget_chars: int = 5000 -- operator-configurable budget for learning.md in SCAN context.
+2. scan.py: _load_orient_context(repo, learning_budget_chars=5000) -- expand from 500 to configurable budget. Section header updated to describe content accurately.
+3. reorient.py: Add _load_learning(repo, budget_chars=20000). Include learning surface in REORIENT user_content between retrospect.md and audit-trail.md. Pre-digested patterns before raw trail.
+4. reorient_system.md: Updated Input section -- 4 inputs with reading order instruction (learning first, then trail).
+5. cli.py: _CONFIG_TEMPLATE exposes learning_budget_chars.
+
+**Alternative rejected:** Implement CODIFY phase now. Too large for this iteration; needs spec in destination first. The interim expansion (500 -> 5000 for SCAN, 0 -> 20000 for REORIENT) is the right pragmatic fix.
+
+**Prediction:** 4 new tests for _load_learning (loads file, placeholder when missing, truncates from tail, reorient integration). 133 + 4 = 137. All pass. Prediction held exactly.
+
+### Reflection
+
+**Model claim:** The ACM memory symmetry gap for learning.md is partially closed. REORIENT now receives the pre-digested pattern surface alongside the full trail -- the right reading order (learning then trail mirrors the retrospect skill's step 4b before arc-read). SCAN now receives 10x more learning context. The principle "if it is written, it must be read" is structurally better but not yet complete.
+
+**Blind spots:**
+- 5000 chars for SCAN is still 10% of learning.md (164 markers). CODIFY (dedicated pattern crystallization) is the proper ACM-symmetric solution.
+- history.md (46k chars, timeline table) is still read by nothing. Lower priority but named gap.
+- The 5000-char budget was chosen without measurement -- a SCAN context inspection on a real run would validate whether 30 markers is sufficient orientation.
+
+**Imagined expert pushback:** "You improved from 1% to 10% for SCAN. The principle still isn't fulfilled." Correct. The full answer is CODIFY writing rules.md which SCAN reads at 100% coverage. This iteration is the pragmatic interim fix.
+
+[!REALIZATION] The ACM memory model has a symmetry requirement: every file written must have a reader at appropriate cognition depth. This is not just a nice-to-have -- it is the structural equivalent of the principle "autonomy without evidence is abdication." Unread memory is wasted evidence.
+
+Trigger evaluations:
+- Recurring finding-class: not fired
+- About to declare silence: not fired -- change made
+- Contradicts prior [!REALIZATION]: not fired
+- Operator explicitly asked: FIRED
+
+### Candidate Next Moves
+
+1. **CODIFY phase** -- reads learning.md in full, clusters patterns by class, proposes additions to .acm/rules.md. rules.md read by SCAN at highest priority. The proper ACM-symmetric answer.
+2. **Feed history.md into REORIENT** -- compressed timeline table as fast-orientation layer before reading full trail. Small change, closes the last ACM symmetry gap.
+3. **Measure learning context quality** -- run i-steward run and inspect what SCAN actually receives from learning.md. Validate that 5000 chars contains useful markers, not just boilerplate.

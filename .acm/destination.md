@@ -1584,3 +1584,79 @@ The skills suite assumes human presence. Destination Revision and Self-Modificat
 - After ESCALATE: the robot can diagnose repeated failures and ask for help instead of looping forever
 - These phases trigger on silence / failure patterns, not every cycle — they are meta-phases
 
+
+---
+
+## 2026-06-22 - ACM Memory Symmetry and CODIFY phase design
+
+### The principle
+
+Every ACM memory file that gets written must have a reader at appropriate cognition depth and at the right phase. Writing without reading is waste at the architectural level — the information never reaches the reasoning that needs it.
+
+### Current state after this session
+
+| File | Written by | Read by (depth) |
+|------|-----------|---------|
+| destination.md | Operator | SCAN (3000 chars tail) + REORIENT |
+| retrospect.md | REORIENT | SCAN (head 2000 + full operational rules section) |
+| learning.md | record.py learning --write | SCAN (5000 chars tail, up from 500) + REORIENT (full, up to 20000) |
+| history.md | record.py history --write | Nothing — gap remains |
+| audit-trail.md | RECORD phase | REORIENT (full, up to 50000 chars) |
+
+### CODIFY phase (next meta-cognitive phase after GRADUATE/ESCALATE)
+
+When learning.md accumulates enough markers that even 5000 chars is inadequate, the proper fix is a dedicated phase:
+
+**CODIFY phase:**
+- Reads learning.md in full
+- Groups [!REALIZATION] and [!REVERSAL] markers by class (e.g., "scope enforcement," "truncation direction," "prompt limits")
+- Identifies recurring patterns (same class discovered 3+ times across sessions)
+- Proposes additions to .acm/rules.md — a new ACM file of crystallized durable rules
+
+**rules.md** would then be read by SCAN at highest priority (before retrospect.md, before learning.md) — it is the compact crystallized surface of all learned wisdom.
+
+**Why CODIFY belongs in ai-steward:**
+The skills suite does this manually (Retrospect step 4b: extract operational rules). CODIFY is the robot's structural equivalent — it prevents the robot from rediscovering the same patterns session after session because nothing crystallizes them into durable form.
+
+### history.md gap
+
+history.md is a compressed timeline table (46k chars) written by record.py. Nothing reads it. REORIENT could benefit from it as a fast-orientation layer — reading the table before reading the full trail gives a compressed map. This is lower priority than CODIFY but is the remaining ACM symmetry gap.
+
+
+---
+
+## 2026-06-22 - ACM Memory Symmetry and CODIFY phase design
+
+### The principle
+
+Every ACM memory file that gets written must have a reader at appropriate cognition depth and at the right phase. Writing without reading is waste at the architectural level — the information never reaches the reasoning that needs it.
+
+### Current state after this session
+
+| File | Written by | Read by (depth) |
+|------|-----------|---------|
+| destination.md | Operator | SCAN (3000 chars tail) + REORIENT |
+| retrospect.md | REORIENT | SCAN (head 2000 + full operational rules section) |
+| learning.md | record.py learning --write | SCAN (5000 chars tail, up from 500) + REORIENT (full, up to 20000) |
+| history.md | record.py history --write | Nothing — gap remains |
+| audit-trail.md | RECORD phase | REORIENT (full, up to 50000 chars) |
+
+### CODIFY phase (next meta-cognitive phase after GRADUATE/ESCALATE)
+
+When learning.md accumulates enough markers that even 5000 chars is inadequate, the proper fix is a dedicated phase:
+
+**CODIFY phase:**
+- Reads learning.md in full
+- Groups [!REALIZATION] and [!REVERSAL] markers by class (e.g., "scope enforcement," "truncation direction," "prompt limits")
+- Identifies recurring patterns (same class discovered 3+ times across sessions)
+- Proposes additions to .acm/rules.md — a new ACM file of crystallized durable rules
+
+**rules.md** would then be read by SCAN at highest priority (before retrospect.md, before learning.md) — it is the compact crystallized surface of all learned wisdom.
+
+**Why CODIFY belongs in ai-steward:**
+The skills suite does this manually (Retrospect step 4b: extract operational rules). CODIFY is the robot's structural equivalent — it prevents the robot from rediscovering the same patterns session after session because nothing crystallizes them into durable form.
+
+### history.md gap
+
+history.md is a compressed timeline table (46k chars) written by record.py. Nothing reads it. REORIENT could benefit from it as a fast-orientation layer — reading the table before reading the full trail gives a compressed map. This is lower priority than CODIFY but is the remaining ACM symmetry gap.
+
