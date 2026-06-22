@@ -38,6 +38,17 @@ def test_harness_session_sets_harness_root(tmp_path: Path) -> None:
     assert "HARNESS_ROOT" not in os.environ
 
 
+def test_harness_session_sets_harness_session_id(tmp_path: Path) -> None:
+    config = HarnessConfig()
+    os.environ.pop("HARNESS_SESSION_ID", None)
+    with harness_session(tmp_path, config) as result:
+        sid = os.environ.get("HARNESS_SESSION_ID")
+        assert sid is not None, "HARNESS_SESSION_ID must be set during context"
+        assert len(sid) == 26, "run_id must be a 26-char ULID"
+        assert sid == result["run_id"], "env var and result run_id must match"
+    assert "HARNESS_SESSION_ID" not in os.environ
+
+
 def test_harness_session_restores_previous_value(tmp_path: Path) -> None:
     config = HarnessConfig()
     os.environ["HARNESS_ROOT"] = "/previous/value"
@@ -45,6 +56,15 @@ def test_harness_session_restores_previous_value(tmp_path: Path) -> None:
         assert os.environ["HARNESS_ROOT"] == str(tmp_path / ".acm")
     assert os.environ["HARNESS_ROOT"] == "/previous/value"
     del os.environ["HARNESS_ROOT"]
+
+
+def test_harness_session_restores_session_id_on_exit(tmp_path: Path) -> None:
+    config = HarnessConfig()
+    os.environ["HARNESS_SESSION_ID"] = "PREVIOUSSESSIONIDFORTEST00"
+    with harness_session(tmp_path, config):
+        assert os.environ["HARNESS_SESSION_ID"] != "PREVIOUSSESSIONIDFORTEST00"
+    assert os.environ["HARNESS_SESSION_ID"] == "PREVIOUSSESSIONIDFORTEST00"
+    del os.environ["HARNESS_SESSION_ID"]
 
 
 def test_harness_session_restores_on_exception(tmp_path: Path) -> None:
@@ -62,18 +82,18 @@ def test_harness_session_restores_on_exception(tmp_path: Path) -> None:
 
 
 def test_harness_session_discovers_new_session(tmp_path: Path) -> None:
-    """A session .jsonl file created during the context is returned as session_path."""
+    """All .jsonl files created during the context are returned in session_paths."""
     config = HarnessConfig()
     session_id = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
     with harness_session(tmp_path, config) as result:
         sessions_dir = tmp_path / ".acm" / "sessions"
         sessions_dir.mkdir(parents=True)
         (sessions_dir / f"{session_id}.jsonl").write_bytes(b'{"v":1}\n')
-    assert result["session_path"] == f".acm/sessions/{session_id}.jsonl"
+    assert result["session_paths"] == [f".acm/sessions/{session_id}.jsonl"]
 
 
-def test_harness_session_picks_latest_when_multiple_created(tmp_path: Path) -> None:
-    """When multiple sessions are created, the latest ULID is chosen."""
+def test_harness_session_captures_all_when_multiple_created(tmp_path: Path) -> None:
+    """All new session files are captured in chronological (ULID sort) order."""
     config = HarnessConfig()
     earlier = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
     later   = "01BX5ZZKBKACTAV9WEVGEMMVS0"
@@ -82,12 +102,15 @@ def test_harness_session_picks_latest_when_multiple_created(tmp_path: Path) -> N
         sessions.mkdir(parents=True)
         (sessions / f"{earlier}.jsonl").write_bytes(b'{"v":1}\n')
         (sessions / f"{later}.jsonl").write_bytes(b'{"v":1}\n')
-    assert result["session_path"] == f".acm/sessions/{later}.jsonl"
+    assert result["session_paths"] == [
+        f".acm/sessions/{earlier}.jsonl",
+        f".acm/sessions/{later}.jsonl",
+    ]
 
 
-def test_harness_session_returns_none_when_no_session_created(tmp_path: Path) -> None:
-    """session_path is None when no new session directory appears."""
+def test_harness_session_returns_empty_list_when_no_session_created(tmp_path: Path) -> None:
+    """session_paths is an empty list when no new .jsonl files appear."""
     config = HarnessConfig()
     with harness_session(tmp_path, config) as result:
         pass  # harness not running — no session directory created
-    assert result["session_path"] is None
+    assert result["session_paths"] == []

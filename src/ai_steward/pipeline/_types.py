@@ -39,4 +39,4 @@ class LoopResult:
     diff: str | None
     acm_entry: str
     preflight_failure: str | None = None
-    harness_session_path: str | None = None
+    harness_session_paths: list[str] | None = None

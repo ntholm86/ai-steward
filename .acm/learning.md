@@ -497,6 +497,14 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** The blind spot the model named (cli.py `_CONFIG_TEMPLATE` not updated) is the correct next proposal. The model correctly identified it but deferred it as out of scope for this cycle. If the next self-targeting run produces a proposal to update the template, the mandate gate is working as designed.
 
+## 2026-06-22 â€” fix(harness): complete session coverage — all pipeline LLM calls captured
+
+**[!REALIZATION]** The harness Observable Autonomy guarantee in ai-steward was structurally incomplete: two of three LLM calls per pipeline run (SCAN and REFLECT) were producing unlinked session files. This is fixed on the ai-steward side. The remaining gap is the proxy side — one session file per run (true grouping) requires the proxy to implement `X-Harness-Session`. Until then, trails will list three separate file paths, which is complete evidence, just not grouped in a single JSONL.
+
+## 2026-06-22 â€” fix(harness): complete session coverage — all pipeline LLM calls captured
+
+**[!REALIZATION]** :* not fired — no prior realization contradicted; the REFLECT harness attribution gap was named as open in the last retrospect (claim 3: "Reflection now also complete. Remaining: multi-cycle convergence, REFLECT harness attribution, external repo testing.").
+
 ---
 
-**123 markers â€” 93 realisations, 30 reversals**
+**125 markers â€” 95 realisations, 30 reversals**

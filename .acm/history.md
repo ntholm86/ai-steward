@@ -54,6 +54,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 47 | 2026-06-22 | feat(reflect): add REFLECT phase — third LLM call producing Reflection section in trail entries |  |  |
 | â–¸ 48 | 2026-06-22 | ai-steward: Add max_tokens_reflect config parameter for REFLECT phase |  |  |
 | â–¸ 49 | 2026-06-22 | live-validation: REFLECT phase first live run |  |  |
+| â–¸ 50 | 2026-06-22 | fix(harness): complete session coverage — all pipeline LLM calls captured | REFLECT moved inside harness context; session_paths list replaces single session_path; X-Harness-Session + HARNESS_SESSION_ID added for future proxy grouping | 88 tests → 92 tests; 6 files changed (+153/−67); mypy clean |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -302,4 +303,8 @@ Do not edit by hand â€” re-run the command to refresh.
 
 - **decided:** ** Proposed: Add max_tokens_reflect config parameter for REFLECT phase
 
-**49 runs total â€” 49 with changes, 0 silence**
+### Run 50 â€” 2026-06-22 â€” fix(harness): complete session coverage — all pipeline LLM calls captured
+
+- **decided:** **Fix the Observable Autonomy gap in two layers:**
+
+**50 runs total â€” 50 with changes, 0 silence**

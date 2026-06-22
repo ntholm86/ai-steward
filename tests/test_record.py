@@ -113,6 +113,22 @@ def test_record_entry_omits_reflection_section_when_empty(tmp_path: Path) -> Non
     assert "**Reflection:**" not in entry
 
 
+def test_record_entry_lists_all_harness_session_paths(tmp_path: Path) -> None:
+    paths = [".acm/sessions/01ARZ.jsonl", ".acm/sessions/01BXZ.jsonl", ".acm/sessions/01CXZ.jsonl"]
+    entry = record(tmp_path, _make_config(tmp_path), _make_finding(), diff="",
+                   harness_session_paths=paths)
+
+    assert "**Harness sessions:**" in entry
+    for p in paths:
+        assert p in entry
+
+
+def test_record_entry_shows_not_captured_when_no_sessions(tmp_path: Path) -> None:
+    entry = record(tmp_path, _make_config(tmp_path), _make_finding(), diff="",
+                   harness_session_paths=None)
+
+    assert "not captured" in entry
+
 # ---------------------------------------------------------------------------
 # Git staging
 # ---------------------------------------------------------------------------

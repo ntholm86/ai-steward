@@ -52,7 +52,7 @@ def record(
     config: AiStewardConfig,
     finding: Finding,
     diff: str,
-    harness_session_path: str | None = None,
+    harness_session_paths: list[str] | None = None,
 ) -> str:
     """Append a trail entry and stage the changed file.
 
@@ -61,15 +61,15 @@ def record(
         config: Pipeline configuration — used for model-appropriate cost estimation.
         finding: The change that was applied by IMPLEMENT.
         diff: Output of ``git diff HEAD -- <file>`` captured before staging.
-        harness_session_path: Repo-relative path to the harness session
-            directory (e.g. ``.acm/sessions/01J.../``), or None if the
-            harness session path could not be determined.
+        harness_session_paths: Repo-relative paths to all harness session files
+            created during this pipeline run (SCAN + IMPLEMENT + REFLECT), or
+            None / empty when the harness was not running.
 
     Returns:
         The trail entry string that was appended.
     """
     cycle_cost_usd = _estimate_cycle_cost(config, finding)
-    entry = _build_entry(finding, diff, harness_session_path, cycle_cost_usd=cycle_cost_usd)
+    entry = _build_entry(finding, diff, harness_session_paths, cycle_cost_usd=cycle_cost_usd)
     _append_to_trail(repo, entry)
     _stage_file(repo, finding.file)
     return entry
@@ -83,7 +83,7 @@ def record(
 def _build_entry(
     finding: Finding,
     diff: str,
-    harness_session_path: str | None = None,
+    harness_session_paths: list[str] | None = None,
     cycle_cost_usd: float = 0.0,
 ) -> str:
     """Build a structured trail entry from a Finding.
@@ -103,11 +103,10 @@ def _build_entry(
     """
     today = date.today().isoformat()
     cycle_cost = cycle_cost_usd
-    session_line = (
-        harness_session_path
-        if harness_session_path
-        else "not captured (harness not running or no calls made)"
-    )
+    if harness_session_paths:
+        session_line = ", ".join(f"`{p}`" for p in harness_session_paths)
+    else:
+        session_line = "not captured (harness not running or no calls made)"
     return (
         f"\n---\n\n"
         f"## {today} \u2014 ai-steward: {finding.description}\n\n"
@@ -136,7 +135,7 @@ def _build_entry(
         f"SCAN {finding.input_tokens}/{finding.output_tokens} "
         f"\u2014 IMPL {finding.impl_input_tokens}/{finding.impl_output_tokens} "
         f"\u2014 cycle est. ${cycle_cost:.5f} USD  \n"
-        f"**Harness session:** `{session_line}`  \n\n"
+        f"**Harness sessions:** {session_line}  \n\n"
         f"**Diff:**\n```diff\n{diff}\n```\n\n"
         f"*Staged for operator review. Not committed.*\n"
     )

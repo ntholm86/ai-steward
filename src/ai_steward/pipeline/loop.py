@@ -172,30 +172,34 @@ def run(repo: Path, config: AiStewardConfig) -> LoopResult:
         finding.impl_input_tokens = impl_in_tok
         finding.impl_output_tokens = impl_out_tok
 
-    # Extract session path populated by harness_session's finally block.
-    # harness_ctx is None when the session is mocked (tests) â€” handled gracefully.
-    harness_session_path = harness_ctx["session_path"] if isinstance(harness_ctx, dict) else None
+        diff = _get_diff(repo, finding.file)
+        changed_file = repo / finding.file
+        ok, reason = verify(repo, config, changed_file, original_size, baseline_count)
+        if not ok:
+            return LoopResult(
+                status="verify_failed",
+                finding=finding,
+                diff=diff,
+                acm_entry=f"VERIFY FAILED: {reason}",
+            )
 
-    # VERIFY and RECORD are tier-0 â€” outside the harness LLM context.
-    diff = _get_diff(repo, finding.file)
-    changed_file = repo / finding.file
-    ok, reason = verify(repo, config, changed_file, original_size, baseline_count)
-    if not ok:
-        return LoopResult(
-            status="verify_failed",
-            finding=finding,
-            diff=diff,
-            acm_entry=f"VERIFY FAILED: {reason}",
-        )
+        # REFLECT is an LLM call — inside the harness context so its session
+        # is captured alongside SCAN and IMPLEMENT.
+        finding.reflection = reflect(repo, config, finding, diff)
 
-    finding.reflection = reflect(repo, config, finding, diff)
+    # session_paths populated in harness_session’s finally block — contains
+    # all .jsonl files created during this run (SCAN + IMPLEMENT + REFLECT).
+    # harness_ctx is None when the session is mocked (tests) — handled gracefully.
+    harness_session_paths = (
+        harness_ctx.get("session_paths", []) if isinstance(harness_ctx, dict) else []
+    )
 
-    acm_entry = record(repo, config, finding, diff, harness_session_path=harness_session_path)
+    acm_entry = record(repo, config, finding, diff, harness_session_paths=harness_session_paths)
 
     return LoopResult(
         status="proposed",
         finding=finding,
         diff=diff,
         acm_entry=acm_entry,
-        harness_session_path=harness_session_path,
+        harness_session_paths=harness_session_paths,
     )

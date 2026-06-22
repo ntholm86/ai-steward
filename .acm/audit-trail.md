@@ -3457,3 +3457,113 @@ Commit: feat(config): max_tokens_reflect — REFLECT phase token budget operator
 1. **Update `_CONFIG_TEMPLATE` in cli.py** — add `max_tokens_reflect: 400` to the init-scaffolded YAML so the three `max_tokens_*` fields are discoverable to operators. The model named this as its blind spot — it should appear as a proposal in the next self-targeting run.
 2. **Multi-cycle convergence test** — the highest-priority untested claim. Run until SCAN returns `nothing_found` twice. "Convergence Is Silence" needs to be evidence.
 3. **REFLECT harness attribution** — the reflection LLM call runs outside the harness_session context; its session is not linked in the trail entry. Minor P2 gap.
+
+---
+
+## 2026-06-22 — fix(harness): complete session coverage — all pipeline LLM calls captured
+
+- target: ai-steward — harness.py, loop.py, record.py, _types.py
+- operator: Nils Holmager
+- agent: claude-sonnet-4-6 (GitHub Copilot)
+- skill: improve v3.10.0
+- outcome: REFLECT moved inside harness context; session_paths list replaces single session_path; X-Harness-Session + HARNESS_SESSION_ID added for future proxy grouping
+- delta: 88 tests → 92 tests; 6 files changed (+153/−67); mypy clean
+
+### Interpretation of the ask
+
+Operator identified that each `.jsonl` in `.acm/sessions/` has only one entry (`seq=0`, unique `sid`), and that a pipeline iteration (SCAN + IMPLEMENT + REFLECT) was producing three separate unrelated files with only IMPLEMENT's linked in the trail. They recognised the fix direction: ai-steward should generate a shared session ID and pass it to all API calls as a generic protocol header (`X-Harness-Session`), while the proxy stays ignorant of ai-steward.
+
+Design constraint stated explicitly: the proxy must work as a true MITM for any LLM client — session grouping is a protocol feature, not an ai-steward-specific coupling.
+
+The operator also noted the harness protocol itself may need ACM governance — `llm-harness-proxy` already has `.acm/` files, so this is already structurally true.
+
+### Examination
+
+**Purpose lens:** `harness_session()` was designed to track which session file was created per run. But it only tracked the LAST new file (via `sorted(after - before)[-1]`). Three API calls (SCAN + IMPLEMENT + REFLECT) = three files; only IMPLEMENT's was captured. REFLECT ran outside the context entirely — its session was never linked anywhere. SCAN's session was also silently lost. Observable Autonomy gap: a third of the evidence trail was structurally invisible.
+
+**Inconsistency lens:** REFLECT was added to the pipeline after `harness_session()` was designed. It was placed outside the context, inconsistent with SCAN and IMPLEMENT. This was an architectural seam, not a design choice.
+
+**Purpose lens (SPEC):** SPEC §3 defines a session as "a contiguous sequence of entries sharing one `sid`." The proxy creates a new `sid` per HTTP request — there is no client-side mechanism to specify the `sid`. No `X-Harness-Session` header exists in the current SPEC or proxy. The proxy uses `X-Harness-Root` (already implemented) but nothing for session grouping.
+
+**Gap:** ai-steward can generate a ULID and send it as `X-Harness-Session`, but the proxy will ignore it until the proxy implements the header. The client-side work is safe to do now — zero regression.
+
+### Decision
+
+[!DECISION] **Fix the Observable Autonomy gap in two layers:**
+
+1. Move REFLECT inside `harness_session()` context — its session is now captured.
+2. Change `harness_session()` to return ALL new `.jsonl` files (list), not just the last one.
+3. Generate a pipeline-run ULID (`_generate_ulid()`) and pass it as `HARNESS_SESSION_ID` env var; `anthropic_client()` reads this and sends `X-Harness-Session` header with every API call.
+4. Update trail entry to list all sessions.
+
+Rejected alternative: only fix the tracking (capture all files) without adding ULID/header. Rejected because the operator confirmed they want the full solution; the client-side header infrastructure is safe to add now and avoids a second iteration later.
+
+Rejected alternative: modify the proxy. Outside ai-steward's autonomous scope (operational rule). The proxy change is a separate operator decision.
+
+### Prediction
+
+After this change:
+- All three session files (SCAN, IMPLEMENT, REFLECT) will be listed in every trail entry's "Harness sessions" field.
+- `X-Harness-Session: <ulid>` will appear on every API call (proxy currently ignores it — no behaviour change on sessions until proxy implements the header).
+- 88 tests → 92+ (session discovery tests updated; 4 new tests added).
+- mypy clean.
+- What will NOT happen: the three files will not merge into one yet — that is the proxy-side implementation.
+
+### Action
+
+**Prediction held.** 92 tests pass, mypy clean.
+
+Changes made:
+
+**harness.py** (+69 lines net):
+- Added `import time`
+- Added `_CROCKFORD` and `_generate_ulid()` — valid 26-char Crockford base-32 ULID per SPEC §4.2
+- `anthropic_client()`: reads `HARNESS_SESSION_ID` env var, adds `X-Harness-Session` header if set
+- `harness_session()`: generates `run_id` ULID at start; sets `HARNESS_SESSION_ID` env var (restored on exit); yields `{"session_paths": [], "run_id": run_id}`; finally block collects ALL new `.jsonl` files as a sorted list
+
+**loop.py** (+4 lines net, structural change):
+- Moved `diff = _get_diff(...)`, `verify()`, and `reflect()` inside `harness_session()` context
+- Changed `harness_ctx["session_path"]` (str | None) → `harness_ctx.get("session_paths", [])` (list)
+- REFLECT is now inside the harness context — its session is captured
+
+**record.py** (+3 lines net):
+- `harness_session_path: str | None` → `harness_session_paths: list[str] | None` everywhere
+- `session_line` now joins all paths with `, ` (backtick-wrapped)
+- Label changed from `**Harness session:**` to `**Harness sessions:**`
+
+**_types.py** (rename only):
+- `LoopResult.harness_session_path: str | None` → `harness_session_paths: list[str] | None`
+
+**tests/test_harness.py** (+26 lines net):
+- `test_harness_session_sets_harness_session_id` — verifies HARNESS_SESSION_ID set + run_id in result
+- `test_harness_session_restores_session_id_on_exit` — verifies env var restored
+- `test_harness_session_captures_all_when_multiple_created` — verifies both files returned (replacing the old "picks latest" test)
+- `test_harness_session_returns_empty_list_when_no_session_created` — empty list (was None)
+
+**tests/test_record.py** (+16 lines):
+- `test_record_entry_lists_all_harness_session_paths` — all 3 paths appear in entry
+- `test_record_entry_shows_not_captured_when_no_sessions` — None → "not captured"
+
+### Reflection
+
+**Current model of the target as a falsifiable claim:**
+[!REALIZATION] The harness Observable Autonomy guarantee in ai-steward was structurally incomplete: two of three LLM calls per pipeline run (SCAN and REFLECT) were producing unlinked session files. This is fixed on the ai-steward side. The remaining gap is the proxy side — one session file per run (true grouping) requires the proxy to implement `X-Harness-Session`. Until then, trails will list three separate file paths, which is complete evidence, just not grouped in a single JSONL.
+
+**Blind spot:** I did not verify that the proxy actually ignores unknown headers rather than rejecting the call. The proxy currently receives `X-Harness-Session` on every API call. If the proxy rejects calls with unknown `X-Harness-*` headers, all pipeline runs will break. No live run was made to confirm this is safe. **This warrants a live validation run before the change is considered fully deployed.**
+
+**What a knowledgeable reader would push back on:** The mojibake issue in `loop.py` (U+00E2 + U+20AC + U+201D stored as Unicode characters instead of U+2014 em dash) was worked around with a Python script rather than fixed. The file now has a mix of proper em dashes (in the newly written lines) and mojibake (in lines that weren't touched). This is a latent hygiene issue.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* not fired — this is an architectural fix, not another field addition.
+- *About to declare silence:* not fired — a change was made.
+- *Contradicts prior [!REALIZATION]:* not fired — no prior realization contradicted; the REFLECT harness attribution gap was named as open in the last retrospect (claim 3: "Reflection now also complete. Remaining: multi-cycle convergence, REFLECT harness attribution, external repo testing.").
+- *Operator explicitly asked:* fired — operator asked "Use improve skill" with explicit session-grouping intent.
+
+### Candidate Next Moves
+
+1. **Live validation run** — confirm the proxy silently ignores `X-Harness-Session` and doesn't reject calls. Required before considering this change fully deployed.
+2. **Proxy `X-Harness-Session` implementation** — update SPEC.md in `llm-harness-proxy` to define the header, then implement it in the proxy binary. This closes the final gap: one session file per pipeline run.
+3. **Multi-cycle convergence test** — highest-priority untested architectural claim; the loop has never run until self-silence.
+4. **Fix mojibake in loop.py comments** — cosmetic but the file has mixed encodings; a clean pass would write all em dashes as U+2014.
+
+*Staged for operator review. Not committed.*
