@@ -12,7 +12,7 @@ import pytest
 
 from ai_steward.config import AiStewardConfig, ModelAssignment, ScopeConfig
 from ai_steward.pipeline import Finding
-from ai_steward.pipeline.scan import _collect_files, scan
+from ai_steward.pipeline.scan import _collect_files, _load_scope_context, scan
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -513,3 +513,55 @@ def test_scan_head_budget_is_two_thousand_chars(tmp_path: Path) -> None:
 
     user_content = client.messages.create.call_args[1]["messages"][0]["content"]
     assert marker_text in user_content, "Content at char 1100 must be inside the 2000-char head window"
+
+
+# ---------------------------------------------------------------------------
+# _load_scope_context — parameter variation (scope_depth, budget_chars)
+# ---------------------------------------------------------------------------
+
+
+def test_load_scope_context_scope_depth_limits_traversal(tmp_path: Path) -> None:
+    """scope_depth=1 reads only the immediate parent, not the grandparent."""
+    workspace = tmp_path / "workspace"
+    repo = workspace / "myrepo"
+    repo.mkdir(parents=True)
+
+    (tmp_path / ".acm").mkdir()
+    (tmp_path / ".acm" / "destination.md").write_text(
+        "# Grandparent\nGrandparent goal.", encoding="utf-8"
+    )
+    (workspace / ".acm").mkdir()
+    (workspace / ".acm" / "destination.md").write_text(
+        "# Workspace\nWorkspace goal.", encoding="utf-8"
+    )
+
+    # scope_depth=1 — only the immediate parent (workspace) is in range
+    result_shallow = _load_scope_context(repo, scope_depth=1)
+    assert result_shallow is not None
+    assert "Workspace goal." in result_shallow
+    assert "Grandparent goal." not in result_shallow
+
+    # scope_depth=2 — both levels reached
+    result_deep = _load_scope_context(repo, scope_depth=2)
+    assert result_deep is not None
+    assert "Workspace goal." in result_deep
+    assert "Grandparent goal." in result_deep
+
+
+def test_load_scope_context_budget_chars_controls_truncation(tmp_path: Path) -> None:
+    """destination_budget_chars limits how much destination text reaches SCAN."""
+    repo = tmp_path
+    (repo / ".acm").mkdir()
+    # Destination large enough to exceed a small budget (half goes to repo scope)
+    long_dest = "## 2026-01-01\n\n" + "A" * 2000
+    (repo / ".acm" / "destination.md").write_text(long_dest, encoding="utf-8")
+
+    # budget_chars=200 → repo gets 100 chars; 2015-char dest must be truncated
+    result_tight = _load_scope_context(repo, budget_chars=200)
+    assert result_tight is not None
+    assert "[... destination.md truncated" in result_tight
+
+    # budget_chars=10000 → repo gets 5000 chars; 2015-char dest fits without truncation
+    result_wide = _load_scope_context(repo, budget_chars=10000)
+    assert result_wide is not None
+    assert "[... destination.md truncated" not in result_wide

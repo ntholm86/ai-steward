@@ -4494,3 +4494,94 @@ work under its own discipline, now that the _extract_json fix ensures proposals 
    parameter-variation blind spot named in Reflection above.
 3. Run `ai-steward run` -- let SCAN propose under its own discipline with the _extract_json
    fix in place; observe whether it finds the binary/skip-dirs surface or something else first.
+
+---
+
+## 2026-06-22 — test-scope-context-parameter-variation
+
+- target: ai-steward (tests/test_scan.py)
+- agent: GitHub Copilot (Claude claude-sonnet-4-6)
+- skill: improve
+- outcome: CHANGE ACCEPTED — two tests added covering scope_depth and budget_chars parameter variation
+
+### Ask
+
+Improve skill run. Prior entry named a blind spot: "_load_scope_context parameter variation
+(non-default scope_depth, budget_chars) is not tested." This iteration closes that gap.
+
+### Examination
+
+**Purpose lens:** 23 existing scan tests cover traversal behavior at default depth/budget.
+No test verifies that scope_depth=1 blocks a grandparent visible at scope_depth=2.
+No test verifies that budget_chars=200 causes truncation while budget_chars=10000 does not.
+The wiring from the prior run is structurally correct but behaviorally unverified at
+non-default values -- regression could reintroduce hardcoding silently.
+
+**Inconsistency lens:** The existing test pattern for the budget-related behavior uses
+_truncate_destination indirectly (test_scan_truncates_long_destination) but none of those
+tests pass through the budget_chars parameter. Direct parameter-variation tests are missing.
+
+**challenge:** Is there a more impactful gap than adding coverage tests? Considered:
+  - Wire _BINARY_HEURISTIC_BYTES/_DEFAULT_SKIP_DIRS (new config fields needed first -- design
+    question). Not this iteration.
+  - Wire lenses into SCAN system prompt (requires new prompt machinery). Not this iteration.
+The test gap was explicitly named as a blind spot in the prior entry. Closing named blind
+spots is the highest-integrity move; skipping them in favor of new work is rationalization drift.
+
+### Decision
+
+**[!DECISION]** Add two tests calling _load_scope_context directly:
+  1. test_load_scope_context_scope_depth_limits_traversal -- scope_depth=1 vs scope_depth=2
+     with grandparent + workspace + repo structure. Verifies the range(scope_depth) wiring.
+  2. test_load_scope_context_budget_chars_controls_truncation -- budget_chars=200 triggers
+     truncation marker; budget_chars=10000 does not. Verifies the half=budget_chars//2 wiring.
+
+**Prediction:** 102+2=104 tests pass. No existing tests break. No scan.py or config.py changes.
+The named blind spot from the prior iteration is closed.
+
+### Action
+
+Added _load_scope_context to the import in test_scan.py.
+Added two test functions at the end of test_scan.py under a new section header.
+
+104 tests pass. Prediction held exactly.
+
+### Reflection
+
+**Model of target:** The parameter-variation coverage gap has been a recurring pattern:
+functionality is added (wiring), the entry names a blind spot (no test for non-default values),
+and the next run closes it. This three-step arc (wire -> name gap -> close gap) is a stable
+convergence pattern. The pattern is now closing two major config wiring items (scope_depth,
+budget_chars) with full coverage. The remaining open items are architecturally distinct:
+  - lenses: requires system prompt machinery (design-level work)
+  - _BINARY_HEURISTIC_BYTES/_DEFAULT_SKIP_DIRS: new config fields needed (two-step like
+    acm_scope_depth was)
+
+**Blind spot:** No test verifies that _load_scope_context respects the .acm-root STOPPING
+CONDITION in combination with a non-default scope_depth. The existing test_scan_stops_at_acm_root_marker
+tests only the default depth=4. If scope_depth=1 AND .acm-root is set at the immediate parent,
+the behavior should be: read that parent's destination, then stop. This interaction is untested.
+
+**Imagined expert pushback:** "Why test _load_scope_context directly instead of through scan()?
+Direct testing of private functions is fragile -- if the function is renamed or inlined, the test
+breaks without the public API being affected." Valid concern. The counter-argument: the function
+is large and stable (it has its own docstring and section in the test file), and testing through
+scan() requires mocking that obscures what's being verified. The existing test suite mixes both
+approaches. Acceptable for this scope.
+
+Trigger evaluations:
+- Recurring finding-class: not fired -- this is a targeted coverage close, not a new
+  finding class. Prior 3 entries were dead-config + encoding + parse-fix. This is coverage.
+- About to declare silence: not fired -- change was made.
+- Contradicts prior [!REALIZATION]: not fired -- consistent with all prior realizations.
+- Operator explicitly asked: fired (improve skill invoked directly).
+
+### Candidate Next Moves
+
+1. Wire _BINARY_HEURISTIC_BYTES and _DEFAULT_SKIP_DIRS to new config fields (binary_heuristic_bytes,
+   default_skip_dirs) -- cycle 8's original finding, now the last major hardcoded input-filter
+   surface. Two-step: add config fields, then wire into _collect_files.
+2. Run `ai-steward run` -- let SCAN propose the next surface under its own discipline.
+   With _extract_json fix in place, the pipeline should surface the binary/skip_dirs finding
+   or the lenses machinery gap, whichever it ranks highest.
+3. Add a test for scope_depth + .acm-root interaction -- the blind spot named above.
