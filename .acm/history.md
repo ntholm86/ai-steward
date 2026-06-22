@@ -46,6 +46,7 @@ Do not edit by hand â€” re-run the command to refresh.
 | â–¸ 39 | 2026-06-21 | Retrospect: pre-orient-implementation |  |  |
 | â–¸ 40 | 2026-06-21 | feat(orient): inject retrospect.md and learning.md into SCAN context |  |  |
 | â–¸ 41 | 2026-06-22 | fix(record): remove redundant Expected outcome line from trail entry |  |  |
+| â–¸ 42 | 2026-06-22 | feat(record): replace hardcoded lenses with examination_summary from SCAN Step 2 |  |  |
 
 ### Run 1 â€” 2026-05-14 â€” Evo analysis and new project decision
 
@@ -261,4 +262,9 @@ Do not edit by hand â€” re-run the command to refresh.
 
 - **decided:** Remove `f"*Expected outcome:* {finding.rationale}\n\n"` from `_build_entry()`. The Prediction field now carries a clean, single falsifiable statement.
 
-**41 runs total â€” 41 with changes, 0 silence**
+### Run 42 â€” 2026-06-22 â€” feat(record): replace hardcoded lenses with examination_summary from SCAN Step 2
+
+- **decided:** Add `examination_summary: str = ""` to `Finding`, `"examination_summary"` to SCAN JSON schema, extract in `scan()`, and replace the two hardcoded lines in `_build_entry()` with the model’s value (fallback to generic lines if empty).
+- **decided:** (description + rationale + risk), Prediction (Step 4 falsifiable statement), Lenses (Step 2 examination summary), Blind spot (Step 5). The remaining gap is fundamentally different: Reflection (a second LLM call after VERIFY), across-trail trigger evaluation, and Candidate Next Moves. These require architecture changes to the pipeline, not field additions.
+
+**42 runs total â€” 42 with changes, 0 silence**

@@ -2958,3 +2958,74 @@ Imagined reader pushback: "This is a cosmetic fix. The Lenses section is still b
 1. **Extract lenses from SCAN model output** — add a `lenses` JSON field to the SCAN prompt schema, extract it into `Finding`, emit it in `_build_entry()` instead of the hardcoded generic lines. Same pattern as the prediction field fix. Completes `_build_entry()`’s structural alignment with the trail skill standard.
 2. **Cost model correction in destination** — append a section to destination.md updating the "$0.002 (haiku)" figure to actual ~$0.03/cycle. Operator-held document; requires a human-supervised session to write.
 3. **Orient context budget tuning** — run a live self-targeting scan to inspect what retrospect.md content lands in the context window; 1000 chars may truncate before operational rules.
+
+---
+
+## 2026-06-22 — feat(record): replace hardcoded lenses with examination_summary from SCAN Step 2
+
+- target: ai-steward pipeline (_types.py, scan.py, record.py)
+- agent: GitHub Copilot (Claude Sonnet 4.6)
+- skill: improve v3.10.0
+
+### Interpretation
+
+Operator: "run improve skill." Recurring-class trigger (entry 41): three consecutive RECORD format fixes; "[!REALIZATION] one more iteration completes the structural alignment." Top candidate: extract lenses from SCAN model output. This is entry 42.
+
+### Examination
+
+**Waste lens:** `_build_entry()` emitted two hardcoded lines under `**Lenses applied:**`:
+- "Commander’s Intent: Operator destination loaded — improvement selected against stated direction."
+- "Code examination: Repository files within scope scanned for structural improvements."
+
+These are trivially true by construction for every cycle — they add zero information about what the model actually found. The model’s Step 2 examination writes genuine findings (which files were read, what was found there) in prose, discarded by `_extract_json()`.
+
+**Inconsistency lens:** The prediction field (entry 37) established the pattern: add a JSON field to SCAN schema, extract it into Finding, emit it in `_build_entry()`. The examination content has the same problem but a different solution was never applied.
+
+Exact lines in record.py (before fix):
+```
+f"- *Commander’s Intent:* ... loaded — improvement selected against stated direction.\n"
+f"- *Code examination:* Repository files within scope scanned for structural improvements.\n\n"
+```
+
+### [!DECISION]
+
+[!DECISION] Add `examination_summary: str = ""` to `Finding`, `"examination_summary"` to SCAN JSON schema, extract in `scan()`, and replace the two hardcoded lines in `_build_entry()` with the model’s value (fallback to generic lines if empty).
+
+Rationale: same pattern as prediction field. The model’s Step 2 examination prose is the genuine content; a JSON field promotes it to a first-class output.
+
+Alternative rejected: `lenses: dict[str, str]` (named lens findings). The prompt’s Step 2 doesn’t use lens vocabulary; the model would invent names. Free-form `examination_summary` is honest about what the prompt actually asks. Named lenses belong in a prompt restructure that requires a live test.
+
+### Prediction
+
+Trail entries will show what the model actually examined in Step 2 rather than boilerplate. The prompt instruction asks for "2-3 sentences from Step 2: which files were read and what the examination found." If a model omits the field, the fallback generic lines remain — no regression. 81 existing tests pass unchanged. No new tests needed (same coverage pattern as prediction field).
+
+### Action
+
+4 changes across 3 files:
+- `_types.py`: `examination_summary: str = ""` added to `Finding`
+- `scan.py`: `"examination_summary"` added to JSON schema + `data.get("examination_summary", "")` in Finding constructor
+- `record.py`: replaced 2 hardcoded f-strings with conditional `finding.examination_summary + "\n\n"` (fallback to generic if empty)
+
+81 tests pass. mypy clean.
+
+### Reflection
+
+Current model: `_build_entry()` structural alignment with the trail skill standard is now complete for the fields that come from the SCAN JSON output: [!DECISION] (description + rationale + risk), Prediction (Step 4 falsifiable statement), Lenses (Step 2 examination summary), Blind spot (Step 5). The remaining gap is fundamentally different: Reflection (a second LLM call after VERIFY), across-trail trigger evaluation, and Candidate Next Moves. These require architecture changes to the pipeline, not field additions.
+
+Blind spot: did not examine whether the fallback condition (`if finding.examination_summary`) handles the empty-string case from models that output `"examination_summary": ""` explicitly. `""` is falsy in Python, so the fallback fires. This is correct behavior — an empty examination summary is equivalent to none.
+
+Imagined reader pushback: "The examination_summary is just the model summarizing what it already wrote in prose. Doesn’t this double the token output?" The model writes Step 2 prose for its reasoning chain, then condenses it into 2-3 sentences in the JSON field. Marginal token cost per cycle, not a structural problem.
+
+**Across-trail trigger evaluation:**
+- *Recurring finding-class:* FIRED again — entries 37, 40, 41, 42 are all `_build_entry()` format fixes. Four consecutive. But the [!REALIZATION] from entry 41 said this iteration was the last one in this class. That prediction is now testable: the next improve iteration should NOT be a `_build_entry()` fix.
+- *About to declare silence on `_build_entry()`:* FIRED — all fields from SCAN JSON output are now captured. The remaining gap (Reflection + Reflection call) is a different class of work.
+- *Contradicts prior [!REALIZATION]:* not fired.
+- *Operator explicitly asked:* not fired.
+
+[!REALIZATION] `_build_entry()` is now structurally aligned with the trail skill standard for all fields derivable from a single SCAN + IMPLEMENT cycle. The structural boundary is now clear: Prediction, Lenses, Blind spot come from the SCAN model’s JSON. Reflection, trigger evaluation, and Candidate Next Moves require a second reasoning pass after VERIFY. These are architecturally distinct — the first set is free (the model produces them as part of its reasoning); the second set costs an additional LLM call.
+
+### Candidate Next Moves
+
+1. **Run a live self-targeting scan to validate** — the four field fixes (prediction, orient, expected-outcome removal, examination_summary) have never been tested together in a real cycle. A live run confirms the new fields are populated correctly and the trail entry looks right.
+2. **Cost model correction in destination** — append to destination.md updating "$0.002 (haiku)" to actual ~$0.03/cycle. Operator-held document; human-supervised session.
+3. **Reflection call architecture** — design the second LLM call in `record.py` that synthesizes VERIFY outcome against the prediction. This is the next class of work, architecturally distinct from field additions.

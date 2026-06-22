@@ -425,6 +425,22 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** The recurring-class trigger fired: three consecutive RECORD format fixes (prediction field, ORIENT context, Expected outcome). The pattern suggests `_build_entry()` was written as a rough first draft and is being incrementally corrected toward the trail skill standard. The remaining gap (Lenses boilerplate) follows the same pattern. One more iteration would complete the structural alignment. After that, the Reflection call (second LLM call) is a different category of work.
 
+## 2026-06-22 â€” feat(record): replace hardcoded lenses with examination_summary from SCAN Step 2
+
+**[!REALIZATION]** one more iteration completes the structural alignment." Top candidate: extract lenses from SCAN model output. This is entry 42.
+
+## 2026-06-22 â€” feat(record): replace hardcoded lenses with examination_summary from SCAN Step 2
+
+**[!REALIZATION]** from entry 41 said this iteration was the last one in this class. That prediction is now testable: the next improve iteration should NOT be a `_build_entry()` fix.
+
+## 2026-06-22 â€” feat(record): replace hardcoded lenses with examination_summary from SCAN Step 2
+
+**[!REALIZATION]** :* not fired.
+
+## 2026-06-22 â€” feat(record): replace hardcoded lenses with examination_summary from SCAN Step 2
+
+**[!REALIZATION]** `_build_entry()` is now structurally aligned with the trail skill standard for all fields derivable from a single SCAN + IMPLEMENT cycle. The structural boundary is now clear: Prediction, Lenses, Blind spot come from the SCAN model’s JSON. Reflection, trigger evaluation, and Candidate Next Moves require a second reasoning pass after VERIFY. These are architecturally distinct — the first set is free (the model produces them as part of its reasoning); the second set costs an additional LLM call.
+
 ---
 
-**105 markers â€” 76 realisations, 29 reversals**
+**109 markers â€” 80 realisations, 29 reversals**
