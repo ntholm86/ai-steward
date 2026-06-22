@@ -1,6 +1,6 @@
 ﻿# retrospect.md — ai-steward
 
-_Last updated: 2026-06-22 (run: post-reorient-and-graduate-escalate-design)_
+_Last updated: 2026-06-22 (run: post-graduate-escalate-implementation)_
 
 ---
 
@@ -18,16 +18,16 @@ This is an architectural principle, not a one-time fix. Any future constraint on
 **Falsifiable by:** a future out-of-scope proposal bypassing the code-level gate.
 
 **3. The loop has transitioned from infrastructure to meta-cognition.**
-Entries 1-75 built and validated the execution+governance layer. Entry 76-78: REORIENT phase added; GRADUATE and ESCALATE phases designed in destination.md. The target is no longer a pipeline — it is becoming an autonomous agent with structured self-awareness. The founding architectural insight ("execution layer deliberately dumb; reasoning layer external") now applies to the robot's own reasoning as well as the code it improves.
+Entries 1-75 built and validated the execution+governance layer. Entries 76+ added REORIENT, then the `run-loop` runner, then GRADUATE (silence classification) and ESCALATE (failure-pattern classification) as implemented phases — not just designs. The target is no longer a pipeline — it is an autonomous agent with structured self-awareness across both cognitive outcomes (silence and persistent failure). The founding architectural insight ("execution layer deliberately dumb; reasoning layer external") now applies to the robot's own reasoning as well as the code it improves.
 **Falsifiable by:** evidence that REORIENT, GRADUATE, or ESCALATE introduce reasoning failures that the pipeline layer does not catch.
 
-**4. REORIENT capability exists but is disconnected from the pipeline.**
-`ai-steward reorient REPO` executes correctly. Config fields `reorient_interval`, `max_tokens_reorient`, `reorient_trail_budget_chars` exist. But `ai-steward run` cannot trigger REORIENT automatically; there is no `run-loop` command that iterates cycles and fires the meta-cognitive phases. The capability exists as a standalone; the activation path does not.
-**Falsifiable by:** `ai-steward run` that triggers REORIENT after N cycles without a `run-loop` command.
+**4. The meta-cognitive phases are wired into the loop runner.**
+`ai-steward run-loop REPO` iterates cycles up to `max_iterations` and fires the meta-cognitive phases automatically: REORIENT every `reorient_interval` successful cycles, GRADUATE on two consecutive NOTHING FOUND (convergence), ESCALATE on `escalate_streak` consecutive failures. The standalone `ai-steward reorient REPO` command remains for manual invocation. The activation path that was missing now exists.
+**Falsifiable by:** a `run-loop` invocation that reaches a convergence or failure-streak condition without firing the corresponding phase.
 
-**5. The multi-cycle loop runner does not exist.**
-`reorient_interval`, `max_iterations`, and `budget_usd` are config fields but nothing reads them at runtime. GRADUATE (trigger on sustained silence) and ESCALATE (trigger on failure patterns) are designed in destination.md but not implemented. The robot cannot yet run itself to convergence, respond to silence, or escalate when stuck. All cognitive triggers require human invocation.
-**Falsifiable by:** an autonomous run that triggers GRADUATE or ESCALATE without human invocation.
+**5. The cognitive triggers are autonomous, but unvalidated in a live multi-cycle run.**
+`run-loop` reads `reorient_interval`, `max_iterations`, and `escalate_streak` at runtime. GRADUATE and ESCALATE are implemented with 37 unit tests between them and fire without human invocation. What remains unproven is behavioral: no live multi-cycle run has exercised the runner end-to-end against a real harness. `budget_usd` is still a config field that nothing enforces at runtime — the loop cannot yet stop on cost.
+**Falsifiable by:** a live `run-loop` run that converges or escalates correctly against a real harness; or a cost-cap enforcement that reads `budget_usd`.
 
 **6. External repo targeting remains unvalidated post-fix.**
 Vectorium was tested once (entry 26), revealed a VERIFY deletion-guard gap that was fixed. No external run has been done since the fix. The generalization claim is structurally sound but empirically untested against any repo that is not ai-steward itself.
@@ -53,17 +53,15 @@ Destination.md has the corrected cost range (~$0.018-0.030/cycle at claude-sonne
 
 ## What the next runs should test
 
-1. **`run-loop` command (highest priority)** — the multi-cognitive pipeline (REORIENT after N cycles, GRADUATE on silence, ESCALATE on failure patterns) requires a loop runner. Without this, REORIENT, GRADUATE, and ESCALATE are capabilities without activation paths. This is the single most valuable next structural change.
+1. **Live multi-cycle `run-loop` validation (highest priority)** — the runner, GRADUATE, and ESCALATE are unit-tested but never run end-to-end against a real harness. Run `ai-steward run-loop .` with a reachable harness to confirm the meta-cognitive triggers fire correctly under operational conditions and produce quality artifacts (retrospect rewrite, graduate proposal, escalate report).
 
-2. **GRADUATE phase** — implement destination-revision-on-silence. When SCAN returns NOTHING FOUND for N consecutive cycles, the robot should classify the silence (ACHIEVED / STALE / STUCK / PREMATURE) and propose a successor destination for human approval.
+2. **`budget_usd` cost-cap enforcement** — the field exists but nothing reads it at runtime. The loop cannot stop on cost. This requires a cost field on LoopResult and a cumulative check in run-loop. Until then, `max_iterations` is the only safety limit.
 
-3. **ESCALATE phase** — implement self-modification awareness. When repeated failures share a class (same test, same phase, same error), the robot should diagnose and escalate instead of looping.
+3. **Compounding-error detection across cycles** — the loop has only been validated one cycle at a time. If the trail carries a stale claim that steers SCAN wrong in cycle N+1, that pattern is invisible in single-cycle testing. A multi-cycle run is the only way to surface it.
 
 4. **External repo targeting** — validate post-deletion-guard behavior against vectorium or another TypeScript repo. First proof of generalization beyond self-targeting.
 
-5. **Live REORIENT validation** — run `ai-steward reorient .` against this repo to confirm the prompt produces arc-claims of the required quality. The phase is untested in live conditions.
-
-6. **Workspace-level destination conflict** — cycle 3 showed SCAN reading the workspace-level `.acm/destination.md` and using it to target test files inside the blocked scope. Examine whether higher-scope mandates systematically steer proposals toward blocked paths.
+5. **Workspace-level destination conflict** — cycle 3 showed SCAN reading the workspace-level `.acm/destination.md` and using it to target test files inside the blocked scope. Examine whether higher-scope mandates systematically steer proposals toward blocked paths.
 
 ---
 
