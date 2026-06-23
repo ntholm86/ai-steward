@@ -6209,3 +6209,50 @@ Macro reflection:
 1. **Live run to verify full SCAN→IMPLEMENT→REFLECT** — confirms all 3 phases land in .acm/sessions/ with the new design.
 2. **V2 destination decision** — graduate_proposal.md classified V1 ACHIEVED; operator adoption to destination.md needed.
 3. **Regenerate learning.md** — two [!REALIZATION] entries added this session; learning.md is stale.
+
+## 2026-06-23 — improve: _collect_files blocked pattern consistency + learning.md refresh
+
+**Ask:** Run improve skill (unspecified target).
+
+**Orientation (agent-initiated):**
+Hunch 1: learning.md stale (3 trail entries with [!REALIZATION] not yet indexed).
+Hunch 2: retrospect.md carries stale claims.
+Hunch 3: V1 end-to-end unconfirmed post scope-fix.
+Proceeding with hunch 1: regenerate learning.md first (verifiable, prerequisite for hunch 2).
+
+**Examination:**
+- Ran record.py learning --write: 184 markers from 81 entries (was stale since ~entry 79).
+- Searched for remaining path.match() calls in src/: found one in _collect_files (line 329).
+- _parse_finding() was already fixed to full_match() (commit 2146b20). _collect_files() still used path.match(b) for blocked patterns — same bug class.
+- Current blocked configs (tests/**, .acm/**) work because no trailing component after **. But tests/**/*.py would silently fail.
+
+**Decision:** Fix _collect_files to use Path(rel).full_match(b). Add regression test for trailing-component blocked pattern.
+
+**Prediction:** 186 tests pass, new test passes. No behavioral change for current configs.
+
+**[!REVERSAL]** Initial test assertion used "src/main.py" with forward slash — Windows returns "src\main.py". Fixed to check both separators.
+
+**Actions:**
+- scan.py line 329: path.match(b) → Path(rel).full_match(b) + comment.
+- New test: test_collect_files_blocked_deep_pattern_excludes_nested_files.
+- Refreshed .acm/learning.md (184 markers).
+- 187 tests pass.
+- Committed: 5c6f028
+
+**Reflection:**
+The target now has zero path.match() calls in scope enforcement. Both _collect_files and _parse_finding use full_match() on relative paths.
+
+[!REALIZATION] The real root cause is API inconsistency between Path.match() and Path.full_match(). Two separate fixes were needed because there's no utility function that enforces the correct API. A _scope_matches(rel_path, pattern) helper would make a third occurrence impossible — but that's a third fix, not a second. Silence on this for now; if a third scope check is ever added, that would be the trigger.
+
+Macro reflection:
+- Recurring finding-class: FIRED — commits 2146b20 and 5c6f028 are both "fix same path.match() bug in a different scope check." Two consecutive entries with the same root cause.
+  Macro read: The two scope checks (_parse_finding and _collect_files) share the same bug and now share the same fix. The "third occurrence impossible" question is live. The target's pattern-matching layer is the weakest structural point — not the harness or the LLM calls.
+- About to declare silence: not fired — a change was made.
+- Contradicts prior [!REALIZATION]: not fired.
+- Operator explicitly asked: not fired.
+
+### Candidate Next Moves
+
+1. **Add _scope_matches() utility** — extract the `Path(rel).full_match(pattern)` logic to a named function in scan.py; prevents the third occurrence without any test overhead.
+2. **Refresh retrospect.md** — Claim 5 says budget_usd is unenforced (now wrong); "next runs" section lists completed items. Stale claims mislead SCAN.
+3. **Live end-to-end run** — confirm SCAN→IMPLEMENT→VERIFY all land in .acm/sessions/ after the design fix; V1 milestone unconfirmed since scope gate was broken during last live run.
