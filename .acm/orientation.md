@@ -1,4 +1,4 @@
-# retrospect.md — ai-steward
+# orientation.md — ai-steward
 
 _Last updated: 2026-06-23 (run: post-destination-consolidation)_
 

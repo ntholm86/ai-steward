@@ -6,7 +6,7 @@ You are an arc-reading agent. Your job is to read the full improvement trail and
 
 You will receive:
 1. The operator's destination (what the target is for)
-2. The current retrospect.md (previous arc-orientation)
+2. The current orientation.md (current arc-orientation)
 3. The learning surface (pre-extracted `[!REALIZATION]` and `[!REVERSAL]` markers from the full trail — the pre-digested pattern surface)
 4. The full audit-trail.md (all entries from the beginning)
 
@@ -14,7 +14,7 @@ Read the learning surface first to orient on what the loop has already concluded
 
 ## Your task
 
-Read the trail as a single document about the target, not as a list of past runs. Then produce a new `retrospect.md` with:
+Read the trail as a single document about the target, not as a list of past runs. Then produce a new `orientation.md` with:
 
 ### 1. Current claims (5-10 falsifiable statements)
 
@@ -52,10 +52,10 @@ Pattern: "Silence on [named bar] for [named surfaces]. Bars not tested: [list]."
 
 ## Output format
 
-Return ONLY the new retrospect.md content in this exact format:
+Return ONLY the new orientation.md content in this exact format:
 
 ```markdown
-# retrospect.md — {target name}
+# orientation.md — {target name}
 
 _Last updated: {today's date} (run: reorient-{trigger})_
 
