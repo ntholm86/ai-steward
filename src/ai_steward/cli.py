@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import harness_session
 from ai_steward.pipeline import run as pipeline_run
-from ai_steward.pipeline.reorient import reorient as reorient_phase, write_retrospect
+from ai_steward.pipeline.reorient import reorient as reorient_phase, write_orientation
 from ai_steward.pipeline.escalate import escalate as escalate_phase, write_report as write_escalate_report
 from ai_steward.pipeline.graduate import graduate as graduate_phase, write_proposal as write_graduate_proposal
 
@@ -218,10 +218,10 @@ def init(repo: str) -> None:
 @main.command()
 @click.argument("repo", type=click.Path(exists=True))
 def reorient(repo: str) -> None:
-    """Run arc-level trail reading and rewrite retrospect.md.
+    """Run arc-level trail reading and rewrite orientation.md.
 
     REORIENT reads the full audit-trail.md, forms arc-claims about the target,
-    and rewrites .acm/retrospect.md. This gives the pipeline fresh orientation
+    and rewrites .acm/orientation.md. This gives the pipeline fresh orientation
     for subsequent SCAN calls.
 
     Triggers automatically during multi-cycle runs after N successful cycles,
@@ -259,11 +259,11 @@ def reorient(repo: str) -> None:
     click.echo(f"REORIENT: Reading trail and forming arc-claims...")
     with harness_session(repo_path, config.harness):
         content, in_tok, out_tok = reorient_phase(repo_path, config, trigger="manual")
-    retro_path = write_retrospect(repo_path, content)
+    orientation_path = write_orientation(repo_path, content)
 
     click.echo(f"REORIENT complete")
     click.echo(f"  Tokens:  {in_tok} in / {out_tok} out")
-    click.echo(f"  Wrote:   {retro_path}")
+    click.echo(f"  Wrote:   {orientation_path}")
     click.echo("")
     click.echo("The next SCAN will read this fresh orientation.")
 
@@ -339,7 +339,7 @@ def run_loop(repo: str) -> None:
                         content, in_tok, out_tok = reorient_phase(
                             repo_path, config, trigger="auto"
                         )
-                    write_retrospect(repo_path, content)
+                    write_orientation(repo_path, content)
                     click.echo(f"REORIENT complete ({in_tok} in / {out_tok} out)")
         elif result.status == "nothing_found":
             nothing_found_streak += 1

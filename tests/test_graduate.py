@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from ai_steward.config import AiStewardConfig, HarnessConfig, ModelAssignment, ScopeConfig
-from ai_steward.pipeline._utils import _load_current_retrospect, _load_destination
+from ai_steward.pipeline._utils import _load_current_orientation, _load_destination
 from ai_steward.pipeline.graduate import (
     _extract_proposal_content,
     _load_recent_trail,
@@ -72,18 +72,18 @@ class TestLoadDestination:
         assert "OLD content" not in result
 
 
-class TestLoadCurrentRetrospect:
-    def test_loads_retrospect(self, tmp_path: Path) -> None:
+class TestLoadCurrentOrientation:
+    def test_loads_orientation(self, tmp_path: Path) -> None:
         acm = tmp_path / ".acm"
         acm.mkdir()
-        (acm / "retrospect.md").write_text("# retrospect\n\n1. Claim.", encoding="utf-8")
+        (acm / "orientation.md").write_text("# orientation\n\n1. Claim.", encoding="utf-8")
 
-        result = _load_current_retrospect(tmp_path)
+        result = _load_current_orientation(tmp_path)
         assert "Claim." in result
 
     def test_returns_placeholder_when_missing(self, tmp_path: Path) -> None:
-        result = _load_current_retrospect(tmp_path)
-        assert "No retrospect.md found" in result
+        result = _load_current_orientation(tmp_path)
+        assert "No orientation.md found" in result
 
 
 class TestLoadRecentTrail:

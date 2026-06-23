@@ -22,12 +22,12 @@ def _load_destination(repo: Path, budget_chars: int = 3000) -> str:
     return "[No destination.md found]"
 
 
-def _load_current_retrospect(repo: Path) -> str:
-    """Load current retrospect.md if it exists."""
-    retro_file = repo / ".acm" / "retrospect.md"
-    if not retro_file.exists():
-        return "[No retrospect.md found]"
-    return retro_file.read_text(encoding="utf-8")
+def _load_current_orientation(repo: Path) -> str:
+    """Load current orientation.md if it exists."""
+    orientation_file = repo / ".acm" / "orientation.md"
+    if not orientation_file.exists():
+        return "[No orientation.md found]"
+    return orientation_file.read_text(encoding="utf-8")
 
 
 def _load_learning(repo: Path, budget_chars: int = 20000) -> str:

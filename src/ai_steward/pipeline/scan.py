@@ -226,17 +226,17 @@ def _load_scope_context(
 
 
 def _load_orient_context(repo: Path, learning_budget_chars: int = 5000) -> str | None:
-    """Load repo-scoped ORIENT context: retrospect.md and learning.md.
+    """Load repo-scoped ORIENT context: orientation.md and learning.md.
 
-    retrospect.md is extracted in two guaranteed parts:
+    orientation.md is extracted in two guaranteed parts:
 
     1. Arc-claims head — up to 2000 chars from the top of the file.
-       Claims are listed first in retrospect.md, so the head captures
+       Claims are listed first in orientation.md, so the head captures
        current arc-state.
 
     2. Operational rules — the full "## Active operational rules" section,
        extracted by header name and always appended as a separate subsection.
-       Rules live at the END of retrospect.md.  In the current file they
+       Rules live at the END of orientation.md.  In the current file they
        begin at char 5681.  The previous 1000-char head window delivered
        NONE of them — the model was operating without its operational
        constraints in every SCAN call.  Explicit header-targeted extraction
@@ -246,19 +246,19 @@ def _load_orient_context(repo: Path, learning_budget_chars: int = 5000) -> str |
     the tail is most relevant (most recent markers last). Budget controlled
     by learning_budget_chars (default 5000 — covers ~30 recent markers).
 
-    Budget: retrospect head ≤ 2000 chars; operational rules ≤ 3000 chars;
+    Budget: orientation head ≤ 2000 chars; operational rules ≤ 3000 chars;
     learning tail ≤ learning_budget_chars.  Returns None if neither file exists.
     """
     _RULES_MARKER = "## Active operational rules"
     sections: list[str] = []
 
-    retrospect = repo / ".acm" / "retrospect.md"
-    if retrospect.is_file():
+    orientation = repo / ".acm" / "orientation.md"
+    if orientation.is_file():
         try:
-            text = retrospect.read_text(encoding="utf-8", errors="ignore")
+            text = orientation.read_text(encoding="utf-8", errors="ignore")
             # 1. Arc-claims: head of file.
             head = text[:2000] + "\n[... truncated ...]" if len(text) > 2000 else text
-            sections.append(f"### Current orientation (retrospect):\n\n{head}")
+            sections.append(f"### Current orientation:\n\n{head}")
             # 2. Operational rules: always extracted by section header.
             rules_idx = text.find(_RULES_MARKER)
             if rules_idx >= 0:

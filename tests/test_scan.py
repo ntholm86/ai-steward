@@ -511,16 +511,16 @@ def test_collect_files_default_scope_excludes_binary_files(tmp_path: Path) -> No
 
 
 # ---------------------------------------------------------------------------
-# ORIENT — retrospect.md and learning.md injection
+# ORIENT — orientation.md and learning.md injection
 # ---------------------------------------------------------------------------
 
 
-def test_scan_includes_retrospect_in_context(tmp_path: Path) -> None:
-    """retrospect.md content appears in user_content when the file exists."""
+def test_scan_includes_orientation_in_context(tmp_path: Path) -> None:
+    """orientation.md content appears in user_content when the file exists."""
     (tmp_path / "utils.py").write_text("x = 1\n")
     (tmp_path / ".acm").mkdir()
-    (tmp_path / ".acm" / "retrospect.md").write_text(
-        "# retrospect.md\n\nClaim: the loop is working.", encoding="utf-8"
+    (tmp_path / ".acm" / "orientation.md").write_text(
+        "# orientation.md\n\nClaim: the loop is working.", encoding="utf-8"
     )
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
@@ -528,7 +528,7 @@ def test_scan_includes_retrospect_in_context(tmp_path: Path) -> None:
     scan(tmp_path, config, client=client)
 
     user_content = client.messages.create.call_args[1]["messages"][0]["content"]
-    assert "Current orientation (retrospect):" in user_content
+    assert "Current orientation:" in user_content
     assert "Claim: the loop is working." in user_content
 
 
@@ -550,7 +550,7 @@ def test_scan_includes_learning_in_context(tmp_path: Path) -> None:
 
 
 def test_scan_skips_missing_orient_files(tmp_path: Path) -> None:
-    """SCAN succeeds normally when retrospect.md and learning.md are absent."""
+    """SCAN succeeds normally when orientation.md and learning.md are absent."""
     (tmp_path / "utils.py").write_text("x = 1\n")
     config = _make_config(tmp_path)
     client = _mock_client({
@@ -572,7 +572,7 @@ def test_scan_skips_missing_orient_files(tmp_path: Path) -> None:
 def test_scan_delivers_operational_rules_beyond_head_window(tmp_path: Path) -> None:
     """Operational rules reach the model even when they fall well past the head window.
 
-    This is the regression test for the 1000-char window bug: retrospect.md in
+    This is the regression test for the 1000-char window bug: orientation.md in
     production has its '## Active operational rules' section at char 5681. The
     prior head-only extraction silently delivered zero operational rules to SCAN.
     """
@@ -580,13 +580,13 @@ def test_scan_delivers_operational_rules_beyond_head_window(tmp_path: Path) -> N
     (tmp_path / ".acm").mkdir()
     # Rules section far beyond the 2000-char head window
     padding = "Claim: " + ("x" * 50 + "\n") * 40  # ~2400 chars of claims
-    retrospect = (
-        f"# retrospect\n\n{padding}\n\n"
+    orientation = (
+        f"# orientation\n\n{padding}\n\n"
         f"## Active operational rules\n\n"
         f"- V1 stops before release. Inviolable.\n"
         f"- Harness proxy outside autonomous scope.\n"
     )
-    (tmp_path / ".acm" / "retrospect.md").write_text(retrospect, encoding="utf-8")
+    (tmp_path / ".acm" / "orientation.md").write_text(orientation, encoding="utf-8")
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
 
@@ -595,7 +595,7 @@ def test_scan_delivers_operational_rules_beyond_head_window(tmp_path: Path) -> N
     user_content = client.messages.create.call_args[1]["messages"][0]["content"]
     assert "Active operational rules:" in user_content
     assert "V1 stops before release. Inviolable." in user_content
-    assert "Current orientation (retrospect):" in user_content  # head still present
+    assert "Current orientation:" in user_content  # head still present
 
 
 def test_scan_head_budget_is_two_thousand_chars(tmp_path: Path) -> None:
@@ -605,8 +605,8 @@ def test_scan_head_budget_is_two_thousand_chars(tmp_path: Path) -> None:
     # Write a claim that starts at char ~1100 (beyond the old 1000-char window)
     filler = "A" * 1100
     marker_text = "CLAIM_BEYOND_OLD_LIMIT"
-    retrospect = filler + marker_text
-    (tmp_path / ".acm" / "retrospect.md").write_text(retrospect, encoding="utf-8")
+    orientation = filler + marker_text
+    (tmp_path / ".acm" / "orientation.md").write_text(orientation, encoding="utf-8")
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
 

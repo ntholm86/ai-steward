@@ -8,8 +8,8 @@ It writes .acm/escalate_report.md for operator review and the loop stops cleanly
 This is the robot's structural equivalent of recognising "I keep failing for the same
 reason — a human needs to make a decision I can't."
 
-Token tier: 1 (focused failure context, no retrospect needed — recent trail has the
-evidence; retrospect adds no cognitive yield for concrete failure diagnosis).
+Token tier: 1 (focused failure context, no orientation needed — recent trail has the
+evidence; orientation adds no cognitive yield for concrete failure diagnosis).
 All calls route through llm-harness-proxy. Never call the Anthropic API directly.
 
 Triggers:

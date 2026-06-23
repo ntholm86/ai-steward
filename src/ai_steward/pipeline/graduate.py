@@ -1,14 +1,14 @@
 """GRADUATE phase — silence classification and destination revision.
 
 When the loop converges (SCAN returns NOTHING FOUND for N consecutive cycles),
-GRADUATE reads the destination, retrospect, and recent trail to classify the
+GRADUATE reads the destination, orientation, and recent trail to classify the
 silence: ACHIEVED, STALE, STUCK, or PREMATURE. It then produces a proposal
 written to .acm/graduate_proposal.md for operator review.
 
 This is the robot's structural equivalent of the human noticing "this goal is
 done, time to move on" or "the approach is exhausted."
 
-Token tier: 2 (needs destination + retrospect + recent trail context).
+Token tier: 2 (needs destination + orientation + recent trail context).
 All calls route through llm-harness-proxy. Never call the Anthropic API directly.
 
 Triggers:
@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
 from ai_steward.pipeline import _prompts
-from ai_steward.pipeline._utils import _load_current_retrospect, _load_destination, _load_learning
+from ai_steward.pipeline._utils import _load_current_orientation, _load_destination, _load_learning
 
 if TYPE_CHECKING:
     import anthropic
@@ -101,7 +101,7 @@ def graduate(
         client = anthropic_client(config.harness)
 
     destination = _load_destination(repo, config.destination_budget_chars)
-    retrospect = _load_current_retrospect(repo)
+    orientation = _load_current_orientation(repo)
     learning = _load_learning(repo)
     recent_trail = _load_recent_trail(repo)
     today = date.today().isoformat()
@@ -112,9 +112,9 @@ def graduate(
 
 ---
 
-## Current retrospect.md
+## Current orientation.md
 
-{retrospect}
+{orientation}
 
 ---
 

@@ -1,7 +1,7 @@
 """REORIENT phase — arc-level reading of the improvement trail.
 
-Reads the full audit-trail.md, forms arc-claims, and rewrites retrospect.md.
-This is the robot's equivalent of the human-driven Retrospect skill.
+Reads the full audit-trail.md, forms arc-claims, and rewrites orientation.md.
+This is the robot's equivalent of the human-driven Orient skill.
 
 Token tier: 2 (needs large context for full trail reading).
 All calls route through llm-harness-proxy. Never call the Anthropic API directly.
@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
 from ai_steward.pipeline import _prompts
-from ai_steward.pipeline._utils import _load_current_retrospect, _load_destination, _load_learning
+from ai_steward.pipeline._utils import _load_current_orientation, _load_destination, _load_learning
 
 if TYPE_CHECKING:
     import anthropic
@@ -45,8 +45,8 @@ def _load_audit_trail(repo: Path, budget_chars: int = 50000) -> str:
     return content
 
 
-def _extract_retrospect_content(response_text: str) -> str:
-    """Extract the retrospect.md content from the model's response.
+def _extract_orientation_content(response_text: str) -> str:
+    """Extract the orientation.md content from the model's response.
 
     The model is instructed to return only markdown in a code fence.
     Extract it; fall back to raw response if no fence found.
@@ -88,8 +88,8 @@ def reorient(
         client: Anthropic client (injected for testing).
 
     Returns:
-        (retrospect_content, input_tokens, output_tokens)
-        retrospect_content is the new content for .acm/retrospect.md
+        (orientation_content, input_tokens, output_tokens)
+        orientation_content is the new content for .acm/orientation.md
     """
     logger.info("REORIENT phase starting (trigger: %s)", trigger)
 
@@ -99,7 +99,7 @@ def reorient(
     # Build context
     destination = _load_destination(repo, config.destination_budget_chars)
     audit_trail = _load_audit_trail(repo, config.reorient_trail_budget_chars)
-    current_retrospect = _load_current_retrospect(repo)
+    current_orientation = _load_current_orientation(repo)
     learning = _load_learning(repo)
     today = date.today().isoformat()
 
@@ -109,9 +109,9 @@ def reorient(
 
 ---
 
-## Current retrospect.md
+## Current orientation.md
 
-{current_retrospect}
+{current_orientation}
 
 ---
 
@@ -144,7 +144,7 @@ Target name: {repo.name}
 
     block = message.content[0] if message.content else None
     response_text = getattr(block, "text", "") or "" if block else ""
-    retrospect_content = _extract_retrospect_content(response_text)
+    orientation_content = _extract_orientation_content(response_text)
 
     # Extract token counts
     input_tokens = getattr(message.usage, "input_tokens", 0)
@@ -156,11 +156,11 @@ Target name: {repo.name}
         output_tokens,
     )
 
-    return retrospect_content, input_tokens, output_tokens
+    return orientation_content, input_tokens, output_tokens
 
 
-def write_retrospect(repo: Path, content: str) -> Path:
-    """Write the new retrospect.md content to disk.
+def write_orientation(repo: Path, content: str) -> Path:
+    """Write the new orientation.md content to disk.
 
     Creates .acm/ directory if it doesn't exist.
     Returns the path to the written file.
@@ -168,8 +168,8 @@ def write_retrospect(repo: Path, content: str) -> Path:
     acm_dir = repo / ".acm"
     acm_dir.mkdir(exist_ok=True)
 
-    retro_file = acm_dir / "retrospect.md"
-    retro_file.write_text(content, encoding="utf-8")
+    orientation_file = acm_dir / "orientation.md"
+    orientation_file.write_text(content, encoding="utf-8")
 
-    logger.info("Wrote %s (%d chars)", retro_file, len(content))
-    return retro_file
+    logger.info("Wrote %s (%d chars)", orientation_file, len(content))
+    return orientation_file

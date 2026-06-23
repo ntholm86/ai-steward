@@ -8,12 +8,12 @@ from unittest.mock import MagicMock
 import pytest
 
 from ai_steward.config import AiStewardConfig, HarnessConfig, ModelAssignment, ScopeConfig
-from ai_steward.pipeline._utils import _load_current_retrospect, _load_destination, _load_learning
+from ai_steward.pipeline._utils import _load_current_orientation, _load_destination, _load_learning
 from ai_steward.pipeline.reorient import (
-    _extract_retrospect_content,
+    _extract_orientation_content,
     _load_audit_trail,
     reorient,
-    write_retrospect,
+    write_orientation,
 )
 
 
@@ -104,19 +104,19 @@ class TestLoadAuditTrail:
         assert "No audit-trail.md found" in result
 
 
-class TestLoadCurrentRetrospect:
-    def test_loads_existing_retrospect(self, tmp_path: Path) -> None:
+class TestLoadCurrentOrientation:
+    def test_loads_existing_orientation(self, tmp_path: Path) -> None:
         acm_dir = tmp_path / ".acm"
         acm_dir.mkdir()
-        retro = acm_dir / "retrospect.md"
-        retro.write_text("# retrospect.md\n\n## Claims\n\n1. Test claim.", encoding="utf-8")
+        orientation = acm_dir / "orientation.md"
+        orientation.write_text("# orientation.md\n\n## Claims\n\n1. Test claim.", encoding="utf-8")
 
-        result = _load_current_retrospect(tmp_path)
+        result = _load_current_orientation(tmp_path)
         assert "Test claim" in result
 
     def test_returns_placeholder_when_missing(self, tmp_path: Path) -> None:
-        result = _load_current_retrospect(tmp_path)
-        assert "No retrospect.md found" in result
+        result = _load_current_orientation(tmp_path)
+        assert "No orientation.md found" in result
 
 
 class TestLoadLearning:
@@ -166,7 +166,7 @@ class TestLoadLearning:
             ),
         )
         mock_content = MagicMock()
-        mock_content.text = "# retrospect.md\n\n## Current claims\n\n1. Claim."
+        mock_content.text = "# orientation.md\n\n## Current claims\n\n1. Claim."
         mock_message = MagicMock()
         mock_message.content = [mock_content]
         mock_message.usage.input_tokens = 100
@@ -181,34 +181,34 @@ class TestLoadLearning:
         assert "Never truncate from the head" in user_content
 
 
-class TestExtractRetrospectContent:
+class TestExtractOrientationContent:
     def test_extracts_from_markdown_fence(self) -> None:
-        response = """Here's the retrospect:
+        response = """Here's the orientation:
 
 ```markdown
-# retrospect.md — test
+# orientation.md — test
 
 Content here.
 ```
 
 That's the output."""
-        result = _extract_retrospect_content(response)
-        assert result.startswith("# retrospect.md")
+        result = _extract_orientation_content(response)
+        assert result.startswith("# orientation.md")
         assert "Content here" in result
         assert "That's the output" not in result
 
     def test_extracts_from_generic_fence(self) -> None:
         response = """```
-# retrospect.md — test
+# orientation.md — test
 
 Content here.
 ```"""
-        result = _extract_retrospect_content(response)
+        result = _extract_orientation_content(response)
         assert "Content here" in result
 
     def test_returns_raw_when_no_fence(self) -> None:
-        response = "# retrospect.md — test\n\nContent here."
-        result = _extract_retrospect_content(response)
+        response = "# orientation.md — test\n\nContent here."
+        result = _extract_orientation_content(response)
         assert result == response
 
 
@@ -222,7 +222,7 @@ class TestReorient:
         (acm_dir / "destination.md").write_text("# Goal\nBe awesome.", encoding="utf-8")
         (acm_dir / "audit-trail.md").write_text("# Trail\n## Entry 1", encoding="utf-8")
 
-        mock = _mock_client("```markdown\n# retrospect.md — test\n\nNew claims.\n```")
+        mock = _mock_client("```markdown\n# orientation.md — test\n\nNew claims.\n```")
 
         content, in_tok, out_tok = reorient(tmp_path, sample_config, "test", client=mock)
 
@@ -241,33 +241,33 @@ class TestReorient:
         # Set a specific reorient model
         sample_config.models.reorient = "special-reorient-model"
 
-        mock = _mock_client("# retrospect.md\n\nContent.")
+        mock = _mock_client("# orientation.md\n\nContent.")
         reorient(tmp_path, sample_config, "test", client=mock)
 
         call_kwargs = mock.messages.create.call_args.kwargs
         assert call_kwargs["model"] == "special-reorient-model"
 
 
-class TestWriteRetrospect:
+class TestWriteOrientation:
     def test_writes_file(self, tmp_path: Path) -> None:
-        content = "# retrospect.md — test\n\nContent here."
-        path = write_retrospect(tmp_path, content)
+        content = "# orientation.md — test\n\nContent here."
+        path = write_orientation(tmp_path, content)
 
         assert path.exists()
         assert path.read_text(encoding="utf-8") == content
 
     def test_creates_acm_directory(self, tmp_path: Path) -> None:
-        content = "# retrospect.md — test\n\nContent here."
-        write_retrospect(tmp_path, content)
+        content = "# orientation.md — test\n\nContent here."
+        write_orientation(tmp_path, content)
 
         assert (tmp_path / ".acm").is_dir()
 
     def test_overwrites_existing(self, tmp_path: Path) -> None:
         acm_dir = tmp_path / ".acm"
         acm_dir.mkdir()
-        retro = acm_dir / "retrospect.md"
-        retro.write_text("Old content", encoding="utf-8")
+        orientation = acm_dir / "orientation.md"
+        orientation.write_text("Old content", encoding="utf-8")
 
-        write_retrospect(tmp_path, "New content")
+        write_orientation(tmp_path, "New content")
 
-        assert retro.read_text(encoding="utf-8") == "New content"
+        assert orientation.read_text(encoding="utf-8") == "New content"

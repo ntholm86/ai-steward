@@ -171,7 +171,7 @@ def test_run_loop_triggers_reorient_at_interval(tmp_path: Path) -> None:
     runner = CliRunner()
     with patch("ai_steward.cli.pipeline_run", side_effect=side_effects), \
          patch("ai_steward.cli.reorient_phase", return_value=("arc claims", 100, 50)) as mock_reorient, \
-         patch("ai_steward.cli.write_retrospect", return_value=acm_dir / "retrospect.md"), \
+         patch("ai_steward.cli.write_orientation", return_value=acm_dir / "orientation.md"), \
          patch("ai_steward.cli.graduate_phase", return_value=("proposal", 200, 80)), \
          patch("ai_steward.cli.write_graduate_proposal", return_value=acm_dir / "graduate_proposal.md"):
         result = runner.invoke(main, ["run-loop", str(tmp_path)])
