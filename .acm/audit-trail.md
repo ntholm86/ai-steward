@@ -6508,3 +6508,60 @@ Macro reflection:
 1. **`_load_current_retrospect()` DRY check** -- near-identical in graduate.py and reorient.py; if the fallback string difference is unintentional, it is the same class of fix.
 2. **`_scope_matches()` utility** -- deferred for two consecutive entries; if a third call site ever appears this becomes a true DRY fix; currently borderline.
 3. **External repo validation** -- V2 condition #2; first proof of generalization beyond self-targeting; ranks above code structure fixes.
+
+## 2026-06-23 -- improve: extract _load_current_retrospect() to _utils.py
+
+**Ask:** Run improve skill (no specific target named).
+
+**Orientation:**
+Prior trail entry named `_load_current_retrospect()` as candidate #1 — near-identical in graduate.py and reorient.py with only fallback string divergence.
+
+**Step 1 -- Understand:**
+V1 ACHIEVED. V2 = four live-run conditions. Prior trail identified this as blind spot to resolve.
+
+**Step 2 -- Examine:**
+
+Purpose lens: Both implementations serve identical purpose — load retrospect.md or return placeholder.
+
+Inconsistency lens: Fallback strings differ:
+- graduate.py: `"[No retrospect.md found]"`
+- reorient.py: `"[No previous retrospect.md]"`
+
+The word "previous" adds no semantic value the model can act on. Tests check for these specific strings — implementation-detail testing, not behavior testing.
+
+**Step 3 -- Challenge:**
+Is the fallback difference intentional? Reorient "rewrites" retrospect (so "previous" makes sense semantically), but graduate just "reads" it. However, the model receiving this string doesn't parse the English — it only needs to know "file missing." The divergence is accidental.
+
+[!DECISION] Extract `_load_current_retrospect()` to `_utils.py` with unified fallback `"[No retrospect.md found]"`. Update test_reorient.py assertion to expect unified string.
+
+**Prediction:** 187 tests pass. No behavior change. Blind spot from prior entry resolved.
+
+**Step 5 -- Act:**
+- Added `_load_current_retrospect()` to `_utils.py`
+- Removed definition from graduate.py and reorient.py
+- Updated imports in both source files and test files
+- Fixed test_reorient.py assertion: `"No previous retrospect.md"` -> `"No retrospect.md found"`
+- 187 tests pass. Commit: f4d17c6
+
+**Outcome vs prediction:** Prediction held exactly. 187/187.
+
+**Step 6 -- Reflect:**
+Model claim: `_utils.py` now has 2 shared loaders: `_load_destination()` (3 phases) and `_load_current_retrospect()` (2 phases). The fallback string divergence in test_reorient.py was testing implementation detail — the unified string is just as correct.
+
+Blind spot: `_load_learning()` exists in both graduate.py and reorient.py with identical logic but different syntax for default (constant vs literal). Same extraction pattern. Not examined closely this iteration.
+
+Imagined reader pushback: "The test was explicitly checking for 'previous' — was that intentional?" The test was testing string content, not behavior. The behavior under test is "returns placeholder when file is missing." The exact wording is an implementation detail.
+
+Macro reflection:
+- Recurring finding-class: FIRED — this is the second consecutive DRY extraction of loader functions from meta-cognitive phases. Pattern: loader functions were copy-pasted during rapid implementation, then accumulated divergence. The structural fix is extracting to _utils.py during improve passes.
+- About to declare silence: not fired — change made
+- Contradicts prior [!REALIZATION]: not fired — resolves blind spot from prior entry
+- Operator explicitly asked: not fired
+
+[!REALIZATION] (pattern): Loader functions in meta-cognitive phases (REORIENT, GRADUATE, ESCALATE) have been duplicated 3 times now (_load_destination, _load_current_retrospect, _load_learning next). The pattern: each phase was implemented separately under time pressure; each copied from the prior; minor divergence accumulated. The structural fix is extracting to _utils.py. The next instance (_load_learning) should complete the pattern.
+
+### Candidate Next Moves
+
+1. **`_load_learning()` DRY extraction** — third instance of same pattern; completes the loader consolidation.
+2. **External repo validation** — V2 condition #2; first proof of generalization beyond self-targeting.
+3. **`_scope_matches()` utility** — deferred three entries; borderline YAGNI; revisit only if fourth call site appears.
