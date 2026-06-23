@@ -448,10 +448,16 @@ def scan(
     # The system prompt tells the model to only propose files from the provided file
     # list, but the model can reason its way around that instruction. This is the
     # structural gate — not a hint.
-    if any(target.match(b) for b in config.scope.blocked):
+    #
+    # Use full_match() on the repo-relative path. Path.match() has a known limitation
+    # with patterns like "src/**/*.py" — it only matches exactly one directory level
+    # between "src/" and "*.py", silently rejecting files at depth 2+.
+    # full_match() (Python 3.12+) matches the full relative path correctly.
+    rel_target = target.relative_to(repo)
+    if any(rel_target.full_match(b) for b in config.scope.blocked):
         logger.warning("SCAN proposed blocked file %s — rejected by scope", file_path)
         return None
-    if config.scope.allowed and not any(target.match(p) for p in config.scope.allowed):
+    if config.scope.allowed and not any(rel_target.full_match(p) for p in config.scope.allowed):
         logger.warning("SCAN proposed out-of-scope file %s — rejected by scope", file_path)
         return None
 

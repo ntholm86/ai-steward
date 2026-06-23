@@ -196,6 +196,35 @@ def test_scan_rejects_out_of_allowed_scope_proposal(tmp_path: Path) -> None:
     assert result is None
 
 
+def test_scan_accepts_deep_nested_allowed_file(tmp_path: Path) -> None:
+    """Files at depth > 1 within an allowed glob must pass the scope gate.
+
+    Regression test for Path.match() bug: 'src/**/*.py' only matched
+    exactly one directory level. 'src/a/b/file.py' was falsely rejected.
+    Fix: use full_match() on the repo-relative path.
+    """
+    deep = tmp_path / "src" / "pkg" / "sub"
+    deep.mkdir(parents=True)
+    (deep / "module.py").write_text("x = 1\n")
+    config = _make_config(
+        tmp_path,
+        scope=ScopeConfig(allowed=["src/**/*.py"]),
+    )
+
+    result = scan(tmp_path, config, client=_mock_client({
+        "file": "src/pkg/sub/module.py",
+        "description": "Add type hints",
+        "proposed_change": "x: int = 1\n",
+        "rationale": "type safety",
+        "risk": "low",
+    }))
+
+    assert isinstance(result, Finding), (
+        "Deep-nested file src/pkg/sub/module.py must be accepted by 'src/**/*.py' scope"
+    )
+    assert result.file == "src/pkg/sub/module.py"
+
+
 def test_scan_returns_none_if_no_files_in_scope(tmp_path: Path) -> None:
     # No .py files — _collect_files returns empty dict, no LLM call made.
     config = _make_config(tmp_path)
