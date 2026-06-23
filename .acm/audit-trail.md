@@ -6621,3 +6621,82 @@ Macro reflection:
 1. **External repo validation** — V2 condition #2; first proof of generalization beyond self-targeting; no more loader duplication to find.
 2. **`_scope_matches()` utility** — deferred four entries; borderline YAGNI; only revisit if fourth call site appears.
 3. **Silence** — loader consolidation is complete; next structural improvement may require a live run to surface.
+
+## 2026-06-23 — retrospect-to-orientation-rename
+
+- target: ai-steward repo
+- operator: Nils Holmager
+- agent: Claude Opus 4.5 (Anthropic, copilot)
+- skill: improve (operator-directed infrastructure change)
+- outcome: All retrospect references renamed to orientation; tests pass
+- delta: retrospect.md -> orientation.md, function names aligned
+
+### Interpretation of the ask
+
+Part of coordinated cross-ecosystem terminology rename. The ai-steward pipeline reads and writes the orientation file (formerly retrospect.md) during REORIENT phase. All function names, file paths, and documentation updated to match the new terminology.
+
+### Examination
+
+Files with retrospect references:
+- src/ai_steward/pipeline/_utils.py: loader function
+- src/ai_steward/pipeline/graduate.py: reads orientation
+- src/ai_steward/pipeline/reorient.py: writes orientation
+- src/ai_steward/pipeline/escalate.py: comment
+- src/ai_steward/pipeline/scan.py: reads orientation
+- src/ai_steward/cli.py: imports and usage
+- tests/test_*.py: all test files updated
+
+### Decision
+
+[!DECISION] Function renames follow the pattern:
+- _load_current_retrospect -> _load_current_orientation
+- write_retrospect -> write_orientation
+- _extract_retrospect_content -> _extract_orientation_content
+
+### Action
+
+All 10 Python files updated. 187 tests pass.
+
+Commit: c3ca807
+
+### Reflection
+
+*Current model of the target:* The REORIENT phase name now makes sense - it "re-orients" by rewriting orientation.md. The phase name was always forward-looking; the file name just caught up.
+
+*Blind spot:* Any external scripts or tools calling the old function names will break. No deprecation period provided.
+
+*Across-trail reflection triggers:*
+- *Operator explicitly asked:* FIRED - operator initiated this coordinated rename.
+
+## 2026-06-23 — retrospect-to-orientation-rename
+
+- target: ai-steward repo
+- operator: Nils Holmager
+- agent: Claude Opus 4.5 (Anthropic, copilot)
+- skill: improve (operator-directed infrastructure change)
+- outcome: All retrospect references renamed to orientation; tests pass
+- delta: retrospect.md -> orientation.md, function names aligned
+
+### Interpretation of the ask
+
+Part of coordinated cross-ecosystem terminology rename. The ai-steward pipeline reads and writes the orientation file (formerly retrospect.md) during REORIENT phase. All function names, file paths, and documentation updated to match the new terminology.
+
+### Decision
+
+[!DECISION] Function renames follow the pattern:
+- _load_current_retrospect -> _load_current_orientation
+- write_retrospect -> write_orientation
+- _extract_retrospect_content -> _extract_orientation_content
+
+### Action
+
+All 10 Python files updated. 187 tests pass.
+
+Commit: c3ca807
+
+### Reflection
+
+*Current model of the target:* The REORIENT phase name now makes sense - it re-orients by rewriting orientation.md. The phase name was always forward-looking; the file name just caught up.
+
+*Across-trail reflection triggers:*
+- *Operator explicitly asked:* FIRED - operator initiated this coordinated rename.
