@@ -4,8 +4,10 @@ All tests run without a live harness proxy — testing the integration
 contract, not the proxy itself.
 """
 
+import json
 import os
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -140,3 +142,93 @@ def test_harness_session_returns_empty_list_when_no_session_created(tmp_path: Pa
     with harness_session(tmp_path, config) as result:
         pass  # harness not running — no session directory created
     assert result["session_paths"] == []
+
+
+# ---------------------------------------------------------------------------
+# X-Harness-Session grouping — one iteration = one file
+#
+# The proxy routes all calls that share an X-Harness-Session header value to
+# the same <sid>.jsonl file.  ai-steward's side of the contract: every
+# anthropic_client() call within one harness_session() context must send the
+# context's run_id as X-Harness-Session.  When the proxy honours this header,
+# one harness_session() == one session file == one pipeline iteration.
+#
+# Currently the proxy ignores X-Harness-Session and creates one file per LLM
+# call.  These tests verify the client-side invariant and document the intended
+# one-file-per-iteration shape so the contract is explicit and testable.
+# ---------------------------------------------------------------------------
+
+
+def test_anthropic_client_sends_run_id_as_x_harness_session(tmp_path: Path) -> None:
+    """anthropic_client() must send X-Harness-Session equal to the context run_id."""
+    config = HarnessConfig()
+    with patch("anthropic.Anthropic") as mock_cls:
+        mock_cls.return_value = MagicMock()
+        with harness_session(tmp_path, config) as ctx:
+            run_id = ctx["run_id"]
+            anthropic_client(config, harness_root=tmp_path / ".acm")
+
+    http_client = mock_cls.call_args.kwargs["http_client"]
+    assert http_client.headers.get("x-harness-session") == run_id
+
+
+def test_all_lm_calls_in_one_iteration_share_x_harness_session(tmp_path: Path) -> None:
+    """All anthropic_client() calls within one harness_session() send the same
+    X-Harness-Session — the client precondition for one iteration = one file.
+
+    SCAN, IMPLEMENT, and REFLECT each call anthropic_client().  They must all
+    send the same grouping token so the proxy can route them into one file.
+    """
+    config = HarnessConfig()
+    with patch("anthropic.Anthropic") as mock_cls:
+        mock_cls.return_value = MagicMock()
+        with harness_session(tmp_path, config) as ctx:
+            run_id = ctx["run_id"]
+            anthropic_client(config, harness_root=tmp_path / ".acm")  # SCAN
+            anthropic_client(config, harness_root=tmp_path / ".acm")  # IMPLEMENT
+            anthropic_client(config, harness_root=tmp_path / ".acm")  # REFLECT
+
+    assert mock_cls.call_count == 3
+    session_ids = [
+        call.kwargs["http_client"].headers.get("x-harness-session")
+        for call in mock_cls.call_args_list
+    ]
+    assert session_ids == [run_id, run_id, run_id], (
+        f"All LLM calls in one iteration must share X-Harness-Session={run_id!r}. "
+        f"Got: {session_ids!r}"
+    )
+
+
+def test_one_session_file_per_iteration_when_proxy_groups_by_run_id(tmp_path: Path) -> None:
+    """When the proxy honours X-Harness-Session, one harness_session() = one .jsonl file.
+
+    The proxy writes all calls sharing the same X-Harness-Session to
+    <run_id>.jsonl.  harness_session() must report exactly one session_path
+    for the iteration, not one per LLM call.
+
+    All entries in that file share the same sid (SPEC §8.2: one file per session).
+    """
+    config = HarnessConfig()
+    with harness_session(tmp_path, config) as ctx:
+        run_id = ctx["run_id"]
+        sessions_dir = tmp_path / ".acm" / "sessions"
+        sessions_dir.mkdir(parents=True)
+        # Simulate proxy grouping all 3 calls (SCAN+IMPLEMENT+REFLECT) into one file.
+        entries = [{"sid": run_id, "seq": i, "v": 1} for i in range(3)]
+        (sessions_dir / f"{run_id}.jsonl").write_text(
+            "\n".join(json.dumps(e) for e in entries) + "\n",
+            encoding="utf-8",
+        )
+
+    assert len(ctx["session_paths"]) == 1, (
+        f"One iteration must produce exactly one session file. "
+        f"Got {len(ctx['session_paths'])}: {ctx['session_paths']!r}"
+    )
+    assert ctx["session_paths"][0] == f".acm/sessions/{run_id}.jsonl"
+
+    # All entries in the file share the same sid — SPEC §8.2 conformance.
+    lines = (tmp_path / ".acm" / "sessions" / f"{run_id}.jsonl").read_text("utf-8").splitlines()
+    unique_sids = {json.loads(l)["sid"] for l in lines if l.strip()}
+    assert unique_sids == {run_id}, (
+        f"Session file must contain only entries with sid={run_id!r}. Found: {unique_sids!r}"
+    )
