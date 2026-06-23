@@ -117,7 +117,7 @@ def graduate(
     logger.info("GRADUATE phase starting (trigger: %s)", trigger)
 
     if client is None:
-        client = anthropic_client(config.harness, harness_root=repo / ".acm")
+        client = anthropic_client(config.harness)
 
     destination = _load_destination(repo, config.destination_budget_chars)
     retrospect = _load_current_retrospect(repo)

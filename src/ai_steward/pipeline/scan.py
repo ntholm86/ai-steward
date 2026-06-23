@@ -360,7 +360,7 @@ def scan(
         A Finding if one actionable improvement was identified, None otherwise.
     """
     if client is None:
-        client = anthropic_client(config.harness, harness_root=repo / ".acm")
+        client = anthropic_client(config.harness)
 
     files = _collect_files(repo, config)
     if not files:

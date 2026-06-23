@@ -172,6 +172,40 @@ def test_anthropic_client_sends_run_id_as_x_harness_session(tmp_path: Path) -> N
     assert http_client.headers.get("x-harness-session") == run_id
 
 
+def test_anthropic_client_sends_x_harness_root_from_env_without_explicit_param(
+    tmp_path: Path,
+) -> None:
+    """X-Harness-Root is sent automatically from the HARNESS_ROOT env var.
+
+    A call to anthropic_client(config) with no harness_root argument must still
+    send X-Harness-Root — making it impossible to accidentally omit the header.
+    harness_session() sets HARNESS_ROOT unconditionally; this test confirms the
+    client picks it up without any explicit parameter at the call site.
+    """
+    config = HarnessConfig()
+    with patch("anthropic.Anthropic") as mock_cls:
+        mock_cls.return_value = MagicMock()
+        with harness_session(tmp_path, config):
+            expected_root = os.environ["HARNESS_ROOT"]
+            anthropic_client(config)  # no harness_root argument
+
+    http_client = mock_cls.call_args.kwargs["http_client"]
+    assert http_client.headers.get("x-harness-root") == expected_root
+
+
+def test_anthropic_client_explicit_harness_root_overrides_env(tmp_path: Path) -> None:
+    """Explicit harness_root= wins over the env var (override still works)."""
+    config = HarnessConfig()
+    override = tmp_path / "custom" / "root"
+    with patch("anthropic.Anthropic") as mock_cls:
+        mock_cls.return_value = MagicMock()
+        with harness_session(tmp_path, config):
+            anthropic_client(config, harness_root=override)
+
+    http_client = mock_cls.call_args.kwargs["http_client"]
+    assert http_client.headers.get("x-harness-root") == str(override)
+
+
 def test_all_lm_calls_in_one_iteration_share_x_harness_session(tmp_path: Path) -> None:
     """All anthropic_client() calls within one harness_session() send the same
     X-Harness-Session — the client precondition for one iteration = one file.

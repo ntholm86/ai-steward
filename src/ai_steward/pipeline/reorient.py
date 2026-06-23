@@ -130,7 +130,7 @@ def reorient(
     logger.info("REORIENT phase starting (trigger: %s)", trigger)
 
     if client is None:
-        client = anthropic_client(config.harness, harness_root=repo / ".acm")
+        client = anthropic_client(config.harness)
 
     # Build context
     destination = _load_destination(repo, config.destination_budget_chars)

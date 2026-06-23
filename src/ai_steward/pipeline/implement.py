@@ -69,7 +69,7 @@ def implement(
         return False, f"file is not UTF-8: {finding.file}", 0, 0, 0
 
     if client is None:
-        client = anthropic_client(config.harness, harness_root=repo / ".acm")
+        client = anthropic_client(config.harness)
 
     user_message = (
         f"File: {finding.file}\n\n"

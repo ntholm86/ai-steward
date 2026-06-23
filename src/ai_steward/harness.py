@@ -106,15 +106,17 @@ def anthropic_client(
     both the session-grouping token and the proof that the caller is operating
     inside the Observable Autonomy boundary.
 
-    When harness_root is provided, the X-Harness-Root header directs the
-    proxy to write the session ledger to <harness_root>/sessions/<sid>.jsonl
-    instead of the proxy's default root. This is the mechanism that makes
-    Observable Autonomy structural: sessions land in the target repo's
-    .acm/ directory, co-located with audit-trail.md.
+    X-Harness-Root is always sent. harness_session() sets HARNESS_ROOT in
+    the environment; this function reads it as the default when harness_root
+    is not supplied explicitly. A call site can never accidentally omit the
+    header — the context manager's guarantee is structural, not a convention.
+
+    harness_root (optional): override the root for this specific call. Rarely
+    needed; the env var set by harness_session() is correct in all normal cases.
 
     Usage (always inside harness_session()):
         with harness_session(repo, config.harness):
-            client = anthropic_client(config.harness, harness_root=repo / ".acm")
+            client = anthropic_client(config.harness)   # X-Harness-Root from env
             message = client.messages.create(...)
     """
     import anthropic as _anthropic
@@ -128,9 +130,17 @@ def anthropic_client(
             "Wrap this call inside 'with harness_session(repo, config.harness):'."
         )
 
+    # X-Harness-Root: explicit parameter wins; env var (set by harness_session)
+    # is the automatic fallback. Since harness_session() always sets HARNESS_ROOT
+    # before yielding, the header is guaranteed on every call with no action
+    # required from the caller.
+    effective_root: str | None = (
+        str(harness_root) if harness_root is not None else os.environ.get("HARNESS_ROOT")
+    )
+
     default_headers: dict[str, str] = {"Accept-Encoding": "identity"}
-    if harness_root is not None:
-        default_headers["X-Harness-Root"] = str(harness_root)
+    if effective_root is not None:
+        default_headers["X-Harness-Root"] = effective_root
     if run_id:
         # X-Harness-Session groups all calls in this pipeline run into one
         # session file once the proxy implements the header (SPEC §4.2 sid).

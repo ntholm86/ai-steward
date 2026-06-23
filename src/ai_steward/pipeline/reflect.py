@@ -111,7 +111,7 @@ def reflect(
     if client is None:
         import anthropic as _anthropic
 
-        client = anthropic_client(config.harness, harness_root=repo / ".acm")
+        client = anthropic_client(config.harness)
 
     prediction = finding.prediction or finding.proposed_change
     user_content = (
