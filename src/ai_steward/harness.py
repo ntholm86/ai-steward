@@ -41,9 +41,9 @@ def _generate_ulid() -> str:
     """Generate a valid 26-character Crockford base-32 ULID.
 
     Used to produce a pipeline-run identifier that is passed to the harness
-    proxy via X-Harness-Session.  When the proxy implements that header, all
-    API calls in the same run will share a single session file.  Until then
-    the proxy ignores the header and creates one file per call — no regression.
+    proxy via X-Harness-Session.  The proxy groups all calls sharing the same
+    X-Harness-Session value into a single session file — one iteration = one
+    .jsonl file, with SCAN (seq=0), IMPLEMENT (seq=1), REFLECT (seq=2) chained.
     """
     ts = int(time.time() * 1000)  # milliseconds since epoch
     ts_chars = ""
@@ -142,9 +142,9 @@ def anthropic_client(
     if effective_root is not None:
         default_headers["X-Harness-Root"] = effective_root
     if run_id:
-        # X-Harness-Session groups all calls in this pipeline run into one
-        # session file once the proxy implements the header (SPEC §4.2 sid).
-        # Until then the proxy ignores it — zero behaviour change.
+        # X-Harness-Session groups all calls sharing this run_id into one
+        # session file (SPEC §4.2 sid). Proxy implements this — verified live:
+        # one harness_session() produces one .jsonl with 3 hash-chained entries.
         default_headers["X-Harness-Session"] = run_id
 
     return _anthropic.Anthropic(
@@ -160,10 +160,9 @@ def harness_session(target_repo: Path, config: HarnessConfig):
     Sets two environment variables for the duration of the context:
     - HARNESS_ROOT: directs the proxy to write session ledgers to <target_repo>/.acm/
     - HARNESS_SESSION_ID: a per-run ULID forwarded as X-Harness-Session on every API
-      call.  Once the proxy implements that header, all calls in the run will share
-      a single session file.  Until then the proxy creates one file per call and
-      ignores the header — this change has no observable effect on current proxy
-      behaviour, but closes the client side of the protocol gap.
+      call.  The proxy groups all calls sharing this value into one session file.
+      One harness_session() == one .jsonl == one pipeline iteration (verified live:
+      SCAN seq=0, IMPLEMENT seq=1, REFLECT seq=2 in a single hash-chained file).
 
     Yields a dict with:
       "session_paths": list[str]  — repo-relative paths of every .jsonl created

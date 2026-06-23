@@ -153,9 +153,9 @@ def test_harness_session_returns_empty_list_when_no_session_created(tmp_path: Pa
 # context's run_id as X-Harness-Session.  When the proxy honours this header,
 # one harness_session() == one session file == one pipeline iteration.
 #
-# Currently the proxy ignores X-Harness-Session and creates one file per LLM
-# call.  These tests verify the client-side invariant and document the intended
-# one-file-per-iteration shape so the contract is explicit and testable.
+# The proxy groups all calls sharing the same X-Harness-Session into one file.
+# Verified live: one harness_session() produces one .jsonl with SCAN (seq=0),
+# IMPLEMENT (seq=1), REFLECT (seq=2) — hash-chained, one sid, one filename.
 # ---------------------------------------------------------------------------
 
 

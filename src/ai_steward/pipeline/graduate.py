@@ -35,6 +35,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _RECENT_TRAIL_BUDGET = 15000  # chars of recent trail entries delivered to GRADUATE
+_LEARNING_BUDGET = 20000  # chars of learning surface delivered to GRADUATE
 
 
 def _load_destination(repo: Path, budget_chars: int = 3000) -> str:
@@ -67,6 +68,21 @@ def _load_recent_trail(repo: Path, budget_chars: int = _RECENT_TRAIL_BUDGET) -> 
     if not trail_file.exists():
         return "[No audit-trail.md found]"
     content = trail_file.read_text(encoding="utf-8")
+    if len(content) > budget_chars:
+        return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
+    return content
+
+
+def _load_learning(repo: Path, budget_chars: int = _LEARNING_BUDGET) -> str:
+    """Load learning.md (pre-extracted realizations and reversals).
+
+    Takes the tail of the file — the most recent pattern conclusions are most
+    relevant for convergence classification.
+    """
+    learning_file = repo / ".acm" / "learning.md"
+    if not learning_file.exists():
+        return "[No learning.md found]"
+    content = learning_file.read_text(encoding="utf-8")
     if len(content) > budget_chars:
         return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
     return content
@@ -121,6 +137,7 @@ def graduate(
 
     destination = _load_destination(repo, config.destination_budget_chars)
     retrospect = _load_current_retrospect(repo)
+    learning = _load_learning(repo)
     recent_trail = _load_recent_trail(repo)
     today = date.today().isoformat()
 
@@ -133,6 +150,12 @@ def graduate(
 ## Current retrospect.md
 
 {retrospect}
+
+---
+
+## Learning surface (pre-extracted [!REALIZATION]/[!REVERSAL] markers)
+
+{learning}
 
 ---
 
