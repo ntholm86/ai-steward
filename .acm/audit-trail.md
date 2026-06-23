@@ -6131,3 +6131,44 @@ The proxy DID capture everything — no LLM call was lost. Three GRADUATE calls 
 1. Accept GRADUATE's V2 destination proposal — move/append graduate_proposal.md to destination.md.
 2. Investigate scope rejection pattern — SCAN proposes in-scope files that get rejected.
 3. Expand scope for V2 validation — current scope may be too settled for meaningful improvements.
+
+## 2026-06-23 — test: one iteration = one file (X-Harness-Session grouping invariant)
+
+**Ask:** Add a test verifying that entries from one pipeline iteration (one harness_session() context) appear in the same .jsonl file.
+
+**Examination:**
+- harness_session() generates a ULID run_id and sets HARNESS_SESSION_ID env var.
+- anthropic_client() reads HARNESS_SESSION_ID and sends it as X-Harness-Session on every call.
+- Currently the proxy ignores X-Harness-Session and creates one file per LLM call (SCAN+IMPLEMENT+REFLECT = 3 files per iteration).
+- When the proxy implements X-Harness-Session grouping, all calls sharing the same header value will land in one file: <run_id>.jsonl.
+- No existing test verified the header was sent, or that multiple calls within one context shared the same value.
+
+**Decision:** Three tests under a new 'X-Harness-Session grouping' section in test_harness.py:
+1. Single call sends X-Harness-Session = run_id.
+2. All 3 calls within one harness_session() (SCAN+IMPLEMENT+REFLECT) send the same X-Harness-Session — the client-side precondition for one iteration = one file.
+3. When proxy groups correctly: harness_session() returns exactly one session_path, and all entries in that file share the same sid (SPEC §8.2).
+
+**Prediction:** Tests pass immediately (client already sends consistent headers). No production code changes needed.
+
+**Actions:**
+- Added json, MagicMock, patch imports to test_harness.py.
+- Added 3 tests after the Session discovery block.
+- 183 tests pass (up from 180), no regressions.
+- Committed: 7e51d86
+
+**Reflection:**
+The client-side contract is verified. The proxy-side gap (ignoring X-Harness-Session) is now explicitly documented in the test comments — a future contributor implementing proxy grouping will find the test ready and know exactly what to verify.
+
+[!REALIZATION] The 'one iteration = one file' invariant has two halves: client sends a consistent grouping token (now tested), and proxy routes by that token (not yet implemented). Test 3 documents the intended file shape by simulating the proxy. The gap is visible without being a test failure — the right posture for an unimplemented proxy feature.
+
+Macro reflection triggers:
+- Recurring finding-class: not fired — standalone new test block, not a recurring pattern.
+- About to declare silence: not fired — a change was made.
+- Contradicts prior [!REALIZATION]: not fired — this extends the harness_root realization from prior session (class 2 bugs) rather than contradicting it.
+- Operator explicitly asked: not fired.
+
+### Candidate Next Moves
+
+1. **Implement X-Harness-Session in the proxy** — the client side is now proven correct; proxy grouping would make test 3 reflect live reality, not simulated reality.
+2. **Accept GRADUATE's V2 destination proposal** — graduate_proposal.md classified V1 as ACHIEVED; operator decision needed on destination.md.
+3. **Investigate scope rejection pattern** — SCAN keeps proposing in-scope files that get rejected; live V2 runs need this working.
