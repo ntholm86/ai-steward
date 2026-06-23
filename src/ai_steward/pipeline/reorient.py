@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
 from ai_steward.pipeline import _prompts
-from ai_steward.pipeline._utils import _load_current_retrospect, _load_destination
+from ai_steward.pipeline._utils import _load_current_retrospect, _load_destination, _load_learning
 
 if TYPE_CHECKING:
     import anthropic
@@ -41,23 +41,6 @@ def _load_audit_trail(repo: Path, budget_chars: int = 50000) -> str:
     content = trail_file.read_text(encoding="utf-8")
     if len(content) > budget_chars:
         # Take the most recent entries (end of file)
-        return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
-    return content
-
-
-def _load_learning(repo: Path, budget_chars: int = 20000) -> str:
-    """Load learning.md — the pre-extracted [!REALIZATION]/[!REVERSAL] surface.
-
-    learning.md is the compact chronological digest of every marker across the
-    full trail. It is the pre-digested pattern surface: reading it alongside
-    the raw trail gives the model both the extracted conclusions and their
-    original context. Budget takes the tail (newest markers last).
-    """
-    learning_file = repo / ".acm" / "learning.md"
-    if not learning_file.exists():
-        return "[No learning.md found — run record.py learning --write to generate it]"
-    content = learning_file.read_text(encoding="utf-8")
-    if len(content) > budget_chars:
         return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
     return content
 

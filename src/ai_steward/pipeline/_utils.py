@@ -30,6 +30,23 @@ def _load_current_retrospect(repo: Path) -> str:
     return retro_file.read_text(encoding="utf-8")
 
 
+def _load_learning(repo: Path, budget_chars: int = 20000) -> str:
+    """Load learning.md — the pre-extracted [!REALIZATION]/[!REVERSAL] surface.
+
+    learning.md is the compact chronological digest of every marker across the
+    full trail. It is the pre-digested pattern surface: reading it alongside
+    the raw trail gives the model both the extracted conclusions and their
+    original context. Budget takes the tail (newest markers last).
+    """
+    learning_file = repo / ".acm" / "learning.md"
+    if not learning_file.exists():
+        return "[No learning.md found — run record.py learning --write to generate it]"
+    content = learning_file.read_text(encoding="utf-8")
+    if len(content) > budget_chars:
+        return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
+    return content
+
+
 def run_verify_command(cmd: str, repo: Path) -> tuple[bool, int]:
     """Run a configurable verify command. Returns (passed, count).
 
