@@ -6565,3 +6565,59 @@ Macro reflection:
 1. **`_load_learning()` DRY extraction** — third instance of same pattern; completes the loader consolidation.
 2. **External repo validation** — V2 condition #2; first proof of generalization beyond self-targeting.
 3. **`_scope_matches()` utility** — deferred three entries; borderline YAGNI; revisit only if fourth call site appears.
+
+## 2026-06-23 -- improve: extract _load_learning() to _utils.py
+
+**Ask:** Run improve skill (no specific target named).
+
+**Orientation:**
+Candidate #1 from prior trail: `_load_learning()` DRY extraction — third instance, completes loader consolidation.
+
+**Step 1 -- Understand:**
+V1 ACHIEVED. Prior [!REALIZATION] (entry above): loader functions in meta-cognitive phases were copy-pasted during rapid implementation. Three extractions needed to complete the pattern.
+
+**Step 2 -- Examine:**
+
+Purpose lens: Both `_load_learning()` implementations serve identical purpose.
+
+Inconsistency lens:
+- graduate.py: default `_LEARNING_BUDGET` (constant = 20000), fallback `"[No learning.md found]"`
+- reorient.py: default `20000` (literal), fallback `"[No learning.md found — run record.py learning --write to generate it]"`
+
+The reorient.py fallback is more informative (actionable hint to operator). The constant `_LEARNING_BUDGET` was graduate-local with no callers outside its default parameter.
+
+**Step 3 -- Challenge:**
+Is the more informative fallback meaningfully different? The model receives this string when learning.md is absent. The actionable hint ("run record.py learning --write") is useful to a developer reading the session log. Extract using reorient's richer fallback. Use literal `20000` (YAGNI — named constant for one-use default adds noise).
+
+[!DECISION] Extract `_load_learning()` to `_utils.py` using reorient.py's richer fallback and literal default. Remove local definition and `_LEARNING_BUDGET` constant from graduate.py. Remove from reorient.py. Update imports.
+
+**Prediction:** 187 tests pass. The test assertion `"No learning.md found" in result` still holds — the richer fallback starts with that phrase. No behavior change.
+
+**Step 5 -- Act:**
+- Added `_load_learning()` to `_utils.py`
+- Removed `_LEARNING_BUDGET` constant and `_load_learning()` from graduate.py
+- Removed `_load_learning()` from reorient.py
+- Updated imports in both source files and test_reorient.py
+
+[!REVERSAL] Removing `_RECENT_TRAIL_BUDGET` and `_LEARNING_BUDGET` together deleted both constants, but `_load_recent_trail()` still used `_RECENT_TRAIL_BUDGET` as its default. Collection-time NameError. Fixed immediately by restoring `_RECENT_TRAIL_BUDGET` to graduate.py. Pattern: when removing a constant, verify all its callers, not just the one in scope.
+
+- 187 tests pass. Commit: 01bddd2
+
+**Outcome vs prediction:** Prediction held after [!REVERSAL]. 187/187.
+
+**Step 6 -- Reflect:**
+Model claim: The loader consolidation is structurally complete. `_utils.py` now holds all three shared loaders. The root cause named in the [!REALIZATION] from the prior entry is resolved.
+
+Blind spot: `_load_recent_trail()` is unique to graduate.py (REORIENT uses `_load_audit_trail()`, a different function). No further loader extractions are pending.
+
+Macro reflection:
+- Recurring finding-class: FIRED (third consecutive DRY extraction of loader functions). This iteration is the last of the pattern — the root cause is resolved, not merely one more instance.
+- About to declare silence: not fired — change made
+- Contradicts prior [!REALIZATION]: not fired — resolves it
+- Operator explicitly asked: not fired
+
+### Candidate Next Moves
+
+1. **External repo validation** — V2 condition #2; first proof of generalization beyond self-targeting; no more loader duplication to find.
+2. **`_scope_matches()` utility** — deferred four entries; borderline YAGNI; only revisit if fourth call site appears.
+3. **Silence** — loader consolidation is complete; next structural improvement may require a live run to surface.
