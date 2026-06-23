@@ -6256,3 +6256,129 @@ Macro reflection:
 1. **Add _scope_matches() utility** — extract the `Path(rel).full_match(pattern)` logic to a named function in scan.py; prevents the third occurrence without any test overhead.
 2. **Refresh retrospect.md** — Claim 5 says budget_usd is unenforced (now wrong); "next runs" section lists completed items. Stale claims mislead SCAN.
 3. **Live end-to-end run** — confirm SCAN→IMPLEMENT→VERIFY all land in .acm/sessions/ after the design fix; V1 milestone unconfirmed since scope gate was broken during last live run.
+
+---
+
+## 2026-06-23 — ai-steward: Add learning.md context to GRADUATE phase for pattern-aware convergence classification
+
+**[!DECISION]** Proposed: Add learning.md context to GRADUATE phase for pattern-aware convergence classification  
+*Rationale:* GRADUATE classifies convergence (ACHIEVED vs STUCK vs STALE) but currently reads only raw trail entries. learning.md contains pre-extracted pattern conclusions that would change classification reasoning (e.g., 'loop has transitioned to meta-cognition' is a realization that informs what 'achieved' means). The destination calls for 'meaningful symmetry' — reads that change reasoning earn their token budget. This adds ~5000 chars per GRADUATE trigger (convergence boundary only, not every cycle), delivering higher cognitive yield than equivalent raw trail text.  
+*Risk:* low
+
+**Prediction:** This change will improve GRADUATE's classification accuracy when historical patterns are relevant to the convergence state. It will not change behavior when the situation has no precedent in learning.md. Token cost increases only on convergence triggers, not on normal SCAN cycles.  
+
+**Lenses applied:**
+Examined graduate.py, escalate.py, scan.py, and reorient.py. Found that SCAN and REORIENT load learning.md for pattern context, but GRADUATE and ESCALATE do not. GRADUATE reads destination + retrospect + recent trail; ESCALATE reads destination + failure trail. Both miss the pre-extracted [!REALIZATION]/[!REVERSAL] pattern surface that would inform their classification decisions.
+
+**Blind spot:** src/ai_steward/pipeline/prompts/graduate_system.md — the system prompt may need explicit instructions on how to weight learning surface evidence vs. raw trail evidence
+
+**Reflection:**
+The prediction held partially. Classification accuracy improvement cannot yet be verified without multi-cycle observation, but the token cost claim proved accurate—learning.md loads only when GRADUATE runs, which occurs exclusively on convergence triggers. The change surfaces historical pattern data that was previously inaccessible to the classification decision.
+
+The target is becoming a system where convergence classification incorporates distilled organizational memory alongside immediate context. The 20K character budget for learning.md positions it as roughly equivalent weight to recent trail (15K), suggesting the model treats prior realizations as peer evidence to current cycle observations. This architecture implies GRADUATE now distinguishes between "unprecedented situation" and "pattern-matched situation" rather than treating all convergence triggers uniformly.
+
+The blind spot is `src/ai_steward/pipeline/prompts/graduate_system.md`. The system prompt was written before learning.md existed and contains no guidance on interpreting pre-extracted pattern markers or resolving conflicts between learning surface conclusions and raw trail evidence. The verification note identifies this correctly—without explicit instructions, the model may treat learning.md as decorative context rather than decision-critical input, or worse, double-count evidence that appears in both learning and trail sections.
+
+**File:** `src/ai_steward/pipeline/graduate.py`  
+**Tokens:** SCAN 33996/2539 — IMPL 2118/1985 — REFLECT 883/258 — cycle est. $0.18272 USD  
+**Harness sessions:** `.acm/sessions/01KVS6HP18E5TN0RD8M53YAWWS.jsonl`  
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/pipeline/graduate.py b/src/ai_steward/pipeline/graduate.py
+index 5a8a53a..561e99c 100644
+--- a/src/ai_steward/pipeline/graduate.py
++++ b/src/ai_steward/pipeline/graduate.py
+@@ -35,6 +35,7 @@ if TYPE_CHECKING:
+ logger = logging.getLogger(__name__)
+ 
+ _RECENT_TRAIL_BUDGET = 15000  # chars of recent trail entries delivered to GRADUATE
++_LEARNING_BUDGET = 20000  # chars of learning surface delivered to GRADUATE
+ 
+ 
+ def _load_destination(repo: Path, budget_chars: int = 3000) -> str:
+@@ -72,6 +73,21 @@ def _load_recent_trail(repo: Path, budget_chars: int = _RECENT_TRAIL_BUDGET) ->
+     return content
+ 
+ 
++def _load_learning(repo: Path, budget_chars: int = _LEARNING_BUDGET) -> str:
++    """Load learning.md (pre-extracted realizations and reversals).
++
++    Takes the tail of the file â€” the most recent pattern conclusions are most
++    relevant for convergence classification.
++    """
++    learning_file = repo / ".acm" / "learning.md"
++    if not learning_file.exists():
++        return "[No learning.md found]"
++    content = learning_file.read_text(encoding="utf-8")
++    if len(content) > budget_chars:
++        return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
++    return content
++
++
+ def _extract_proposal_content(response_text: str) -> str:
+     """Extract the proposal content from the model's response.
+ 
+@@ -121,6 +137,7 @@ def graduate(
+ 
+     destination = _load_destination(repo, config.destination_budget_chars)
+     retrospect = _load_current_retrospect(repo)
++    learning = _load_learning(repo)
+     recent_trail = _load_recent_trail(repo)
+     today = date.today().isoformat()
+ 
+@@ -136,6 +153,12 @@ def graduate(
+ 
+ ---
+ 
++## Learning surface (pre-extracted [!REALIZATION]/[!REVERSAL] markers)
++
++{learning}
++
++---
++
+ ## Recent audit trail (most recent entries)
+ 
+ {recent_trail}
+
+```
+
+*Staged for operator review. Not committed.*
+
+## 2026-06-23 — live run: one iteration = one file confirmed; proxy implements X-Harness-Session
+
+**Ask:** Run ai-steward and verify all entries from one iteration appear in the same .jsonl file.
+
+**Run result:** PROPOSED — src/ai_steward/pipeline/graduate.py — Add learning.md context to GRADUATE phase.
+
+**Session file audit:**
+File: 01KVS6HP18E5TN0RD8M53YAWWS.jsonl (in .acm/sessions/)
+- 3 entries, 1 unique sid, sid == filename stem
+- Entry 0: seq=0, SCAN reasoning, 9771 chars
+- Entry 1: seq=1, IMPLEMENT reasoning, 6945 chars
+- Entry 2: seq=2, REFLECT reasoning, 1419 chars
+- Entry 0 prev is genesis (000...0), hash chain valid
+
+[!REALIZATION] The proxy already implements X-Harness-Session. One harness_session() == one .jsonl == one pipeline iteration, hash-chained. All code comments saying "Until then the proxy ignores the header" were wrong — corrected in commit 66c46a3. The test_one_session_file_per_iteration_when_proxy_groups_by_run_id test was testing a hypothetical future that had already arrived.
+
+All 3 phases landed in .acm/sessions/ (not proxy default). The design fix (HARNESS_ROOT auto-from-env) and harness_root fix (meta-cognitive phases) both confirmed correct.
+
+**Actions:**
+- Corrected stale comments in harness.py (3 locations) and test_harness.py (1 location).
+- 187 tests pass.
+- Committed: 66c46a3
+
+**Proposed change staged (operator review required):**
+graduate.py — _load_learning() added (20000 char budget, tail-first); learning.md section added to GRADUATE prompt. Enables pattern-aware convergence classification. Change looks correct; operator should commit or discard.
+
+Macro reflection:
+- Recurring finding-class: not fired — this is an investigation/verification, not a pattern of fixes.
+- About to declare silence: not fired — a change was made.
+- Contradicts prior [!REALIZATION]: FIRED — prior entries said "proxy ignores X-Harness-Session." Empirical evidence contradicts. The code was written defensively before the proxy implemented the feature; the feature shipped and no one updated the comments.
+  Macro read: The target is ahead of its own documentation. The proxy shipped X-Harness-Session grouping; the client-side tests were written assuming it hadn't. The gap was harmless (tests still passed) but misleading. The pattern: live validation surfaces truth that static analysis cannot. This is the third time this session that a live run corrected a false documentation/assumption (scope gate, harness_root routing, now X-Harness-Session status).
+
+### Candidate Next Moves
+
+1. **Commit the staged graduate.py change** — the learning.md context in GRADUATE is a genuine improvement; verify tests pass with it first.
+2. **Refresh retrospect.md** — Claim 5 is stale (budget_usd now enforced); "next runs" section lists completed items; the new realization about live-validation-as-ground-truth belongs there.
+3. **External repo validation** — V1 self-targeting is now fully confirmed; the next proof point is generalization.
