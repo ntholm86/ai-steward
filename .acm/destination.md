@@ -4,100 +4,126 @@
 
 ---
 
-## Current State (consolidated 2026-06-20)
+## Current State (consolidated 2026-06-23)
+
+### V1 ACHIEVED -- 2026-06-22
+
+The autonomous improvement loop runs against its own repository. Self-targeting was the validation gate; it passed. The GRADUATE phase classified V1 as ACHIEVED on 2026-06-22 after consecutive NOTHING FOUND cycles, confirming convergence.
+
+What V1 delivered:
+- Complete pipeline with all phases wired and tested (187 tests)
+- Meta-cognitive layer: REORIENT, GRADUATE, ESCALATE all implemented and triggered automatically by run-loop
+- Observable Autonomy structurally enforced -- harness capture is impossible to omit by design
+- Scope gate enforcement at code level -- not a prompt instruction, a structural check
 
 ### What ai-steward is
 
-An autonomous software improvement engine that:
-1. **Reads** the operator's destination (what + why)
-2. **Proposes** one improvement per cycle
-3. **Applies** the change
-4. **Verifies** tests still pass
-5. **Stages** the result for human review
+An autonomous software improvement robot that runs a closed loop against any codebase:
 
-The operator commits or discards. Trust is earned one accepted proposal at a time.
+1. **Reads** the operator's destination (what + why -- Commander's Intent)
+2. **Proposes** one improvement per cycle
+3. **Applies** and verifies the change
+4. **Stages** the result and records the reasoning trail
+5. **Stops when done** -- not when it runs out of ideas (Convergence Is Silence)
+
+The operator commits or discards. Trust is earned one accepted proposal at a time. Every API call is captured structurally -- the robot cannot fabricate or omit evidence.
 
 ### Dual purpose
 
-**Purpose 1 — Proof:** ai-steward is a reference implementation of the Principles of Earned Autonomy. It demonstrates that autonomous delegation can be structurally trustworthy — not through promises, but through Observable Autonomy (harness-captured evidence), Commander's Intent (operator-written destination), and Convergence Is Silence (stop when done, not when tired).
+**Purpose 1 -- Proof:** ai-steward is a reference implementation of the Principles of Earned Autonomy. Autonomous delegation can be structurally trustworthy -- not through promises, but through Observable Autonomy, Commander's Intent, and Convergence Is Silence.
 
-**Purpose 2 — Tool:** ai-steward must be genuinely useful and widely adoptable. The workflow is simple: write a destination → run the loop → review staged changes → commit. It works on any codebase. Adoption depends on cost-efficiency being *provable* — not claimed, measured.
+**Purpose 2 -- Tool:** Write a destination -> run the loop -> review staged changes -> commit. Works on any codebase. Adoption depends on cost-efficiency being *provable* -- not claimed, measured.
 
-Both purposes are essential. A proof that nobody uses proves nothing. A tool that violates the principles is just another black box.
+Both are essential. A proof nobody uses proves nothing. A tool that violates the principles is a black box.
 
-### The architecture
+### Architecture
 
-```
-┌─────────────────────────────────────────────────────────â”
-│  OPERATOR                                               │
-│  - Writes .acm/destination.md (Commander's Intent)    │
-│  - Reviews staged diffs                                 │
-│  - Commits or discards                                  │
-└─────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────â”
-│  PIPELINE (ai-steward)                                  │
-│  PRE-FLIGHT → SCAN → IMPLEMENT → VERIFY → RECORD        │
-│  - Tier 0: structural checks (zero tokens)              │
-│  - Tier 1: cheap models (haiku) for routine work        │
-│  - Tier 2+: deferred until V1 proves the baseline       │
-└─────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────â”
-│  HARNESS (localhost:8474)                               │
-│  - Intercepts all LLM API calls                         │
-│  - Writes .acm/sessions/*.jsonl BEFORE response       │
-│  - Hash-chained, tamper-evident                         │
-│  - The agent cannot fabricate evidence                  │
-└─────────────────────────────────────────────────────────┘
-```
+One cycle (ai-steward run):
 
-### Cost model
+  PRE-FLIGHT   tier 0 -- harness reachable? git clean? tests green?
+      |
+  SCAN         LLM -- reads destination + retrospect + learning surface;
+               proposes one improvement or returns nothing
+      |
+  IMPLEMENT    LLM -- applies the proposed change
+      |
+  VERIFY       tier 0 -- runs test suite; stages on pass, rolls back on fail
+      |
+  REFLECT      LLM -- evaluates prediction vs outcome
+      |
+  RECORD       tier 0 -- appends audit-trail.md; links harness session file
 
-V1 target: **~$0.002 per improvement cycle** (haiku, 2 LLM calls).
+All three LLM calls land in one .acm/sessions/<sid>.jsonl (X-Harness-Session grouping, verified live 2026-06-23).
 
-Every trail entry records:
-- SCAN tokens (input/output)
-- IMPLEMENT tokens (input/output)
-- Estimated cycle cost in USD
-- Link to harness session (independent evidence)
+Meta-cognitive layer (ai-steward run-loop):
 
-Efficiency is measured, not claimed. Improvements are evaluated against cost-per-accepted-proposal.
+  REORIENT     every N successful cycles
+               -- rewrites retrospect.md from the full trail
 
-### V1 milestone
+  GRADUATE     on 2 consecutive NOTHING FOUND (convergence)
+               -- classifies ACHIEVED / STALE / STUCK / PREMATURE
+               -- writes graduate_proposal.md for operator review
 
-V1 is done when ai-steward successfully runs the loop against **its own repository**:
-1. `ai-steward run c:\git\pea\ai-steward` executes
-2. The loop proposes one improvement, applies it, verifies it, records the trail
-3. The operator reviews and commits
+  ESCALATE     on N consecutive failures
+               -- classifies failure pattern
+               -- writes escalate_report.md for operator review
 
-Self-targeting is the validation gate. If it can improve itself under its own discipline, the proof holds.
+Each meta-cognitive phase runs in its own harness_session() -- its own .acm/sessions/ file.
+
+Harness layer:
+
+  localhost:8474 intercepts ALL LLM API calls
+  Writes .acm/sessions/*.jsonl BEFORE response is released
+  Hash-chained, tamper-evident
+  One run = one file (X-Harness-Session grouping, verified live)
+  HARNESS_ROOT set by context manager -- structurally impossible to omit
+
+### Structural guarantees
+
+These are code-enforced, not prompt-advised:
+
+1. **One run = one session file.** Every LLM call inside harness_session() shares the same X-Harness-Session header. The proxy groups them into one .acm/sessions/<sid>.jsonl. Verified live: SCAN (seq=0) + IMPLEMENT (seq=1) + REFLECT (seq=2) in a single hash-chained file.
+
+2. **HARNESS_ROOT impossible to omit.** harness_session() sets HARNESS_ROOT in the environment before yielding. anthropic_client() reads it automatically. No call site needs to pass it explicitly.
+
+3. **Scope gate is code-level.** scope.allowed and scope.blocked are enforced in _parse_finding() and _collect_files() using Path.full_match() on repo-relative paths. System-prompt scope instructions are soft constraints; the code gate is the structural boundary.
+
+4. **anthropic_client() outside harness_session() raises immediately.** Not a warning -- a RuntimeError. Every LLM call is inside the Observable Autonomy boundary or it does not run.
+
+### Current V2 destination
+
+Prove the V1 structure generalizes. From graduate_proposal.md (generated by the GRADUATE phase, 2026-06-22):
+
+V2 closes when all four conditions produce a trail entry:
+
+1. **Live multi-cycle run** -- run-loop completes with REORIENT firing, GRADUATE or ESCALATE firing, retrospect rewrite validated
+2. **External repo run** -- post-deletion-guard fix; generalization proven beyond self-targeting
+3. **Cost-cap enforcement live** -- loop stops on budget_usd, not just max_iterations
+4. **Compounding-error detection** -- N>=3 cycle run; stale retrospect.md claim at cycle N does not corrupt SCAN reasoning at cycle N+1
+
+If all four succeed, V2 is ACHIEVED. If any structural defect surfaces (not just tuning), that defect becomes the V3 destination.
+
+Out of scope for V2: multi-model independence, hash-chain cryptographic verification, real-time cost tracking from provider APIs, CODIFY phase, production deployment.
+
+### Cost model (actual)
+
+~.15-0.20 per improvement cycle (claude-sonnet-4-5, 3 LLM calls: SCAN + IMPLEMENT + REFLECT).
+
+Every trail entry records tokens and estimated USD per cycle. Cost is measured, not claimed. Long-term target: reduce cost-per-accepted-proposal through better prompts, model-tier selection, and scope efficiency. Haiku is the V2 cost target once behavioral quality is validated at sonnet level.
 
 ### Development principles
 
 - **KISS:** Each phase does exactly one thing.
-- **YAGNI:** V2 features ship after V1 data proves they're needed.
-- **DRY:** Shared logic extracted (e.g., `_load_destination()`).
-- **Solve by design:** Structure prevents misbehavior; tests verify behavior.
-
-### What remains for V1
-
-1. **P1 compliance:** SCAN must produce trail entries with visible reasoning (lenses, predictions, `[!DECISION]`). This is a `record.py` change.
-2. **Self-targeting gate:** Both P1 (reasoning quality) and P2 (harness capture) must be structurally complete before self-targeting runs are merged to main.
-
-### Post-V1 direction
-
-- Retrospect (arc-level orientation from harness ledger)
-- ARF probe (operator-triggered reasoning fidelity check)
-- Tier escalation (when cheap models can't decide)
-- Multi-family verification (proposer ≠ judge)
-- Push/release autonomy (earned after N accepted proposals)
+- **Solve by design:** Structure prevents misbehavior; tests verify behavior. System-prompt instructions are soft constraints only.
+- **YAGNI:** V3 features ship after V2 data proves they are needed.
+- **DRY:** Shared logic extracted (_load_destination(), _load_learning(), etc.).
+- **Observable Autonomy by default:** Every structural harness change is enforced, not documented.
 
 ---
 
 # Historical Record
+
+*The sections below preserve the evolution of this destination. Newest entries win on conflicts. The consolidated section above supersedes any conflicting claim below.*
 
 *The sections below preserve the evolution of this destination. Newest entries win on conflicts.*
 
