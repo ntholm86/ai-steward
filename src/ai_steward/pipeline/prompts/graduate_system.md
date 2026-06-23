@@ -7,7 +7,10 @@ You are a destination-revision agent. The improvement loop has converged — SCA
 You will receive:
 1. The operator's destination (what the target is for and its goals)
 2. The current retrospect.md (arc-claims and where attention has been)
-3. The recent audit trail (last N entries showing the convergence pattern)
+3. The learning surface — a compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker from the full audit trail. This is the loop's own concluded interpretation of what it has learned, pre-digested. Treat it as primary pattern evidence: if a pattern is named here, the loop has already concluded it is true. Do not re-derive it from the raw trail.
+4. The recent audit trail (last N entries showing the convergence pattern)
+
+When the learning surface and the raw trail contain overlapping information, do not count it twice. The learning surface is the distillation; the raw trail is the supporting evidence. Cite learning surface entries by their slug (e.g., `2026-06-23 — improve: scan fix`) when they inform your classification, and the raw trail only when you need specific entry detail not captured in the learning surface.
 
 ## Classifications
 

@@ -6382,3 +6382,70 @@ Macro reflection:
 1. **Commit the staged graduate.py change** — the learning.md context in GRADUATE is a genuine improvement; verify tests pass with it first.
 2. **Refresh retrospect.md** — Claim 5 is stale (budget_usd now enforced); "next runs" section lists completed items; the new realization about live-validation-as-ground-truth belongs there.
 3. **External repo validation** — V1 self-targeting is now fully confirmed; the next proof point is generalization.
+
+---
+
+## 2026-06-23 — improve: graduate_system.md — declare learning surface as 4th input
+
+**Ask:** Use improve skill (operator intent: understand the per-cycle-one-file invariant, then improve the codebase).
+
+**Orientation (agent-initiated):**
+Established context: per-cycle session file isolation is correct and working (confirmed in prior live run). Applying improve skill to find next highest-leverage change.
+
+**Step 1 — Understand:**
+Destination: V1 self-targeting validated. Active operational rules apply. Retrospect.md is stale (Claim 5 wrong) but requires REORIENT to fix properly. Recent cycle added learning.md context to graduate.py but left the graduate system prompt unchanged.
+
+**Step 2 — Examine:**
+
+Purpose lens: graduate_system.md lists 3 inputs (destination, retrospect, recent trail). graduate.py now delivers 4 sections — the 3 existing plus a "Learning surface" block of pre-extracted [!REALIZATION]/[!REVERSAL] markers. The model receives the 4th section with no instructions about what it is or how to use it relative to the raw trail. Gap: implementation and prompt are out of sync.
+
+Inconsistency lens: The prompt's input list says "You will receive: 1, 2, 3." The code delivers 1, 2, 3, 4. Any model reading the prompt and receiving 4 sections has no basis for treating the learning surface differently from a second trail dump. It may re-derive patterns the loop already concluded, or worse, double-count evidence that appears in both sections.
+
+Waste lens: Two scope-match call sites exist (_parse_finding and _collect_files) — both correct since commit 5c6f028. The duplicate is low risk and was ranked lower than the prompt gap.
+
+**Step 3 — Challenge:**
+First read was _scope_matches() utility (top candidate from prior trail entry). Re-examined: that is defensive against a future third call site that doesn't exist yet. The graduate_system.md gap affects every GRADUATE run that fires now that learning.md is wired into the context. GRADUATE has already received learning.md in session 01KVS6HP18E5TN0RD8M53YAWWS.jsonl without any prompt guidance — that run was the blind spot from the last trail entry. The prompt gap is the more impactful fix.
+
+**[!DECISION]** Fix graduate_system.md to declare learning.md as the 3rd input (renumbering raw trail to 4th) and add explicit usage guidance: treat learning surface as primary pattern evidence, cite by slug, do not double-count overlap with raw trail.
+
+**Prediction:** After this change, GRADUATE will explicitly know learning.md exists, cite [!REALIZATION] markers by slug when classifying convergence, and not double-count evidence appearing in both sections. No behavior change when learning.md is absent or empty (the model simply won't reference it). 187 tests pass (prompt is a static file — no test covers its content).
+
+**Step 5 — Act:**
+- graduate_system.md: expanded "Input" section from 3 items to 4, added usage guidance paragraph on overlap handling and citation format.
+- 187 tests pass.
+
+**Step 6 — Reflect:**
+The prediction holds structurally: the prompt now tells the model what learning.md is and how to use it. Behavioral quality (whether GRADUATE actually cites markers and avoids double-counting) is visible only through live runs — unit tests cannot verify model reasoning.
+
+[!REALIZATION] The pattern is: code changes that add new context to LLM prompts require two commits — one for the code (what data is delivered) and one for the system prompt (how the model should interpret it). These are structurally coupled but not in the same file. When they diverge, the model operates with undeclared context. This is the second instance of this pattern: graduate.py added learning.md (data), graduate_system.md now declares it (instructions). If escalate.py ever gets learning.md added, escalate_system.md will need the same treatment.
+
+Macro reflection:
+- Recurring finding-class: not fired — this entry is a different kind of fix (prompt sync) than the prior two (path.match() fixes).
+- About to declare silence: not fired — a change was made.
+- Contradicts prior [!REALIZATION]: not fired — the blind_spot from the prior entry (entry 82) was "graduate_system.md may need explicit instructions on how to weight learning surface evidence." This entry resolves that blind spot; no contradiction.
+- Operator explicitly asked: not fired directly; operator said "use improve skill."
+
+### Candidate Next Moves
+
+1. **_scope_matches() utility** — extract Path(rel).full_match(pattern) to a named helper in scan.py; deferred from this run, still valid.
+2. **Retrospect refresh via i-steward reorient .** — Claim 5 (budget_usd unenforced) is wrong; "next runs" lists completed items; stale retrospect steers SCAN toward completed work.
+3. **Add learning.md to escalate_system.md** — parallel gap: if escalate.py ever adds learning.md context (as graduate.py did), escalate_system.md will need the same treatment. Currently hypothetical — but the pattern is now named.
+
+**Diff:**
+```diff
+diff --git a/src/ai_steward/pipeline/prompts/graduate_system.md b/src/ai_steward/pipeline/prompts/graduate_system.md
+index 7ee5ea3..bd4cf70 100644
+--- a/src/ai_steward/pipeline/prompts/graduate_system.md
++++ b/src/ai_steward/pipeline/prompts/graduate_system.md
+@@ -7,7 +7,10 @@ You are a destination-revision agent. The improvement loop has converged -- SCA
+ You will receive:
+ 1. The operator's destination (what the target is for and its goals)
+ 2. The current retrospect.md (arc-claims and where attention has been)
+-3. The recent audit trail (last N entries showing the convergence pattern)
++3. The learning surface -- a compact chronological extract of every [!REALIZATION] and [!REVERSAL] marker from the full audit trail. This is the loop's own concluded interpretation of what it has learned, pre-digested. Treat it as primary pattern evidence: if a pattern is named here, the loop has already concluded it is true. Do not re-derive it from the raw trail.
++4. The recent audit trail (last N entries showing the convergence pattern)
++
++When the learning surface and the raw trail contain overlapping information, do not count it twice. The learning surface is the distillation; the raw trail is the supporting evidence. Cite learning surface entries by their slug when they inform your classification, and the raw trail only when you need specific entry detail not captured in the learning surface.
+ 
+ ## Classifications
+```
