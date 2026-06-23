@@ -701,6 +701,46 @@ Compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker
 
 **[!REALIZATION]** : not fired
 
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** : not fired
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** -- live runs are structurally different from unit tests
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** (live runs required for validation): CONFIRMED, not contradicted
+
+## 2026-06-22 — feat(reorient): add REORIENT phase for arc-level awareness
+
+**[!REALIZATION]** : FIRED -- new class of test-invisible bug identified
+
+## 2026-06-22 — Proxy capture audit and harness_root fix
+
+**[!REALIZATION]** There are now two classes of harness bug that tests cannot see: (1) calling anthropic_client() outside harness_session() context — enforced by a RuntimeError at runtime; (2) calling anthropic_client() without harness_root — proxy silently routes to default. Class (2) has no runtime enforcement. A static analysis rule or integration test checking all anthropic_client() call sites for harness_root is needed.
+
+## 2026-06-23 — test: one iteration = one file (X-Harness-Session grouping invariant)
+
+**[!REALIZATION]** The 'one iteration = one file' invariant has two halves: client sends a consistent grouping token (now tested), and proxy routes by that token (not yet implemented). Test 3 documents the intended file shape by simulating the proxy. The gap is visible without being a test failure — the right posture for an unimplemented proxy feature.
+
+## 2026-06-23 — test: one iteration = one file (X-Harness-Session grouping invariant)
+
+**[!REALIZATION]** : not fired — this extends the harness_root realization from prior session (class 2 bugs) rather than contradicting it.
+
+## 2026-06-23 — fix: X-Harness-Root impossible to omit (solve by design)
+
+**[!REALIZATION]** The symmetry between HARNESS_SESSION_ID (raise if absent) and HARNESS_ROOT (auto-from-env) is intentional and correct. They enforce different things: the session-ID check is a hard fail that stops you operating outside the boundary; the root-from-env is a silent convenience that routes correctly. Raising on missing HARNESS_ROOT would be wrong — it IS set by harness_session() always, so raising would just add noise.
+
+## 2026-06-23 — fix: X-Harness-Root impossible to omit (solve by design)
+
+**[!REALIZATION]** : not fired — this resolves the class-2 bug realization from the proxy audit entry (2026-06-22). That entry said "no runtime enforcement"; this entry adds structural enforcement via env var.
+
+## 2026-06-23 — fix: X-Harness-Root impossible to omit (solve by design)
+
+**[!REALIZATION]** entries added this session; learning.md is stale.
+
 ---
 
-**174 markers — 135 realisations, 39 reversals**
+**184 markers — 145 realisations, 39 reversals**

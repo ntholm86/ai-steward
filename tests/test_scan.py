@@ -255,6 +255,32 @@ def test_collect_files_respects_blocked(tmp_path: Path) -> None:
     assert "skip.py" not in files
 
 
+def test_collect_files_blocked_deep_pattern_excludes_nested_files(tmp_path: Path) -> None:
+    """Blocked patterns with trailing components (e.g. tests/**/*.py) must work at depth > 1.
+
+    Regression test for path.match() bug: patterns like 'tests/**/*.py' silently failed
+    to block files at depth > 1. Fix: use Path(rel).full_match() on the relative path.
+    """
+    tests = tmp_path / "tests" / "unit"
+    tests.mkdir(parents=True)
+    (tests / "test_foo.py").write_text("def test_foo(): pass")
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "main.py").write_text("x = 1")
+    config = _make_config(
+        tmp_path,
+        scope=ScopeConfig(allowed=["**/*.py"], blocked=["tests/**/*.py"]),
+    )
+
+    files = _collect_files(tmp_path, config)
+
+    assert "src/main.py" in files or "src\\main.py" in files
+    # Deep test file must be excluded by the blocked pattern
+    assert not any("test_foo" in k for k in files), (
+        f"tests/**/*.py blocked pattern must exclude deep test files. Got: {list(files)}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Directed SCAN — Commander's Intent injection
 # ---------------------------------------------------------------------------

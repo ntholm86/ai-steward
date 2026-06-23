@@ -326,7 +326,9 @@ def _collect_files(repo: Path, config: AiStewardConfig) -> dict[str, str]:
             if not path.is_file():
                 continue
             rel = str(path.relative_to(repo))
-            if any(path.match(b) for b in blocked):
+            # Use full_match() on the relative path — same reasoning as _parse_finding():
+            # path.match() silently fails for patterns like "tests/**/*.py" at depth > 1.
+            if any(Path(rel).full_match(b) for b in blocked):
                 continue
             if not config.scope.allowed and _is_binary(path, config.binary_heuristic_bytes):
                 continue
