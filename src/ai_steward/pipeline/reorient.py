@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
 from ai_steward.pipeline import _prompts
-from ai_steward.pipeline._utils import _load_destination
+from ai_steward.pipeline._utils import _load_current_retrospect, _load_destination
 
 if TYPE_CHECKING:
     import anthropic
@@ -43,14 +43,6 @@ def _load_audit_trail(repo: Path, budget_chars: int = 50000) -> str:
         # Take the most recent entries (end of file)
         return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
     return content
-
-
-def _load_current_retrospect(repo: Path) -> str:
-    """Load current retrospect.md if it exists."""
-    retro_file = repo / ".acm" / "retrospect.md"
-    if not retro_file.exists():
-        return "[No previous retrospect.md]"
-    return retro_file.read_text(encoding="utf-8")
 
 
 def _load_learning(repo: Path, budget_chars: int = 20000) -> str:

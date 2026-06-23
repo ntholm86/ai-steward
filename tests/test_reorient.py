@@ -8,11 +8,10 @@ from unittest.mock import MagicMock
 import pytest
 
 from ai_steward.config import AiStewardConfig, HarnessConfig, ModelAssignment, ScopeConfig
-from ai_steward.pipeline._utils import _load_destination
+from ai_steward.pipeline._utils import _load_current_retrospect, _load_destination
 from ai_steward.pipeline.reorient import (
     _extract_retrospect_content,
     _load_audit_trail,
-    _load_current_retrospect,
     _load_learning,
     reorient,
     write_retrospect,
@@ -118,7 +117,7 @@ class TestLoadCurrentRetrospect:
 
     def test_returns_placeholder_when_missing(self, tmp_path: Path) -> None:
         result = _load_current_retrospect(tmp_path)
-        assert "No previous retrospect.md" in result
+        assert "No retrospect.md found" in result
 
 
 class TestLoadLearning:

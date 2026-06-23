@@ -8,10 +8,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from ai_steward.config import AiStewardConfig, HarnessConfig, ModelAssignment, ScopeConfig
-from ai_steward.pipeline._utils import _load_destination
+from ai_steward.pipeline._utils import _load_current_retrospect, _load_destination
 from ai_steward.pipeline.graduate import (
     _extract_proposal_content,
-    _load_current_retrospect,
     _load_recent_trail,
     graduate,
     write_proposal,
