@@ -6700,3 +6700,44 @@ Commit: c3ca807
 
 *Across-trail reflection triggers:*
 - *Operator explicitly asked:* FIRED - operator initiated this coordinated rename.
+
+## 2026-06-23 -- complete-retrospect-orientation-rename
+
+**Slug:** complete-retrospect-orientation-rename
+**Target:** ai-steward
+**Skills run:** Improve
+
+**Ask interpretation:** "improve skill on ai-steward" -- no argument. Checked ACM context (destination, orientation, learning), ran tests to verify green baseline, then examined the codebase for the highest-leverage finding.
+
+**ACM context read:** destination.md (V1 ACHIEVED, V2 conditions), orientation.md (10 claims, active rules), learning.md tail (recent [!REALIZATION]/[!REVERSAL] markers). Tests: 187/187 passing.
+
+**Examination:**
+- Searched src/ and tests/ for "retrospect" after the `refactor: rename retrospect -> orientation` commit (c3ca807).
+- Found: `graduate_system.md` and `reorient_system.md` (the LLM prompt files in `prompts/`) were NOT updated by the rename commit.
+- Specifically: 4 stale "retrospect.md" references in the prompt files, plus 1 stale `# retrospect.md — {target name}` output template in `reorient_system.md`.
+- Also: `.acm/orientation.md` still had `# retrospect.md — ai-steward` as its own file header (written by the last REORIENT run before the rename).
+
+**Lenses applied:**
+- Inconsistency: the rename was partial. Code files (Python) updated; Markdown prompt files missed entirely. The prompt files are the model's instruction layer -- if they say "retrospect.md" but the file is called "orientation.md", REORIENT produces a mis-titled output every run.
+- Overburden: none -- this is a targeted 6-line fix.
+
+**[!DECISION]** Fix all 6 stale references: 2 in graduate_system.md, 4 in reorient_system.md (including the output template header), 1 in orientation.md itself.
+
+**Pre-commit prediction:** Zero retrospect references remain in src/ and tests/. Tests unaffected (prompts are not under test assertions). Future REORIENT runs produce files headed `# orientation.md —` correctly. 187/187 after fix.
+
+**Verification:** `Select-String` on src/tests returned no matches post-fix. 187/187. Prediction held.
+
+**Reflection:**
+- Current model: the rename is now complete across all layers. Code, tests, prompts, and the file header itself all use "orientation".
+- Blind spot: audit-trail.md contains many historical "retrospect" references -- these are legitimate history, not stale references, and were correctly excluded.
+- Imagined-reader pushback: the prompt rename matters most for REORIENT (which writes orientation.md) and GRADUATE (which reads it). A reader could ask: does it matter what the model is told the file is called? Yes -- the output template header is literally what gets written to disk.
+
+**Across-trail reflection:**
+- Recurring finding-class: not fired -- isolated completion of a prior rename.
+- About to declare silence: not fired -- change made.
+- Contradicts prior [!REALIZATION]: not fired -- this resolves the rename commit's stated intent.
+- Operator explicitly asked: not fired (no explicit ask -- found by examine).
+
+**Candidate Next Moves:**
+1. V2 condition #1: live multi-cycle run -- REORIENT fires at N successes; proves the loop generalises without human cycle-by-cycle supervision.
+2. V2 condition #2: external repo run -- post-deletion-guard fix; generalization proven beyond self-targeting.
