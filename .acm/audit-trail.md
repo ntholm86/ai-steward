@@ -6449,3 +6449,62 @@ index 7ee5ea3..bd4cf70 100644
  
  ## Classifications
 ```
+
+## 2026-06-23 -- improve: extract _load_destination() to _utils.py
+
+**Ask:** Run improve skill (no specific target named).
+
+**Orientation (agent-initiated):**
+Read destination.md, retrospect.md, learning.md (tail), recent trail. The destination explicitly names the target pattern: "The `_load_destination()` function is the model: one place, used by any phase that needs it." Orientation files confirmed V1 ACHIEVED. V2 requires live-run validation, not more code structure fixes.
+
+**Step 1 -- Understand:**
+Destination: V1 ACHIEVED. V2 = four live-run conditions. Active operational rules apply. Improve skill applied to the full codebase to find highest-leverage change.
+
+Agent-initiated direction question (ask underspecified -- "run improve skill"): What is the highest-leverage structural improvement before V2 live-run validation begins?
+
+Sourced hunches from orientation:
+- Prior trail: _scope_matches() utility (deferred from entry 82), escalate.py learning.md gap, _load_destination() DRY
+- Destination: "DRY: Shared logic extracted (_load_destination(), _load_learning(), etc.)"
+
+**Step 2 -- Examine:**
+
+Purpose lens: destination.md says `_load_destination()` should be "one place, used by any phase that needs it." Found it in three places: graduate.py, escalate.py, reorient.py -- all three definitions byte-for-byte identical.
+
+Inconsistency lens: reorient_system.md already correctly declares learning.md as input #3 (graduate_system.md fix from prior entry was the real gap; reorient was already correct). Escalate was intentionally designed without learning.md (docstring: "focused failure context, no retrospect needed").
+
+Waste lens: `_scope_matches()` candidate from prior trail -- 3 call sites in one file, simple one-liner. Ranks below DRY extraction because destination explicitly names _load_destination() extraction as the model pattern.
+
+**Step 3 -- Challenge:**
+The _load_destination() fix was the obvious first read. Re-examining: is there a more impactful gap? The V2 conditions are all live-run items -- no code change enables them except the code being correct first. The destination names this exact function as the DRY model. This is the right fix.
+
+[!DECISION] Extract `_load_destination()` from graduate.py, escalate.py, reorient.py into `_utils.py`. Update imports in 3 source files and 3 test files (test_graduate.py, test_escalate.py, test_reorient.py import the function directly).
+
+**Prediction:** 187 tests pass unchanged. No behavior change. `_load_destination()` becomes a single source of truth in `_utils.py`. Risk of silent divergence between the three copies eliminated.
+
+**Step 5 -- Act:**
+- Added `_load_destination()` to `_utils.py`
+- Removed identical definition from graduate.py, escalate.py, reorient.py
+- Added `from ai_steward.pipeline._utils import _load_destination` to each
+- Updated test_graduate.py, test_escalate.py, test_reorient.py to import from `_utils`
+- 187 tests pass. Commit: febc0ec
+
+**Outcome vs prediction:** Prediction held exactly. 187/187, no failures.
+
+**Step 6 -- Reflect:**
+Model claim: The codebase now implements the DRY pattern the destination names as its model. If destination-loading logic ever needs to change (different fallback, encoding change, new file name), it changes in one place.
+
+Blind spot: `_load_current_retrospect()` exists in both graduate.py and reorient.py with near-identical bodies but different fallback strings ("No retrospect.md found" vs "No previous retrospect.md"). Did not extract -- the minor divergence may be intentional. Not examined closely.
+
+Imagined reader pushback: "Why not extract `_load_current_retrospect()` too?" The differing fallback strings are the answer -- they suggest different semantic intent. If they converged, that would be the next extraction candidate.
+
+Macro reflection:
+- Recurring finding-class: not fired -- single extraction, not a pattern
+- About to declare silence: not fired -- change made
+- Contradicts prior [!REALIZATION]: not fired -- destination already named this
+- Operator explicitly asked: not fired
+
+### Candidate Next Moves
+
+1. **`_load_current_retrospect()` DRY check** -- near-identical in graduate.py and reorient.py; if the fallback string difference is unintentional, it is the same class of fix.
+2. **`_scope_matches()` utility** -- deferred for two consecutive entries; if a third call site ever appears this becomes a true DRY fix; currently borderline.
+3. **External repo validation** -- V2 condition #2; first proof of generalization beyond self-targeting; ranks above code structure fixes.
