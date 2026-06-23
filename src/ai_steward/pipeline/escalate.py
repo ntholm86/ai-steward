@@ -112,7 +112,7 @@ def escalate(
     logger.info("ESCALATE phase starting (trigger: %s)", trigger)
 
     if client is None:
-        client = anthropic_client(config.harness)
+        client = anthropic_client(config.harness, harness_root=repo / ".acm")
 
     destination = _load_destination(repo, config.destination_budget_chars)
     failure_context = _load_failure_context(repo)
