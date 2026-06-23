@@ -6172,3 +6172,40 @@ Macro reflection triggers:
 1. **Implement X-Harness-Session in the proxy** — the client side is now proven correct; proxy grouping would make test 3 reflect live reality, not simulated reality.
 2. **Accept GRADUATE's V2 destination proposal** — graduate_proposal.md classified V1 as ACHIEVED; operator decision needed on destination.md.
 3. **Investigate scope rejection pattern** — SCAN keeps proposing in-scope files that get rejected; live V2 runs need this working.
+
+## 2026-06-23 — fix: X-Harness-Root impossible to omit (solve by design)
+
+**Ask:** Make it structurally impossible for anthropic_client() to be called without X-Harness-Root being sent. Solve by design, not by convention.
+
+**Examination:**
+The two harness invariants had asymmetric enforcement:
+- HARNESS_SESSION_ID: harness_session() sets env var; anthropic_client() raises RuntimeError if absent. Cannot be forgotten.
+- X-Harness-Root: harness_session() sets HARNESS_ROOT env var, but anthropic_client() only sent the header if harness_root= was explicitly passed. Forgettable.
+
+harness_session() already set HARNESS_ROOT. anthropic_client() already read HARNESS_SESSION_ID. The env var was right there — it just wasn't being used.
+
+**Decision:** Read HARNESS_ROOT from os.environ as automatic fallback in anthropic_client(). Explicit harness_root= parameter remains for override, but is no longer necessary. Removed redundant harness_root=repo/".acm" from all 6 pipeline call sites (scan, implement, reflect, graduate, escalate, reorient).
+
+**Prediction:** 186 tests pass (no behavior change for sessions inside harness_session; explicit overrides still work).
+
+**Actions:**
+- harness.py: effective_root = harness_root if explicit else os.environ.get("HARNESS_ROOT")
+- Removed harness_root= from 6 call sites.
+- Added 2 tests: env-var implicit path, explicit override path.
+- 186 tests pass.
+- Committed: d6b597c
+
+**Reflection:**
+[!REALIZATION] The symmetry between HARNESS_SESSION_ID (raise if absent) and HARNESS_ROOT (auto-from-env) is intentional and correct. They enforce different things: the session-ID check is a hard fail that stops you operating outside the boundary; the root-from-env is a silent convenience that routes correctly. Raising on missing HARNESS_ROOT would be wrong — it IS set by harness_session() always, so raising would just add noise.
+
+Macro reflection:
+- Recurring finding-class: not fired.
+- About to declare silence: not fired — a change was made.
+- Contradicts prior [!REALIZATION]: not fired — this resolves the class-2 bug realization from the proxy audit entry (2026-06-22). That entry said "no runtime enforcement"; this entry adds structural enforcement via env var.
+- Operator explicitly asked: FIRED — operator said "solve by design, make the bug impossible."
+
+### Candidate Next Moves
+
+1. **Live run to verify full SCAN→IMPLEMENT→REFLECT** — confirms all 3 phases land in .acm/sessions/ with the new design.
+2. **V2 destination decision** — graduate_proposal.md classified V1 ACHIEVED; operator adoption to destination.md needed.
+3. **Regenerate learning.md** — two [!REALIZATION] entries added this session; learning.md is stale.
