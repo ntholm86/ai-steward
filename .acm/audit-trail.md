@@ -6100,3 +6100,34 @@ Observation: SCAN twice proposed files from the scope (scan.py, _utils.py) but t
 1. **Accept GRADUATE's V2 destination proposal** -- move or append graduate_proposal.md content to destination.md. This closes V1 officially and opens V2.
 2. **Investigate scope rejection pattern** -- SCAN keeps proposing files from within scope.allowed that get rejected. The scope gate is working but the targeting is odd. Live V2 validation requires this to work.
 3. **Expand scope for V2 validation** -- the current scope (src/**/*.py) might be too narrow or the destination too settled for SCAN to find meaningful improvements. V2 needs a repo with genuine improvement opportunities.
+
+## 2026-06-22 — Proxy capture audit and harness_root fix
+
+**Ask:** Verify whether the proxy correctly intercepted and captured all LLM traffic from the live run-loop validation.
+
+**Examination:**
+- .acm/sessions/ had 42 files; 8 new from today's live run (01KVR6* and 01KVR7* prefix). Verified real content (SHA256 hash chains, model name, SCAN reasoning 1.4–12.6 KB).
+- Searched for GRADUATE session (7886+1919 tokens): NOT in .acm/sessions/.
+- Read SPEC.md §9 and §8: proxy resolves write target from X-Harness-Root HTTP header per request. Without that header, falls back to default (.harness/ relative to proxy cwd git root).
+- Found proxy default location: C:\git\pea\llm-harness-proxy\.harness\sessions\.
+- Found 3 sessions there from today: 01KVR6YG9P (7908 B), 01KVR73ZPD (8095 B), 01KVR78YZW (11890 B). All read as GRADUATE proposals, classification ACHIEVED.
+
+**Root cause:**
+graduate.py, escalate.py, reorient.py all called nthropic_client(config.harness) without harness_root. No X-Harness-Root header → proxy used default. The SCAN phase (loop.py) passes harness_root=repo / ".acm" correctly.
+
+**Decision:** Fix all three call sites. Pass harness_root=repo / ".acm" to anthropic_client in graduate.py, escalate.py, reorient.py.
+
+**Actions:**
+- Added harness_root=repo / ".acm" to the if client is None: branch in all 3 files.
+- 180 tests pass (no behavioral change — tests mock the client, not the header).
+- Committed: 9da73af "fix(harness): pass harness_root to anthropic_client in all meta-cognitive phases"
+
+**Reflection:**
+The proxy DID capture everything — no LLM call was lost. Three GRADUATE calls were misdirected, not dropped. Observable Autonomy held structurally; the sessions exist and are intact in the proxy default location. The gap was routing, not capture.
+
+[!REALIZATION] There are now two classes of harness bug that tests cannot see: (1) calling anthropic_client() outside harness_session() context — enforced by a RuntimeError at runtime; (2) calling anthropic_client() without harness_root — proxy silently routes to default. Class (2) has no runtime enforcement. A static analysis rule or integration test checking all anthropic_client() call sites for harness_root is needed.
+
+**Candidate next moves (carried forward):**
+1. Accept GRADUATE's V2 destination proposal — move/append graduate_proposal.md to destination.md.
+2. Investigate scope rejection pattern — SCAN proposes in-scope files that get rejected.
+3. Expand scope for V2 validation — current scope may be too settled for meaningful improvements.
