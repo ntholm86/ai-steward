@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
 from ai_steward.pipeline import _prompts
+from ai_steward.pipeline._utils import _load_destination
 
 if TYPE_CHECKING:
     import anthropic
@@ -36,18 +37,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _FAILURE_TRAIL_BUDGET = 8000  # chars — smaller than GRADUATE; failure messages are dense, not long
-
-
-def _load_destination(repo: Path, budget_chars: int = 3000) -> str:
-    """Load destination.md (or legacy vision.md), tail-truncated to budget."""
-    for name in ("destination.md", "vision.md"):
-        dest_file = repo / ".acm" / name
-        if dest_file.exists():
-            content = dest_file.read_text(encoding="utf-8")
-            if len(content) > budget_chars:
-                return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
-            return content
-    return "[No destination.md found]"
 
 
 def _load_failure_context(repo: Path, budget_chars: int = _FAILURE_TRAIL_BUDGET) -> str:

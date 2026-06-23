@@ -8,9 +8,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from ai_steward.config import AiStewardConfig, HarnessConfig, ModelAssignment, ScopeConfig
+from ai_steward.pipeline._utils import _load_destination
 from ai_steward.pipeline.escalate import (
     _extract_report_content,
-    _load_destination,
     _load_failure_context,
     escalate,
     write_report,

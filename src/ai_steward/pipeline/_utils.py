@@ -10,6 +10,18 @@ import subprocess
 from pathlib import Path
 
 
+def _load_destination(repo: Path, budget_chars: int = 3000) -> str:
+    """Load destination.md (or legacy vision.md), tail-truncated to budget."""
+    for name in ("destination.md", "vision.md"):
+        dest_file = repo / ".acm" / name
+        if dest_file.exists():
+            content = dest_file.read_text(encoding="utf-8")
+            if len(content) > budget_chars:
+                return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
+            return content
+    return "[No destination.md found]"
+
+
 def run_verify_command(cmd: str, repo: Path) -> tuple[bool, int]:
     """Run a configurable verify command. Returns (passed, count).
 
