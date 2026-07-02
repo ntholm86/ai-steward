@@ -1,4 +1,4 @@
-﻿"""SCAN phase — one Anthropic LLM call via harness.
+"""SCAN phase — one Anthropic LLM call via harness.
 
 Combines ANALYZE and PROPOSE: asks the model to identify one improvement
 AND describe the specific change in a single prompt. Returns a Finding,
@@ -151,7 +151,7 @@ def _load_scope_context(
     scope_depth: int = 4,
     budget_chars: int = 3000,
 ) -> str | None:
-    """Load Commander's Intent from all applicable ACM scopes (ACM §4).
+    """Load Operator's Intent from all applicable ACM scopes (ACM §4).
 
     Traverses parent directories from repo upward, collecting every
     .acm/destination.md found. Stop conditions (ACM §4.2):
@@ -382,7 +382,7 @@ def scan(
     parts: list[str] = []
     if destination:
         parts.append(
-            f"Commander's Intent (operator destination — higher scope governs):\n\n{destination}"
+            f"Operator's Intent (operator destination — higher scope governs):\n\n{destination}"
         )
     if orient:
         parts.append(orient)

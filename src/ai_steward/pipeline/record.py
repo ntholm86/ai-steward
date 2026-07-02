@@ -140,7 +140,7 @@ def _build_entry(
             finding.examination_summary + "\n\n"
             if finding.examination_summary
             else (
-                f"- *Commander\u2019s Intent:* Operator destination (`.acm/destination.md`) "
+                f"- *Operator\u2019s Intent:* Operator destination (`.acm/destination.md`) "
                 f"loaded \u2014 improvement selected against stated direction.\n"
                 f"- *Code examination:* Repository files within scope scanned for structural improvements.\n\n"
             )

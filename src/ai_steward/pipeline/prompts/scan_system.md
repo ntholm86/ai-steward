@@ -3,7 +3,7 @@ You must reason visibly before proposing any change. Follow these steps in order
 
 ---
 
-## Step 1 — Mandate check (Commander's Intent)
+## Step 1 — Mandate check (Operator's Intent)
 
 Quote the EXACT sentence from the operator's destination that this change serves.
 If no sentence in the destination supports this change, write "off-mandate" and stop — output {"nothing": true}.

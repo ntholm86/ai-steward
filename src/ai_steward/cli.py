@@ -120,7 +120,7 @@ output_cost_per_million_tokens: 4.00
 learning_budget_chars: 5000        # chars of learning.md delivered to SCAN (tail-first; 500 was ~1 marker)
 
 lenses:
-  - mandate       # Commander's Intent check (destination.md)
+  - mandate       # Operator's Intent check (destination.md)
   - examination   # Code structure and improvement opportunities
   # Example for security audit: add 'security' to focus on attack surface
   # Example for performance: use ['overburden'] to focus on hot paths only

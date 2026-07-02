@@ -1,8 +1,8 @@
-﻿# ai-steward
+# ai-steward
 
 An autonomous code improvement loop with structural accountability.
 
-**Purpose 1 — Proof:** A reference implementation of [Principles of Earned Autonomy](https://github.com/ntholm86/manifesto). Demonstrates that autonomous delegation can be structurally trustworthy — not through promises, but through Observable Autonomy (harness-captured LLM evidence), Commander's Intent (operator-written destination), and Convergence Is Silence (stop when done, not when tired).
+**Purpose 1 — Proof:** A reference implementation of [Principles of Earned Autonomy](https://github.com/ntholm86/manifesto). Demonstrates that autonomous delegation can be structurally trustworthy — not through promises, but through Observable Autonomy (harness-captured LLM evidence), Operator's Intent (operator-written destination), and Convergence Is Silence (stop when done, not when tired).
 
 **Purpose 2 — Tool:** Genuinely useful. Write a destination → run the loop → review the staged diff → commit or discard. Works on any codebase. Cost is measured, not claimed (~$0.018/cycle on claude-haiku-4-5).
 
@@ -11,7 +11,7 @@ An autonomous code improvement loop with structural accountability.
 ```
 ┌──────────────────────────────────┐
 │  OPERATOR                        │
-│  .acm/destination.md           │  ← Commander's Intent: what + why
+│  .acm/destination.md           │  ← Operator's Intent: what + why
 │  Reviews staged diffs            │
 │  Commits or discards             │
 └──────────────┬───────────────────┘
@@ -84,7 +84,7 @@ The loop proposes one change, applies it, verifies tests pass, and stages the di
 
 - Self-targeting proven: ai-steward runs against its own repository
 - Observable Autonomy structural: harness sessions co-located with trail in `.acm/`
-- Commander's Intent structural: SCAN reads `.acm/destination.md` before every proposal
+- Operator's Intent structural: SCAN reads `.acm/destination.md` before every proposal
 - 66 tests, mypy-clean, CI on GitHub Actions
 - Cost baseline: ~$0.018/cycle (SCAN + IMPLEMENT, claude-haiku-4-5)
 

@@ -282,7 +282,7 @@ def test_collect_files_blocked_deep_pattern_excludes_nested_files(tmp_path: Path
 
 
 # ---------------------------------------------------------------------------
-# Directed SCAN — Commander's Intent injection
+# Directed SCAN — Operator's Intent injection
 # ---------------------------------------------------------------------------
 
 
@@ -306,7 +306,7 @@ def test_scan_includes_destination_when_present(tmp_path: Path) -> None:
 
     call_kwargs = client.messages.create.call_args
     user_content = call_kwargs[1]["messages"][0]["content"]
-    assert "Commander's Intent" in user_content
+    assert "Operator's Intent" in user_content
     assert "Build a fast reliable pipeline." in user_content
 
 
@@ -327,7 +327,7 @@ def test_scan_works_without_destination(tmp_path: Path) -> None:
     assert isinstance(result, Finding)
     call_kwargs = client.messages.create.call_args
     user_content = call_kwargs[1]["messages"][0]["content"]
-    assert "Commander's Intent" not in user_content
+    assert "Operator's Intent" not in user_content
 
 
 def test_scan_truncates_long_destination(tmp_path: Path) -> None:
