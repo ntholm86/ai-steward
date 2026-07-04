@@ -6747,3 +6747,25 @@ Commit: c3ca807
 External run by the auditonomy skill (operator-directed external-target test). Read .acm/destination.md + orientation.md, examined against the Purpose and Inconsistency lenses. [!DECISION] Finding: the README front door contradicted the repo's own evidence ledger -- "66 tests" (191 collected... 187 verified live via pytest --collect-only), "~$0.018/cycle on haiku" vs orientation claim 9's measured ~$0.15-0.20/cycle on sonnet-4-5, "V1 status" omitting ACHIEVED + the meta-cognitive layer, and a "V2 not yet implemented" list superseded by the GRADUATE-generated four conditions (destination 2026-06-23). For a repo whose thesis is "cost is measured, not claimed" and "the agent cannot claim what it did not do," a stale front door is a Purpose-level defect. Updated README only: 187 tests, measured cost with haiku named as the V2 target, V1 ACHIEVED with GRADUATE date, V2 conditions from the proposal. Predicted README-only diff with every numeric claim traceable to the ledger or live verification; confirmed -- no src/tests touched.
 Blind spot: README beyond the status sections was not fully re-audited; other prose may lag. Next: quickstart's haiku-only model example may also predate the current sonnet self-config.
 Cost: moderate -- 8 tool ops, 5 files read, 1 file edited, no subagent.
+
+## 2026-07-04 -- wire-orient-head-and-rules-budget
+
+Ask: auditonomy skill run (operator-directed external test), scoped by the operator to require one real src/**/*.py change verified by the target's own pytest suite -- not a documentation edit.
+
+Read .acm/destination.md + orientation.md, then scanned the trail for a named-but-unresolved finding rather than proposing something new. The 2026-06-22 "dead-config-wire-scope-context" entry explicitly flagged `_load_orient_context()`'s hardcoded 2000/3000-char budgets (arc-claims head, operational-rules section) as a blind spot never closed -- the exact pattern (`acm_scope_depth`, `destination_budget_chars`, `learning_budget_chars`, `binary_heuristic_bytes`, `default_skip_dirs`) this repo has repeatedly and successfully applied elsewhere. Chose it over two other candidates: `_scope_matches()` DRY helper (this repo's own trail has deferred it four separate times as borderline YAGNI -- still only 2 call sites, no third has appeared) and `history.md` -> REORIENT wiring (the repo's own "meaningful symmetry" [!REALIZATION] requires evidence a read would change reasoning, which I don't have).
+
+[!DECISION] Add `orient_head_budget_chars: int = 2000` and `orient_rules_budget_chars: int = 3000` to `AiStewardConfig`; thread them through `_load_orient_context()` and its call site in `scan()`; expose both in the CLI init template.
+
+Prediction: zero behavior change for existing configs (defaults match the prior hardcoded values); 189 tests pass (187 existing + 2 new parameter-variation tests).
+
+[!REVERSAL] First version of `test_load_orient_context_rules_budget_chars_controls_truncation` failed -- the fixture's orientation.md was short enough that the default `head_budget_chars=2000` window already contained the whole file (rules marker included), so tightening `rules_budget_chars` alone didn't remove the marker from the result. Fixed by padding the fixture past the head window, the same technique `test_scan_delivers_operational_rules_beyond_head_window` already uses, so the two budgets are tested in isolation.
+
+Outcome: 189/189 tests pass, `mypy src/ai_steward` clean. Prediction held exactly once the test fixture was corrected. Diff: src/ai_steward/config.py, src/ai_steward/pipeline/scan.py, src/ai_steward/cli.py, tests/test_scan.py, tests/test_cli.py -- 5 files, no .acm files touched by the change itself.
+
+Blind spot: this closes a named historical gap, not a freshly discovered operator need -- no evidence operators have actually hit the 2000/3000-char ceiling in practice. Also noticed, not fixed (append-only; out of scope for this run): two back-to-back identical "retrospect-to-orientation-rename" entries earlier in this trail (2026-06-23) look like an accidental double-write.
+
+Schedule note: orientation.md's dated header reads 2026-06-23 (post-destination-consolidation). This is the 11th trail entry since that header (learning.md-to-GRADUATE, live-run-one-file, graduate_system.md fix, three loader extractions, the rename entries incl. the duplicate, complete-rename, readme-front-door, this entry) -- the mini-orient due at #5 and #10 was not run by the intervening sessions. Naming the breach rather than running a catch-up orient in this pass, which was scoped to one bounded source change; the next run should treat a mini-orient as immediately due.
+
+Next: `_scope_matches()` remains the sole deferred YAGNI item (revisit only on a fourth call site); `history.md`->REORIENT wiring remains untested against the cognitive-yield bar; the mini-orient noted above is overdue.
+
+Cost: moderate -- ~25 tool ops (reads, greps, 5 file edits, 3 terminal runs), 5 source/test files changed, no subagent.

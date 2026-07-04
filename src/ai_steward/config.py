@@ -110,6 +110,8 @@ class AiStewardConfig(BaseModel):
     reorient_interval: int = 5  # auto-trigger REORIENT every N successful cycles (0 disables)
     reorient_trail_budget_chars: int = 50000  # character budget for audit-trail.md in REORIENT context
     learning_budget_chars: int = 5000  # character budget for learning.md in SCAN orient context (tail-first)
+    orient_head_budget_chars: int = 2000  # character budget for orientation.md arc-claims head in SCAN context
+    orient_rules_budget_chars: int = 3000  # character budget for the "Active operational rules" section in SCAN context
     acm_scope_depth: int = 4  # how many parent .acm/ directories to consult (org/workspace/team hierarchies)
     destination_budget_chars: int = 3000  # total character budget for destination.md excerpts in SCAN context
     binary_heuristic_bytes: int = 8192  # first N bytes inspected for NUL byte (binary file detection)

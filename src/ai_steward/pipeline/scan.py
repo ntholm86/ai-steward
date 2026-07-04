@@ -225,29 +225,37 @@ def _load_scope_context(
     return "\n\n---\n\n".join(sections)
 
 
-def _load_orient_context(repo: Path, learning_budget_chars: int = 5000) -> str | None:
+def _load_orient_context(
+    repo: Path,
+    learning_budget_chars: int = 5000,
+    head_budget_chars: int = 2000,
+    rules_budget_chars: int = 3000,
+) -> str | None:
     """Load repo-scoped ORIENT context: orientation.md and learning.md.
 
     orientation.md is extracted in two guaranteed parts:
 
-    1. Arc-claims head — up to 2000 chars from the top of the file.
-       Claims are listed first in orientation.md, so the head captures
-       current arc-state.
+    1. Arc-claims head — up to head_budget_chars from the top of the file
+       (default 2000). Claims are listed first in orientation.md, so the
+       head captures current arc-state.
 
     2. Operational rules — the full "## Active operational rules" section,
-       extracted by header name and always appended as a separate subsection.
-       Rules live at the END of orientation.md.  In the current file they
-       begin at char 5681.  The previous 1000-char head window delivered
-       NONE of them — the model was operating without its operational
-       constraints in every SCAN call.  Explicit header-targeted extraction
-       makes delivery invariant to file length.
+       extracted by header name and always appended as a separate subsection,
+       capped at rules_budget_chars (default 3000). Rules live at the END of
+       orientation.md.  In the current file they begin at char 5681.  The
+       previous 1000-char head window delivered NONE of them — the model was
+       operating without its operational constraints in every SCAN call.
+       Explicit header-targeted extraction makes delivery invariant to file
+       length.
 
     learning.md carries chronological [!REALIZATION]/[!REVERSAL] markers;
     the tail is most relevant (most recent markers last). Budget controlled
     by learning_budget_chars (default 5000 — covers ~30 recent markers).
 
-    Budget: orientation head ≤ 2000 chars; operational rules ≤ 3000 chars;
-    learning tail ≤ learning_budget_chars.  Returns None if neither file exists.
+    Budget: orientation head ≤ head_budget_chars; operational rules ≤
+    rules_budget_chars; learning tail ≤ learning_budget_chars. All three are
+    operator-configurable via .ai-steward.yaml. Returns None if neither file
+    exists.
     """
     _RULES_MARKER = "## Active operational rules"
     sections: list[str] = []
@@ -257,14 +265,18 @@ def _load_orient_context(repo: Path, learning_budget_chars: int = 5000) -> str |
         try:
             text = orientation.read_text(encoding="utf-8", errors="ignore")
             # 1. Arc-claims: head of file.
-            head = text[:2000] + "\n[... truncated ...]" if len(text) > 2000 else text
+            head = (
+                text[:head_budget_chars] + "\n[... truncated ...]"
+                if len(text) > head_budget_chars
+                else text
+            )
             sections.append(f"### Current orientation:\n\n{head}")
             # 2. Operational rules: always extracted by section header.
             rules_idx = text.find(_RULES_MARKER)
             if rules_idx >= 0:
                 rules_text = text[rules_idx:]
-                if len(rules_text) > 3000:
-                    rules_text = rules_text[:3000] + "\n[... truncated ...]"
+                if len(rules_text) > rules_budget_chars:
+                    rules_text = rules_text[:rules_budget_chars] + "\n[... truncated ...]"
                 sections.append(f"### Active operational rules:\n\n{rules_text}")
         except OSError:
             pass
@@ -377,7 +389,12 @@ def scan(
         scope_depth=config.acm_scope_depth,
         budget_chars=config.destination_budget_chars,
     )
-    orient = _load_orient_context(repo, learning_budget_chars=config.learning_budget_chars)
+    orient = _load_orient_context(
+        repo,
+        learning_budget_chars=config.learning_budget_chars,
+        head_budget_chars=config.orient_head_budget_chars,
+        rules_budget_chars=config.orient_rules_budget_chars,
+    )
 
     parts: list[str] = []
     if destination:

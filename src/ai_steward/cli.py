@@ -118,6 +118,8 @@ input_cost_per_million_tokens: 0.80
 output_cost_per_million_tokens: 4.00
 
 learning_budget_chars: 5000        # chars of learning.md delivered to SCAN (tail-first; 500 was ~1 marker)
+orient_head_budget_chars: 2000     # chars of orientation.md arc-claims head delivered to SCAN
+orient_rules_budget_chars: 3000    # chars of the "Active operational rules" section delivered to SCAN
 
 lenses:
   - mandate       # Operator's Intent check (destination.md)

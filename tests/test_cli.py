@@ -39,7 +39,8 @@ def test_init_config_includes_full_tuning_surface(tmp_path: Path) -> None:
     config_text = (tmp_path / ".ai-steward.yaml").read_text()
     for field in ("max_tokens_scan", "max_tokens_implement", "max_tokens_reflect",
                   "max_iterations", "budget_usd", "allow_dirty", "scope",
-                  "binary_heuristic_bytes", "default_skip_dirs"):
+                  "binary_heuristic_bytes", "default_skip_dirs",
+                  "orient_head_budget_chars", "orient_rules_budget_chars"):
         assert field in config_text, f"'{field}' missing from init config template"
 
 

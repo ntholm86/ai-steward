@@ -12,7 +12,12 @@ import pytest
 
 from ai_steward.config import AiStewardConfig, ModelAssignment, ScopeConfig
 from ai_steward.pipeline import Finding
-from ai_steward.pipeline.scan import _collect_files, _load_scope_context, scan
+from ai_steward.pipeline.scan import (
+    _collect_files,
+    _load_orient_context,
+    _load_scope_context,
+    scan,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -666,3 +671,55 @@ def test_load_scope_context_budget_chars_controls_truncation(tmp_path: Path) -> 
     result_wide = _load_scope_context(repo, budget_chars=10000)
     assert result_wide is not None
     assert "[... destination.md truncated" not in result_wide
+
+
+# ---------------------------------------------------------------------------
+# _load_orient_context — parameter variation (head_budget_chars, rules_budget_chars)
+# ---------------------------------------------------------------------------
+
+
+def test_load_orient_context_head_budget_chars_controls_truncation(tmp_path: Path) -> None:
+    """orient_head_budget_chars limits how much of orientation.md's head reaches SCAN."""
+    (tmp_path / ".acm").mkdir()
+    marker = "CLAIM_MARKER"
+    orientation = ("A" * 500) + marker
+    (tmp_path / ".acm" / "orientation.md").write_text(orientation, encoding="utf-8")
+
+    # head_budget_chars=100 — the file has no operational rules section, so the
+    # entire content is the head; a 100-char budget must truncate before the marker.
+    result_tight = _load_orient_context(tmp_path, head_budget_chars=100)
+    assert result_tight is not None
+    assert marker not in result_tight
+    assert "[... truncated ...]" in result_tight
+
+    # head_budget_chars=1000 comfortably covers the 512-char file.
+    result_wide = _load_orient_context(tmp_path, head_budget_chars=1000)
+    assert result_wide is not None
+    assert marker in result_wide
+
+
+def test_load_orient_context_rules_budget_chars_controls_truncation(tmp_path: Path) -> None:
+    """orient_rules_budget_chars limits how much of the operational-rules section reaches SCAN."""
+    (tmp_path / ".acm").mkdir()
+    marker = "RULE_MARKER_BEYOND_BUDGET"
+    # Padding pushes the rules section past the default 2000-char head window so the
+    # head extraction (a separate budget) cannot smuggle the marker in on its own.
+    padding = "Claim: " + ("x" * 50 + "\n") * 40  # ~2400 chars
+    orientation = (
+        f"# orientation\n\n{padding}\n\n"
+        "## Active operational rules\n\n"
+        + ("x" * 200)
+        + marker
+    )
+    (tmp_path / ".acm" / "orientation.md").write_text(orientation, encoding="utf-8")
+
+    # rules_budget_chars=50 truncates the rules section well before the marker.
+    result_tight = _load_orient_context(tmp_path, rules_budget_chars=50)
+    assert result_tight is not None
+    assert marker not in result_tight
+    assert "Active operational rules:" in result_tight
+
+    # rules_budget_chars=10000 comfortably covers the whole rules section.
+    result_wide = _load_orient_context(tmp_path, rules_budget_chars=10000)
+    assert result_wide is not None
+    assert marker in result_wide
