@@ -6741,3 +6741,9 @@ Commit: c3ca807
 **Candidate Next Moves:**
 1. V2 condition #1: live multi-cycle run -- REORIENT fires at N successes; proves the loop generalises without human cycle-by-cycle supervision.
 2. V2 condition #2: external repo run -- post-deletion-guard fix; generalization proven beyond self-targeting.
+
+## 2026-07-04 -- readme-front-door-matches-ledger
+
+External run by the auditonomy skill (operator-directed external-target test). Read .acm/destination.md + orientation.md, examined against the Purpose and Inconsistency lenses. [!DECISION] Finding: the README front door contradicted the repo's own evidence ledger -- "66 tests" (191 collected... 187 verified live via pytest --collect-only), "~$0.018/cycle on haiku" vs orientation claim 9's measured ~$0.15-0.20/cycle on sonnet-4-5, "V1 status" omitting ACHIEVED + the meta-cognitive layer, and a "V2 not yet implemented" list superseded by the GRADUATE-generated four conditions (destination 2026-06-23). For a repo whose thesis is "cost is measured, not claimed" and "the agent cannot claim what it did not do," a stale front door is a Purpose-level defect. Updated README only: 187 tests, measured cost with haiku named as the V2 target, V1 ACHIEVED with GRADUATE date, V2 conditions from the proposal. Predicted README-only diff with every numeric claim traceable to the ledger or live verification; confirmed -- no src/tests touched.
+Blind spot: README beyond the status sections was not fully re-audited; other prose may lag. Next: quickstart's haiku-only model example may also predate the current sonnet self-config.
+Cost: moderate -- 8 tool ops, 5 files read, 1 file edited, no subagent.
