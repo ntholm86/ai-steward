@@ -6769,3 +6769,21 @@ Schedule note: orientation.md's dated header reads 2026-06-23 (post-destination-
 Next: `_scope_matches()` remains the sole deferred YAGNI item (revisit only on a fourth call site); `history.md`->REORIENT wiring remains untested against the cognitive-yield bar; the mini-orient noted above is overdue.
 
 Cost: moderate -- ~25 tool ops (reads, greps, 5 file edits, 3 terminal runs), 5 source/test files changed, no subagent.
+
+## 2026-07-04 -- mini-orient-catchup-entries-2-to-11
+
+Ask: "Yea run the orient" -- operator confirmed running the overdue mini-orient flagged in the prior entry (due at #5 and #10 since orientation.md's 2026-06-23 header, skipped both times).
+
+Read the last 10 entries (window: live-run-one-file-confirmed through wire-orient-head-and-rules-budget, all entries #2-11 since the header). Formed 3 falsifiable arc-claims: (1) the 2026-06-23 batch was pure consolidation (3 DRY loader extractions + terminology rename + one GRADUATE/learning.md wiring) -- no new capability shipped; (2) trail hygiene lagged code hygiene -- an unexplained duplicate "retrospect-to-orientation-rename" entry went unflagged for 2+ entries, and this mini-orient itself was the skipped one; (3) zero forward movement on any of V2's four conditions across all 11 entries, despite "external repo validation" / "live multi-cycle run" being repeatedly named as the top candidate and repeatedly deferred.
+
+Checked reversal density: 2 [!REVERSAL] markers in the 11-entry window (constant-removal collateral break in the _load_learning extraction; my own test-fixture fix last entry) -- not suspiciously clean, not alarming. Checked cost-line consistency: only the last 2 entries (readme-front-door, wire-orient-head-and-rules-budget) use the auditonomy skill's "Cost:" line format; the 2026-06-23 batch predates that convention (used the improve-skill v3.10.0 format instead) -- a format transition, not a cost drift; not comparable across the boundary so no drift claim made.
+
+[!DECISION] Added a dated "Mini-orient addendum" section to orientation.md rather than rewriting the existing "Current claims" (1-10) -- that list is the last full REORIENT output; this mini-orient's read window is deliberately narrow (last ~10 entries, not the full trail) and shouldn't overwrite arc-level claims it didn't actually re-derive. Updated the file's "_Last updated_" header to today, labelled explicitly as a mini-orient (not a full arc-read), so the next 5-entry counting window starts clean from this point.
+
+Nothing about the existing "Current claims" or "Active operational rules" sections was found to be materially wrong -- left untouched.
+
+Blind spot: did not verify whether the duplicate rename entry actually caused any downstream harm (e.g. double-application of the rename) -- only that it exists unexplained in the trail. Not investigated this pass.
+
+Next: the named V2-avoidance pattern (claim 3) is the strongest candidate for the next substantive run -- either an external repo run or an honest argument for why self-targeting-only work is still the right sequencing.
+
+Cost: light -- ~6 tool ops (1 grep, 1 targeted read already in context, 1 file edit, 1 append, 2 terminal checks), 2 files changed (orientation.md, audit-trail.md), no subagent.

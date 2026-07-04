@@ -1,6 +1,25 @@
 # orientation.md — ai-steward
 
-_Last updated: 2026-06-23 (run: post-destination-consolidation)_
+_Last updated: 2026-07-04 (mini-orient, auditonomy skill — entries 2-11 since prior header; not a full REORIENT arc-read)_
+
+---
+
+## Mini-orient addendum — 2026-07-04 (auditonomy skill, window: entries 2-11 since 2026-06-23 header)
+
+**Arc-claims (falsifiable):**
+
+1. **The post-consolidation window (entries 1-9, all dated 2026-06-23) was consolidation, not new capability.** Three DRY loader extractions (`_load_destination`, `_load_current_retrospect`, `_load_learning` → `_utils.py`), a terminology rename completed across prompt files, and one substantive addition (learning.md wired into GRADUATE + its system prompt). No new phase or pipeline capability shipped in this window.
+   **Falsifiable by:** a future entry in the next window that adds a new phase/capability rather than consolidating an existing one.
+
+2. **Trail hygiene lagged code hygiene in this window.** Code stayed disciplined throughout (187→189 tests, all green, mypy clean at every entry checked). But: two back-to-back identical `retrospect-to-orientation-rename` entries appeared (2026-06-23) with no `[!REVERSAL]` or explanation, and went unflagged for 2+ subsequent entries; separately, the mini-orient itself was due at entry #5 and #10 of this window and was not run either time (this pass is the catch-up).
+   **Falsifiable by:** the duplicate entry being corrected or explained in a later pass, or a future mini-orient trigger being honored on schedule without operator prompting.
+
+3. **V2 made zero forward progress across this entire 11-entry window.** All four of destination.md's V2 conditions (live multi-cycle, external repo run, cost-cap live validation, compounding-error detection) are untouched. Every entry in the window's own "Candidate Next Moves" repeatedly named "external repo validation" or "live multi-cycle run" as a top candidate, and every following entry chose something else instead (DRY extraction, prompt sync, README accuracy, orient-budget wiring).
+   **Falsifiable by:** an external-repo or multi-cycle run entry appearing in the next window.
+
+**Watch for:** if a 12th consecutive entry since 2026-06-23 still hasn't touched a V2 condition, that is no longer "reasonable sequencing" — it is avoidance, and should be named as such rather than quietly continued past.
+
+**Not updated:** the "Current claims" (1-10) and "Active operational rules" sections below are the last full REORIENT output and are left as-is — this addendum is additive, per this mini-orient's deliberately narrow read window (last ~10 entries, not the full trail).
 
 ---
 
