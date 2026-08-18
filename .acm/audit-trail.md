@@ -6787,3 +6787,67 @@ Blind spot: did not verify whether the duplicate rename entry actually caused an
 Next: the named V2-avoidance pattern (claim 3) is the strongest candidate for the next substantive run -- either an external repo run or an honest argument for why self-targeting-only work is still the right sequencing.
 
 Cost: light -- ~6 tool ops (1 grep, 1 targeted read already in context, 1 file edit, 1 append, 2 terminal checks), 2 files changed (orientation.md, audit-trail.md), no subagent.
+
+## 2026-08-18 -- destination-reconciliation-shared-mandate
+
+Ask: operator directed reconciling this destination onto the skills-suite destination (reconciled 2026-08-16), with the same destination held across ai-steward, the skills suite, and the work skill - one problem solved from different angles - and with the nuance that ai-steward operates under different conditions (it is an execution layer, not a skill), which makes some of the skills-surface limitations structurally absent here.
+
+[!DECISION] Layered a new reconciled head onto destination.md (history preserved below the destination-history marker, which this file previously lacked). The head carries: (1) the shared Purpose and Fixed boundary verbatim from the skills destination, held by reference to the canonical text; (2) a new "Same destination, different conditions" section stating which skills-surface limitations are structurally absent here and - the asymmetry - what is harder here instead: reasoning quality, which no structural gate measures, and which the strong rails can mask; (3) "Self-knowledge duties" - read the history layer before every SCAN, name correctness-masking-shallowness honestly, treat avoidance of the hard condition as a finding, hold both purposes co-equal; (4) current priorities adapted to this surface (V2 conditions named as the adoption-shaped evidence); (5) authority section superseding the V1/V2 milestone framing as sequencing authority while keeping the four V2 conditions as standing next evidence.
+
+Prediction: future SCAN runs read the bounded head via the current-destination markers (which this file now has for the first time); the loop's proposals re-aim from consolidation toward the V2 conditions; the historical 92KB record remains readable as provenance. Expected NOT to happen: no src/ or tests/ changes; no destructive overwrite of history.
+
+Outcome: destination.md only; markers verified present and correctly ordered; zero mojibake on verification read; history intact below the marker (line 78 onward is the 2026-06-23 consolidation). Prediction held.
+
+**Reflection:**
+- Current model: this repo's destination drifted because the loop reads destination.md but nothing in the loop's own incentives pushes the destination to stay current with the operator's evolving understanding - drift is the default, reconciliation is an operator act. The by-reference convention (skills file canonical for the shared portion) makes future drift detectable as divergence rather than invisible as absence.
+- Blind spot: the self-knowledge duties are instructions to the model within this destination - which reintroduces, at one remove, exactly the probabilistic-compliance limitation this run celebrated as absent. The scope gate cannot enforce that SCAN actually reasons about its own condition. Naming this rather than solving it; a structural answer (e.g. VERIFY checking reflection depth) does not exist yet.
+- Imagined-reader pushback: "you replaced one stale head with a fresh head; what prevents the next 8 weeks of drift?" Nothing structural. The mitigation is the bounded markers plus the coordination note at workspace scope, which gives any future reader a divergence check to run.
+
+**Across-trail reflection:**
+- Recurring finding-class: not fired - this is a destination-layer change, a class not seen in this trail since the 2026-06-23 consolidation.
+- About to declare silence: not fired - change made.
+- Contradicts prior [!REALIZATION]: not fired - the 2026-07-04 mini-orient's claim 3 (V2-avoidance) is consistent with and cited by this entry.
+- Operator explicitly asked: FIRED - operator directed both the reconciliation and the cross-repo coordination note. Destination skill not formally invoked; operator acted as the destination author directly, which the destination convention permits (operator-held file).
+
+Orientation freshness: STALE - orientation.md last updated 2026-07-04 and predates this reconciliation; the next substantive run should treat a mini-orient as due (the reconciled destination changes what "forward" means for the arc claims).
+Destination need: not triggered - the operator performed the destination function directly in this session.
+
+### Candidate Next Moves
+1. V2 condition #2 (external repo run, post deletion-guard fix) - now the destination's named adoption-shaped evidence, and the strongest single answer to "does the structure generalize."
+2. V2 condition #1 (live multi-cycle run) - proves REORIENT fires without human cycle-by-cycle supervision; cheaper than #2 but weaker evidence.
+3. Mini-orient against the reconciled destination - re-baseline the arc claims under the new mandate before the next substantive run, so avoidance-vs-sequencing is judged against the current destination, not the June one.
+
+Cost: light-moderate - ~10 tool ops, 1 file edited in this repo (destination.md), 1 workspace-scope append (pea/.acm/destination.md), no subagent.
+
+## 2026-08-18 -- scan-bounded-destination-delivery
+
+Ask: Improve-skill examination of ai-steward against the destination reconciled earlier today (operator-chosen Option B after the live-run was blocked on an unreachable harness).
+
+Read the reconciled destination.md head, orientation.md, learning.md (full, 746 lines), and scanned the recent trail. Then examined the SCAN context-delivery path: _load_scope_context() and _truncate_destination() in scan.py.
+
+[!DECISION] Finding: the reconciliation this morning created a contradiction the code could not see. _truncate_destination() tail-truncates destination.md to find the "most recent operator intent" -- correct for a purely append-only file, which destination.md was until today. The reconciled file inverts that: the current mandate is at the TOP (between new current-destination markers), history below. A simulation against the live file proved it: SCAN's 1500-char repo-scope excerpt delivered the 2026-06-22 "meaningful symmetry" amendment -- a superseded section -- and none of the new mandate. The destination's own Self-knowledge duties ("read the history layer... as an input to reasoning") were unreachable by the loop they instruct. Worse, the mandate-check gate (Step 1 of scan_system.md: quote the exact destination sentence or return {"nothing": true}) would have judged every future proposal against June's text -- structural rails enforcing a stale mandate.
+
+Fixed _truncate_destination() in scan.py: when the bounded markers (current-destination: complete / destination-history) are present in order, extract the bounded section and deliver it (whole if it fits the budget, head-truncated if not -- the mandate is the content SCAN must see; the history tail is not). Absent markers, the existing tail + section-boundary behavior is unchanged, so unmarked destinations (every external repo target today) behave as before.
+
+Prediction: 191 tests pass (189 + 2 new marker tests); mypy clean; the two pre-existing truncation tests (raw-tail, section-boundary) pass unchanged because their fixtures carry no markers. Held exactly. Live-file simulation post-fix: mandate marker present, history leak absent.
+
+**Reflection:**
+- Current model: destination format and destination-delivery code are coupled through convention, and today the convention changed on one side only. Any future destination-format evolution (the bounded markers were born in the skills suite, not here) silently breaks delivery until someone simulates what SCAN actually receives. "Read what the phase needs" (the 2026-06-22 symmetry amendment, ironically the exact stale text being delivered) is a code property, not a file property.
+- Blind spot: did not examine whether GRADUATE/ESCALATE/REORIENT's _load_destination() (in _utils.py, plain tail-truncate, no section-boundary logic) needs the same bounded-marker awareness. Those phases have larger budgets (destination_budget_chars) and different jobs, but the same inversion applies in principle.
+- Imagined-reader pushback: "you added a third delivery convention to a function with two already." Fair. The marker path is load-bearing for exactly the repos that adopted the skills-suite destination format -- which, after today, is this repo and any target repo the operator reconciles. The convention is documented in both docstrings; a reader of either side can find the other.
+
+**Across-trail reflection:**
+- Recurring finding-class: not fired -- this is a new class (context-delivery correctness under format change), though it rhymes with the 2026-06-20 truncation-direction defect (head vs tail), suggesting destination-delivery is a recurring fault line worth watching.
+- About to declare silence: not fired -- change made.
+- Contradicts prior [!REALIZATION]: not fired -- extends the 2026-06-22 symmetry amendment rather than contradicting it: the read (bounded mandate) must change what the phase does, and today it demonstrably did not.
+- Operator explicitly asked: not fired for this specific fix -- the operator asked for an examination; the finding emerged from it.
+
+Orientation freshness: STALE -- orientation.md (2026-07-04) predates both the destination reconciliation and this fix; a mini-orient remains due and should now re-baseline against the new mandate.
+Destination need: not triggered -- the operator reconciled the destination directly this morning.
+
+### Candidate Next Moves
+1. Apply bounded-marker awareness to _load_destination() in _utils.py (GRADUATE/ESCALATE/REORIENT path) -- same inversion applies there; one focused follow-up closes the class.
+2. V2 condition #2 (external repo run) -- the destination's named adoption evidence; the mandate-delivery fix removes the strongest "the loop reads the wrong thing" objection to spending money on it.
+3. Mini-orient against the reconciled destination -- re-baseline the arc claims; now covers two entries since the stale header.
+
+Cost: moderate -- ~12 tool ops, 2 files changed (scan.py, test_scan.py), 1 terminal verification on live data, no subagent.

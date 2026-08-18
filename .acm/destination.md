@@ -4,6 +4,75 @@
 
 ---
 
+<!-- current-destination: complete -->
+
+## Current destination (reconciled 2026-08-18)
+
+### Purpose
+
+*This section is held in common with [pea/skills/.acm/destination.md](../../skills/.acm/destination.md) and [pea/work-skill/.acm/destination.md](../../work-skill/.acm/destination.md) — one destination, three surfaces. The shared text lives in the skills file and is reconciled there by the operator; this file carries it by reference and layers the execution-surface difference on top. When the two diverge unintentionally, the skills file is authoritative for the shared portion and the operator reconciles.*
+
+This repository develops and tests an architecture that can understand and improve anything it targets while upholding the Principles of Earned Autonomy. That capability and trustworthy delegation are inseparable: the architecture must let a human safely delegate real work to an AI more capable than themselves while remaining responsible for the outcome, and delegation earns trust only when the architecture can improve the work that was delegated.
+
+The engine's generic theory of improvement is to reason about the purpose of whatever it targets, determine what most limits that purpose, and improve it. Understanding purpose includes understanding the operator's intent, the target's own claims and grounding, its operating context, and any other factor that reasoning reveals as material. These are examples, not an exhaustive model of reasoning.
+
+When the engine targets itself, the same theory applies recursively. It should discover and improve whatever in its own reasoning, learning, architecture, or operation most limits its ability to understand and improve future targets. Better purpose-understanding and better intent interpretation are examples of the benefit, not a prescribed self-improvement roadmap.
+
+### Fixed boundary
+
+Only the three Principles of Earned Autonomy are architectural constraints:
+
+1. **Operator's Intent:** the operator defines the destination; the agent reasons about the route.
+2. **Observable Autonomy:** autonomous work leaves trustworthy evidence that the agent cannot retroactively rewrite.
+3. **Convergence Is Silence:** completion requires diverse independent evaluators to find nothing material left to change.
+
+Everything else is revisable when reasoning and evidence support a better route. No skill, workflow, lens, memory structure, taxonomy, gate, theory, implementation, or current interpretation is sacred. A mechanism earns its continued existence by serving the purpose while respecting all three principles.
+
+### Same destination, different conditions
+
+ai-steward solves the same problem as the skills suite from the opposite angle: the skills are natural-language instructions to a model, whose compliance is probabilistic and whose trail integrity is a practice; ai-steward is an execution layer, where the same commitments are structural facts. Its named limitations therefore do not apply here, and its difficulty profile differs:
+
+- **Compliance is enforced, not instructed.** The scope gate is code (`Path.full_match` over repo-relative paths), VERIFY runs the target's own test suite, PRE-FLIGHT gates on harness reachability and a clean tree. A proposal the model reasons its way into but the gate rejects simply does not land.
+- **Trail integrity is a technical guarantee.** The harness writes hash-chained evidence to `.acm/sessions/<sid>.jsonl` *before* the response is processed; `harness_session()` sets `HARNESS_ROOT` in the environment so capture is impossible to omit by design. The agent cannot fabricate or omit evidence of what it did.
+- **No session-length degradation.** Every cycle is a fresh, bounded context; the loop's discipline lives in code, not in how much the model still remembers of a long conversation.
+- **Cost is measured, not claimed.** Every cycle's token spend lands in the session file; the cost model (~$0.15-0.20/cycle on claude-sonnet-4-5 as measured 2026-06-22) is read from evidence, and budget enforcement runs at runtime.
+
+This is why ai-steward is the closest surface to the safest autonomous agent: it is the one place in the program where the three Principles hold by construction rather than by instruction. The skills prove the problem and argue the route; ai-steward is where the solution must actually work.
+
+The asymmetry cuts both ways. What is *harder* here, precisely because the rails are strong: the loop's own quality gates can converge on "the pipeline ran correctly" while the reasoning inside it stays shallow — correct-looking proposals, thin examination, REFLECT entries that restate the diff. Structural soundness is not reasoning quality, and no test suite currently measures the latter (orientation claim 8). The loop can also grow comfortable improving what is easy to verify rather than what most limits the purpose — and its own trail has already named this failure mode once: eleven consecutive consolidation entries while all four V2 conditions sat untouched (mini-orient, 2026-07-04, claim 3).
+
+**The agency lives inside the rails.** What the agent proposes, how it examines, whether it argues for redesign or declares silence — that is still model judgment, and it is where the real work is. The stronger the structural boundary, the more the remaining risk concentrates in the quality of what happens inside it, and the more dangerous a quiet drift into low-quality-but-passing work becomes, because nothing structural will catch it.
+
+### Self-knowledge duties (required reading before every SCAN)
+
+- **Read the history layer.** The historical record below the `<!-- destination-history -->` marker is not dead text. It preserves how this destination evolved — the V1 self-targeting arc, the cost-model corrections, the V2 conditions. New conditions of operation will emerge as ai-steward looks inward; when they do, they belong in this file as new layered sections, following the same convention. Self-knowledge is an input to reasoning, not background noise.
+- **Reason about your own condition honestly.** Structural soundness can mask shallow reasoning. A cycle that passes VERIFY but added nothing the target's purpose needed is a failure the tests cannot see; say so in the trail rather than letting the green checkmark speak for you.
+- **Treat avoidance as a finding.** Deferring the hard condition (external repo, multi-cycle run) in favor of comfortable consolidation is a pattern the trail has already recorded once. When SCAN keeps choosing the easy adjacent fix, that is itself evidence to surface, not sequencing to quietly continue.
+- **Do not confuse the two purpose-orderings.** Purpose 1 (proof: the reference implementation of Earned Autonomy) and Purpose 2 (tool: genuinely useful on any codebase) are co-equal, and both must hold — a proof nobody uses proves nothing; a tool that violates the principles is a black box.
+
+### Current priorities
+
+Two priorities are co-equal, shared with the skills destination, instantiated for this surface:
+
+1. **Research:** produce bounded evidence about what trustworthy delegation requires *when it is structurally enforceable* — including negative results, and including honest findings about the limits of structural enforcement (what rails cannot catch).
+2. **Adoption:** enable a new developer to point ai-steward at their own repository and complete a useful first run without author assistance. The V2 conditions (below) are the current gate: external-repo validation and live multi-cycle operation are precisely the adoption-shaped evidence still missing.
+
+Leanness and resource efficiency are cross-cutting viability constraints, not standing size targets — for this surface, that means measured cost per cycle must fall (haiku-class models are the named V2 cost target) without degrading reasoning, learning, operator control, or evidence integrity, and the loop must remain worth its cost as the remaining distance to silence narrows. Any deliberate reduction in reasoning, memory, learning, or evidence capability is a consequential tradeoff requiring explicit operator approval every time; one approval creates no standing authority for another.
+
+### Authority and autonomy
+
+The operator owns this destination and any change to it. Within a confirmed destination, the engine may autonomously select and implement the highest-leverage route while leaving observable evidence — that is what the loop is for. The operator reviews staged diffs and commits or discards; convergence toward silence is earned one accepted proposal at a time.
+
+Direction changes, deliberate capability reductions, and any weakening of the structural guarantees (harness capture, scope gate, verify-then-stage) remain human-gated regardless of accumulated trust. The historical V1/V2 milestone framing below is superseded as *sequencing authority* — the four V2 conditions remain the standing next evidence, but this reconciled destination, not the 2026-06-23 consolidation, governs what the work is for.
+
+### Historical reconciliation
+
+Everything below the history marker is provenance, not active instruction. Still-active commitments have been carried into the mandate above: the dual purpose, the structural-guarantee claims, the cost-as-measured discipline, and the four V2 conditions (live multi-cycle run, external repo run post-deletion-guard-fix, cost-cap live validation, compounding-error detection) as the standing next evidence. Superseded as current framing: the V1/V2 milestone structure itself, the "$1.00/cycle ceiling" and earlier cost targets (measured figures supersede them), and the CODIFY-phase and memory-symmetry design sketches (revisable means, not commitments).
+
+<!-- destination-history -->
+
+---
+
 ## Current State (consolidated 2026-06-23)
 
 ### V1 ACHIEVED -- 2026-06-22
