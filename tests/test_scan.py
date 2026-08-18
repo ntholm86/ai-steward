@@ -378,6 +378,55 @@ def test_scan_truncation_starts_at_section_boundary(tmp_path: Path) -> None:
     assert "## 2026-05-14 — Old section" not in user_content
 
 
+def test_scan_bounded_destination_markers_deliver_mandate_not_history(tmp_path: Path) -> None:
+    """A destination with bounded markers delivers the current mandate, not the history tail."""
+    (tmp_path / "utils.py").write_text("x = 1\n")
+    (tmp_path / ".acm").mkdir()
+    # Bounded mandate first, then a large dated history that tail-truncation
+    # would otherwise surface. Total size far exceeds the 3000-char budget.
+    mandate = (
+        "<!-- current-destination: complete -->\n\n"
+        "## Current destination (reconciled 2026-08-18)\n\n"
+        "MANDATE: the current operator direction lives here.\n\n"
+        "<!-- destination-history -->\n"
+    )
+    history = "## 2026-06-22 — Superseded section\n\n" + "H" * 8000
+    (tmp_path / ".acm" / "destination.md").write_bytes((mandate + history).encode("utf-8"))
+    config = _make_config(tmp_path)
+    client = _mock_client({"nothing": True})
+
+    scan(tmp_path, config, client=client)
+
+    user_content = client.messages.create.call_args[1]["messages"][0]["content"]
+    assert "MANDATE: the current operator direction lives here." in user_content
+    # History tail must not crowd out the mandate.
+    assert "Superseded section" not in user_content
+
+
+def test_scan_bounded_destination_over_budget_is_head_truncated(tmp_path: Path) -> None:
+    """An oversized bounded mandate is head-truncated, not replaced by history."""
+    (tmp_path / "utils.py").write_text("x = 1\n")
+    (tmp_path / ".acm").mkdir()
+    mandate = (
+        "<!-- current-destination: complete -->\n\n"
+        "## Current destination\n\n"
+        "MANDATE HEAD: leading direction.\n"
+        + "M" * 6000
+        + "\n<!-- destination-history -->\n"
+    )
+    history = "## 2026-06-22 — Superseded\n\n" + "H" * 1000
+    (tmp_path / ".acm" / "destination.md").write_bytes((mandate + history).encode("utf-8"))
+    config = _make_config(tmp_path)
+    client = _mock_client({"nothing": True})
+
+    scan(tmp_path, config, client=client)
+
+    user_content = client.messages.create.call_args[1]["messages"][0]["content"]
+    assert "bounded current destination truncated to budget" in user_content
+    assert "MANDATE HEAD: leading direction." in user_content
+    assert "Superseded" not in user_content
+
+
 # ---------------------------------------------------------------------------
 # _load_scope_context — parent-scope traversal (ACM §4.2)
 # ---------------------------------------------------------------------------

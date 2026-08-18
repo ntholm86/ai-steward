@@ -133,11 +133,47 @@ def _extract_json(text: str) -> dict | None:
     return None
 
 
+_BOUNDED_DESTINATION_START = "<!-- current-destination: complete -->"
+_BOUNDED_DESTINATION_END = "<!-- destination-history -->"
+
+
+def _extract_bounded_destination(text: str) -> str | None:
+    """Extract the bounded current mandate from a destination.md, if marked.
+
+    When a destination contains the exact markers
+    <!-- current-destination: complete --> and <!-- destination-history -->
+    in that order, the content between them is the operator-confirmed current
+    mandate (see Improve/Intent bounded-read convention). That bounded section
+    is small and authoritative; the dated history below the end marker is
+    provenance, not active instruction — tail-truncation into it would deliver
+    superseded sections and miss the mandate entirely.
+    """
+    start = text.find(_BOUNDED_DESTINATION_START)
+    if start < 0:
+        return None
+    end = text.find(_BOUNDED_DESTINATION_END, start)
+    if end < 0:
+        return None
+    return text[start + len(_BOUNDED_DESTINATION_START) : end].strip()
+
+
 def _truncate_destination(text: str, char_limit: int) -> str:
     """Truncate a destination.md to char_limit, starting at the nearest section
     heading boundary so SCAN receives a complete, labelled section rather than
     a mid-sentence fragment.
+
+    If the file carries the bounded-mandate markers, the bounded section is
+    returned whole when it fits the budget, else head-truncated to it — the
+    mandate is the content SCAN must see; the history tail is not.
     """
+    bounded = _extract_bounded_destination(text)
+    if bounded is not None:
+        if len(bounded) <= char_limit:
+            return bounded
+        return (
+            "[... bounded current destination truncated to budget ...]\n\n"
+            + bounded[:char_limit]
+        )
     if len(text) <= char_limit:
         return text
     cutoff = len(text) - char_limit
