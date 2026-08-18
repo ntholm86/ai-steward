@@ -6880,3 +6880,34 @@ Destination need: not triggered.
 3. V2 condition #1 (live multi-cycle run) -- requires the harness running; blocked at the time of this entry.
 
 Cost: light-moderate -- ~8 tool ops, 3 files changed (scan.py, _utils.py, test_graduate.py), no subagent.
+
+## 2026-08-18 -- mini-orient-post-reconciliation
+
+Ask: "commit and push and continue" -- tree was already clean (all work pushed at df205ad), so continue = next-ranked candidate: mini-orient against the reconciled destination (V2 runs blocked: harness unreachable).
+
+Window: 3 entries since the 2026-07-04 mini-orient (destination-reconciliation-shared-mandate, scan-bounded-destination-delivery, bounded-destination-utils-path) -- all in full context from this session. Formed 3 falsifiable arc-claims: (1) the reconciliation produced its intended code change within the same session -- the new mandate was load-bearing within hours; (2) destination-delivery is structurally closed in this repo (one shared extraction path) but the residual fault line is upstream -- the marker convention lives in the skills suite, the delivery code here; (3) the 2026-07-04 V2-avoidance claim must be re-judged: today's V2 inactivity had an external blocker (harness down), not an avoidance signal -- the hypothesis is only testable once the harness is up.
+
+[!DECISION] Added a dated mini-orient addendum to orientation.md, updated the header (2026-08-18, Improve skill, 3-entry window), left "Current claims" 1-10 and "Active operational rules" untouched -- they are the last full REORIENT output and this pass deliberately did not re-derive them. Named one watch item: the reconciled destination's "Self-knowledge duties" section is the first destination content written TO the loop ABOUT the loop; whether the first live SCAN run shows its influence is direct evidence about how much destination text shapes proposals.
+
+Prediction: addendum-only change to orientation.md; no code, no tests affected; the 2026-07-04 addendum and prior content preserved verbatim. Held -- verified by diff (1 insertion block + header line).
+
+**Reflection:**
+- Current model: this repo's orientation layer is now current against the mandate again, but it took an operator-prompted Improve run to do what the loop's own REORIENT phase exists to do automatically -- the meta-cognitive layer has not fired since 2026-06-22 because no live run-loop has executed since. The machinery is proven; its disuse is operational, not structural.
+- Blind spot: the 3-entry window is small and all three entries are mine from one session -- this orient reads a single operator-session arc, not a cross-session pattern. A full REORIENT (triggered by the run-loop at N successes) remains the real test.
+- Imagined-reader pushback: "claim 3 lets the V2-avoidance pattern off the hook by reclassifying it as blocked." Partially fair -- the harness being down today does not retroactively excuse the 11-entry window before it. The claim is deliberately narrow: TODAY'S inactivity is not evidence of avoidance; the prior window's claim stands until falsified by a post-harness entry.
+
+**Across-trail reflection:**
+- Recurring finding-class: not fired -- orient-class entry, distinct from the destination-delivery pair it reads.
+- About to declare silence: not fired -- change made (documentation layer).
+- Contradicts prior [!REALIZATION]: not fired -- narrows the 2026-07-04 claim 3's applicability explicitly, with the prior claim preserved.
+- Operator explicitly asked: not fired -- chosen from the trail's own candidate ranking under "continue."
+
+Orientation freshness: current -- this entry IS the orient; header updated to 2026-08-18.
+Destination need: not triggered.
+
+### Candidate Next Moves
+1. V2 condition #2 (external repo run) once the harness is up -- the only remaining blockers are operational (harness, API key in the run environment), not code or mandate.
+2. V2 condition #1 (live multi-cycle self-target run) -- same blocker; now also the first test of whether "Self-knowledge duties" changes SCAN behavior (the watch item).
+3. Commit and push this orient -- operator-directed rhythm today has been commit-per-iteration.
+
+Cost: light -- 3 tool ops (1 header read, 1 edit, 1 append), 1 file changed, no subagent.

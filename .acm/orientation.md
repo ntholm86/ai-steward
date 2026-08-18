@@ -1,6 +1,25 @@
 # orientation.md — ai-steward
 
-_Last updated: 2026-07-04 (mini-orient, auditonomy skill — entries 2-11 since prior header; not a full REORIENT arc-read)_
+_Last updated: 2026-08-18 (mini-orient, Improve skill — 3 entries since 2026-07-04 header; not a full REORIENT arc-read)_
+
+---
+
+## Mini-orient addendum — 2026-08-18 (window: destination-reconciliation-shared-mandate, scan-bounded-destination-delivery, bounded-destination-utils-path)
+
+**Arc-claims (falsifiable):**
+
+1. **The destination reconciliation immediately produced the code change it was meant to enable.** Within the same session: the mandate was layered on (entry 1), then a concrete contradiction it created was found and fixed (entries 2-3) — tail-truncation delivering the superseded 2026-06-22 symmetry amendment as SCAN's entire mandate, verified by live-file simulation. The new destination was load-bearing within hours, not aspirational.
+   **Falsifiable by:** a future entry showing SCAN or a meta-cognitive phase still receiving stale mandate text after df205ad.
+
+2. **Destination-delivery is now a structurally closed class — one shared extraction path — but the fault line is upstream, not in this repo.** All four LLM phases read destination.md through `_truncate_destination()` in `_utils.py`. The residual risk is that the destination *format* evolves in the skills suite (where the bounded-marker convention was born) while the delivery code lives here; the next break will arrive the same way today's did — silently, one side of the convention only.
+   **Falsifiable by:** a third destination-delivery entry appearing after df205ad; if so, treat as shape-shifting and route the format-coupling question to Destination, per the 2026-08-18 entry's own across-trail judgment.
+
+3. **V2 is now unblocked on the "loop reads the wrong thing" axis and blocked only operationally.** The 2026-07-04 claim 3 (11 entries of V2-avoidance) should now be re-judged against the current mandate: the harness (localhost:8474) was unreachable today, so conditions #1 and #2 had an external blocker, not an avoidance signal. The avoidance hypothesis is only testable once the harness is up and a run is available.
+   **Falsifiable by:** harness available + a subsequent entry still choosing consolidation over a V2 condition.
+
+**Watch for:** whether the reconciled destination's "Self-knowledge duties" section changes SCAN's behavior in the first live run — it is the first destination content written *to* the loop about *the loop*, and its effect (or absence) is direct evidence about how much destination text shapes proposals.
+
+**Not updated:** "Current claims" (1-10) and "Active operational rules" remain the last full REORIENT output. Claims 7 (external repo unvalidated) and 8 (tests verify structure, not behavior) are unaffected by this window. Claim 1 (V1 ACHIEVED) stands. The counting window for the next mini-orient starts from this header.
 
 ---
 
