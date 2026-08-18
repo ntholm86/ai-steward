@@ -71,6 +71,22 @@ class TestLoadDestination:
         assert "NEW content" in result
         assert "OLD content" not in result
 
+    def test_bounded_markers_deliver_mandate_not_history(self, tmp_path: Path) -> None:
+        """Marked destinations deliver the bounded mandate even when history dominates the tail."""
+        acm = tmp_path / ".acm"
+        acm.mkdir()
+        mandate = (
+            "<!-- current-destination: complete -->\n\n"
+            "## Current destination\n\nMANDATE: current direction.\n\n"
+            "<!-- destination-history -->\n"
+        )
+        history = "## 2026-06-22 — Superseded\n\n" + "H" * 3000
+        (acm / "destination.md").write_text(mandate + history, encoding="utf-8")
+
+        result = _load_destination(tmp_path)
+        assert "MANDATE: current direction." in result
+        assert "Superseded" not in result
+
 
 class TestLoadCurrentOrientation:
     def test_loads_orientation(self, tmp_path: Path) -> None:

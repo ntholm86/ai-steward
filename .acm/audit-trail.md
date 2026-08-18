@@ -6851,3 +6851,32 @@ Destination need: not triggered -- the operator reconciled the destination direc
 3. Mini-orient against the reconciled destination -- re-baseline the arc claims; now covers two entries since the stale header.
 
 Cost: moderate -- ~12 tool ops, 2 files changed (scan.py, test_scan.py), 1 terminal verification on live data, no subagent.
+
+## 2026-08-18 -- bounded-destination-utils-path
+
+Ask: "commit and push and continue" -- continue = top-ranked candidate from the prior entry: close the same mandate-delivery inversion on the GRADUATE/ESCALATE/REORIENT path.
+
+[!DECISION] Moved _extract_bounded_destination() and _truncate_destination() from scan.py to _utils.py (single source for all four LLM phases -- the destination's own named DRY pattern) and rewired _load_destination() to use _truncate_destination() instead of its raw tail-slice. scan.py imports the shared function; the bounded logic now exists once, not twice.
+
+Prediction: 192 tests (191 + 1 new test pinning marker behavior on the _load_destination path); existing tests pass unchanged (their fixtures carry no markers, so the fallback is byte-identical). Held exactly; mypy clean.
+
+**Reflection:**
+- Current model: the destination-delivery fault line is now closed at every entry point the pipeline reads destination.md through -- SCAN via _load_scope_context, the meta-cognitive phases via _load_destination. The class is closed structurally (one function) rather than by convention (N copies). Note the asymmetry that remains: _load_learning still tail-truncates, correctly -- learning.md is append-only with newest last; the bounded-marker inversion is specific to destination.md's format.
+- Blind spot: did not simulate what GRADUATE/ESCALATE/REORIENT actually receive post-change against the live file the way the prior entry did for SCAN; the unit test pins the contract but not the end-to-end content. Low risk (same function, larger budget) but named.
+- Imagined-reader pushback: "test_truncates_from_tail still passes but its name now describes only the unmarked case." Fair -- the test suite now documents both conventions without renaming the old one; a reader of test_graduate.py sees tail behavior asserted for unmarked files and marker behavior asserted beside it.
+
+**Across-trail reflection:**
+- Recurring finding-class: FIRED -- second consecutive entry on destination-delivery correctness (bounded-delivery, then this follow-up). Judgment: this entry closes the class (all four phases now share one extraction path), so recurrence should stop here; if a third destination-delivery entry appears, that is evidence the class is not closed but shape-shifting, and the governing variable (destination format evolving outside this repo, in the skills suite) should be named as a destination-level concern -- the format is operator-evolved upstream while the delivery code lives downstream.
+- About to declare silence: not fired -- change made.
+- Contradicts prior [!REALIZATION]: not fired -- completes the prior entry's named blind spot.
+- Operator explicitly asked: not fired for the specific change -- "continue" delegated the choice to the candidate ranking; recorded as such.
+
+Orientation freshness: STALE -- unchanged; mini-orient still due (now 3 entries since the 2026-07-04 header: reconciliation, bounded-delivery, this entry).
+Destination need: not triggered.
+
+### Candidate Next Moves
+1. V2 condition #2 (external repo run, post deletion-guard fix) -- with mandate delivery now correct on all paths, the strongest "the loop reads the wrong thing" objection to spending money on an external run is gone.
+2. Mini-orient against the reconciled destination -- re-baseline arc claims before the next substantive run; cheap and now covers a meaningful window.
+3. V2 condition #1 (live multi-cycle run) -- requires the harness running; blocked at the time of this entry.
+
+Cost: light-moderate -- ~8 tool ops, 3 files changed (scan.py, _utils.py, test_graduate.py), no subagent.
