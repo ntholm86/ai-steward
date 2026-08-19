@@ -318,3 +318,81 @@ def test_run_loop_batches_proposals_on_review_branch(tmp_path: Path) -> None:
     review = branches.strip().lstrip("* ").splitlines()[0].strip()
     count = git("rev-list", "--count", f"main..{review}").stdout.strip()
     assert count == "2"
+
+# ---------------------------------------------------------------------------
+# doctor tests
+# ---------------------------------------------------------------------------
+
+
+def test_doctor_reports_all_failures_with_remediation(tmp_path: Path) -> None:
+    """A bare directory fails the setup checks in one pass, each with a fix."""
+    runner = CliRunner()
+    with patch("ai_steward.cli.is_reachable", return_value=False):
+        result = runner.invoke(main, ["doctor", str(tmp_path)])
+
+    assert result.exit_code == 1
+    assert "git repository" in result.output
+    assert "config present" in result.output
+    assert "ai-steward init" in result.output
+    assert "destination written" in result.output
+    assert "check(s) failing" in result.output
+
+
+def test_doctor_detects_untouched_template_destination(tmp_path: Path) -> None:
+    """The silent setup failure: template markers still in destination.md."""
+    runner = CliRunner()
+    runner.invoke(main, ["init", str(tmp_path)])  # creates config + template destination
+    with patch("ai_steward.cli.is_reachable", return_value=False), \
+         patch("ai_steward.cli.run_verify_command", return_value=(True, 0)):
+        result = runner.invoke(main, ["doctor", str(tmp_path)])
+
+    assert result.exit_code == 1
+    assert "untouched template" in result.output
+
+
+def test_doctor_passes_when_ready(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """All checks green -> exit 0 and the run-loop pointer."""
+    import subprocess as sp
+
+    def git(*args: str) -> sp.CompletedProcess:
+        return sp.run(["git", *args], cwd=tmp_path, capture_output=True, text=True)
+
+    git("init", "-b", "main")
+    git("config", "user.email", "test@test.com")
+    git("config", "user.name", "Test")
+    (tmp_path / "seed.py").write_text("x = 1\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-m", "seed")
+
+    runner = CliRunner()
+    runner.invoke(main, ["init", str(tmp_path)])
+    # Operator writes a real destination (removes the template markers)
+    (tmp_path / ".acm" / "destination.md").write_text(
+        "# Destination\n\nImprove type safety across the codebase.\n", encoding="utf-8"
+    )
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    with patch("ai_steward.cli.is_reachable", return_value=True), \
+         patch("ai_steward.cli.run_verify_command", return_value=(True, 42)):
+        result = runner.invoke(main, ["doctor", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    assert "All checks pass" in result.output
+    assert "baseline verify green (42 tests)" in result.output
+
+
+def test_doctor_covers_every_preflight_gate() -> None:
+    """Drift guard: doctor must share code with every gate preflight() enforces.
+
+    If a gate is added to preflight() without a matching doctor check, this
+    test fails CI -- doctor can never silently lag the pipeline.
+    """
+    import inspect
+
+    from ai_steward import cli
+    from ai_steward.pipeline import loop
+
+    preflight_src = inspect.getsource(loop.preflight)
+    doctor_src = inspect.getsource(cli.doctor.callback)  # unwrap the click Command
+    for gate in ("_is_git_installed", "_is_git_repo", "is_reachable", "run_verify_command"):
+        assert gate in preflight_src, f"test assumption broken: {gate} left preflight()"
+        assert gate in doctor_src, f"doctor missing coverage for preflight gate: {gate}"

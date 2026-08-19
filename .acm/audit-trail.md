@@ -6975,3 +6975,34 @@ Destination need: not triggered.
 3. V2 condition #1 (live multi-cycle run) -- harness-blocked; the config this run documents is the exact config that run would use.
 
 Cost: light -- 3 tool ops, 1 file changed, verified by config load, no subagent.
+
+## 2026-08-19 -- diagnose-only-doctor-with-gate-coverage
+
+Ask: operator confirmed the lightweight setup direction and added the controlling requirement: doctor must diagnose only, but evolve with ai-steward so it always covers what is required.
+
+[!DECISION] Added `ai-steward doctor <repo>` as a tier-0 readiness view. It makes no LLM calls and writes nothing. It reports, in one pass, git availability/repository status, config presence and schema validity, destination presence and untouched-template status, API-key presence, configured harness reachability, and baseline verify status, with a specific remediation beside each failure. `init` now prints doctor as the next step.
+
+The anti-drift design is deliberate: doctor calls the same `_is_git_installed`, `_is_git_repo`, `is_reachable`, and `run_verify_command` functions used by PRE-FLIGHT rather than reimplementing their behavior. Added a test that inspects both functions and fails if a PRE-FLIGHT gate appears without a corresponding doctor reference. Doctor remains a superset because config/API-key/template checks are setup readiness concerns that PRE-FLIGHT does not all enforce explicitly.
+
+Prediction: all existing tests pass plus 4 doctor tests (201 total); mypy clean; doctor does not mutate a bare repo, start a process, alter config/destination, or invoke an LLM. Held: 201/201, mypy clean. A post-test refinement narrowed template detection from any HTML comment to the two exact generated-template markers, avoiding false failure for operator-authored comments; focused CLI tests (17) and full suite both pass.
+
+**Reflection:**
+- Current model: lightweight does not mean fewer checks; it means one small, derived command with no state, daemon, dependency, or mutation. The complexity already exists in the pipeline. Doctor compresses the operator's discovery path by exposing it at once, while shared gate functions prevent a second source of truth.
+- Blind spot: the drift guard checks named function references, not semantic equivalence. A future gate could be hidden behind a new helper and still evade this string-based coverage test. The deeper remedy would be a declarative gate registry, but that would add architecture before evidence requires it; named, not built.
+- Imagined-reader pushback: "doctor duplicates preflight's work and makes setup heavier." It does execute the baseline verify command on demand, but it replaces repeated failed run attempts and exposes the one currently silent failure (untouched destination template). No runtime path is added to normal runs; setup is lighter in operator attention, not larger in the autonomous loop.
+
+**Across-trail reflection:**
+- Recurring finding-class: FIRED -- setup/readiness friction follows the review-branch ergonomics finding and the destination's adoption priority; this is the first response to that class.
+- About to declare silence: not fired -- change made.
+- Contradicts prior [!REALIZATION]: not fired -- preserves the destination as operator-held and adds no autonomous direction-setting.
+- Operator explicitly asked: FIRED -- diagnose-only doctor with evolution/coverage requirement.
+
+Orientation freshness: STALE -- this is a new CLI capability and changes the setup surface; current orientation should be refreshed after the next substantive run or mini-orient window.
+Destination need: not triggered -- the destination already prioritizes adoption and keeps direction operator-held.
+
+### Candidate Next Moves
+1. Update README quickstart to present `doctor` as the readiness step and remove the stale pause-per-cycle description -- directly closes the adoption documentation gap.
+2. Replace the string-based drift guard with a declarative gate registry only if another gate is added and the test demonstrates the current check is insufficient -- avoid architecture-first work.
+3. V2 condition #1 (live multi-cycle self-target run) -- doctor reduces setup diagnosis, but the harness remains the operational blocker.
+
+Cost: moderate -- ~14 tool ops, 2 files changed (cli.py, test_cli.py), 1 focused refinement after tests, 201 tests, mypy clean, no subagent.

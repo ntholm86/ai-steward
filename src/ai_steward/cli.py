@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -10,11 +11,13 @@ import yaml
 from pydantic import ValidationError
 
 from ai_steward.config import AiStewardConfig
-from ai_steward.harness import harness_session
+from ai_steward.harness import harness_session, is_reachable
 from ai_steward.pipeline import run as pipeline_run
+from ai_steward.pipeline._utils import run_verify_command
 from ai_steward.pipeline.loop import (
     _commit_proposal,
     _current_branch,
+    _is_git_installed,
     _is_git_repo,
     _start_review_branch,
     _switch_back,
@@ -187,6 +190,107 @@ The agent reads this before every improvement cycle.*
 
 
 @main.command()
+@click.argument("repo", type=click.Path(exists=True), default=".")
+def doctor(repo: str) -> None:
+    """Diagnose setup readiness without running a cycle or changing anything.
+
+    Runs every gate the pipeline enforces (plus the silent ones it does not)
+    and reports each with its remediation. Tier-0: no LLM calls, no writes.
+    The PRE-FLIGHT checks call the same gate functions the pipeline uses, so
+    doctor cannot drift from what a run will actually enforce; a test fails
+    CI if a PRE-FLIGHT gate is ever added without a matching check here.
+    """
+    repo_path = Path(repo).resolve()
+    checks: list[tuple[str, bool, str]] = []  # (label, passed, remediation)
+
+    # --- Pipeline gates (same functions as preflight()) ---
+    checks.append((
+        "git installed",
+        _is_git_installed(),
+        "install git and ensure it is on PATH",
+    ))
+    is_repo = _is_git_repo(repo_path)
+    checks.append((
+        "git repository",
+        is_repo,
+        "nothing to do — PRE-FLIGHT auto-initializes an empty repo on first run",
+    ))
+
+    config: AiStewardConfig | None = None
+    config_file = repo_path / ".ai-steward.yaml"
+    if not config_file.exists():
+        checks.append((
+            "config present (.ai-steward.yaml)",
+            False,
+            f"run: ai-steward init {repo_path}",
+        ))
+    else:
+        try:
+            data = yaml.safe_load(config_file.read_text(encoding="utf-8")) or {}
+            data.pop("repo", None)
+            config = AiStewardConfig(repo=repo_path, **data)
+            checks.append(("config valid", True, ""))
+        except (ValidationError, yaml.YAMLError) as exc:
+            checks.append(("config valid", False, f"fix .ai-steward.yaml: {exc}"))
+
+    # --- Silent gates: failures the pipeline never reports loudly ---
+    destination = repo_path / ".acm" / "destination.md"
+    if not destination.exists():
+        checks.append((
+            "destination written (.acm/destination.md)",
+            False,
+            f"run: ai-steward init {repo_path}, then edit it — it guides every cycle",
+        ))
+    else:
+        text = destination.read_text(encoding="utf-8", errors="ignore")
+        template_left = (
+            "<!-- Describe the purpose of this codebase in 1-3 sentences. -->" in text
+            or "<!-- Describe what a good improvement looks like. -->" in text
+        )
+        checks.append((
+            "destination written (.acm/destination.md)",
+            not template_left,
+            "the destination is still the untouched template — write what you "
+            "want the codebase to become; SCAN reasons from this text",
+        ))
+
+    checks.append((
+        "ANTHROPIC_API_KEY set",
+        bool(os.environ.get("ANTHROPIC_API_KEY")),
+        "set ANTHROPIC_API_KEY in the environment before running",
+    ))
+
+    if config is not None:
+        checks.append((
+            f"harness reachable ({config.harness.endpoint})",
+            is_reachable(config.harness),
+            "start llm-harness-proxy, or update harness.endpoint in .ai-steward.yaml",
+        ))
+        if config.verify_command:
+            passed, count = run_verify_command(config.verify_command, repo_path)
+            checks.append((
+                f"baseline verify green ({count} tests)",
+                passed,
+                f"fix the failing baseline first: {config.verify_command}",
+            ))
+
+    # --- Report (no emoji: PS 5.1 encoding) ---
+    failed = 0
+    click.echo(f"ai-steward doctor — {repo_path}\n")
+    for label, ok, remediation in checks:
+        if ok:
+            click.echo(f"  [ok]   {label}")
+        else:
+            failed += 1
+            click.echo(f"  [FAIL] {label}\n         -> {remediation}")
+    click.echo("")
+    if failed:
+        click.echo(f"{failed} check(s) failing. Fix and re-run: ai-steward doctor {repo_path}")
+        sys.exit(1)
+    click.echo(f"All checks pass. Ready: ai-steward run-loop {repo_path}")
+
+
+@main.command()
 @click.argument("repo", type=click.Path(), default=".")
 def init(repo: str) -> None:
     """Scaffold .ai-steward.yaml and .acm/destination.md in REPO."""
@@ -224,7 +328,8 @@ def init(repo: str) -> None:
     click.echo("  1. Edit .acm/destination.md — describe what you want the codebase to become")
     click.echo("  2. Set ANTHROPIC_API_KEY")
     click.echo("  3. Start llm-harness-proxy on localhost:8474")
-    click.echo(f"  4. Run: ai-steward run {repo_path}")
+    click.echo(f"  4. Check readiness: ai-steward doctor {repo_path}")
+    click.echo(f"  5. Run: ai-steward run {repo_path}")
 
 
 @main.command()
