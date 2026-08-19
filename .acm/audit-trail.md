@@ -6911,3 +6911,38 @@ Destination need: not triggered.
 3. Commit and push this orient -- operator-directed rhythm today has been commit-per-iteration.
 
 Cost: light -- 3 tool ops (1 header read, 1 edit, 1 append), 1 file changed, no subagent.
+
+## 2026-08-19 -- review-branch-batching
+
+Ask: operator resolved the ergonomics tension from an external AI review ("constant halting", 5/10): review-before-commit stays (it is the destination's own authority model), the skills' Confirm/Stop/Specify gate does NOT belong here (it never existed here), and the loop must stop halting between cycles. Operator explicitly directed: build review-branch batching.
+
+[!DECISION] run-loop now creates a per-run review branch (ai-steward/review/<utc-timestamp>) when review_branch: true (new config field, default true), commits each PROPOSED cycle to it (finding file + .acm artifacts, message links finding -> trail evidence), keeps main untouched, and switches back at every exit path with a one-line batch summary (git diff base...branch). The human gate moves from between-cycles to the batch boundary: review a batch of autonomous work once, merge or discard wholesale. Skipped (old halting behavior, with the note reworded to say why) when allow_dirty, review_branch: false, detached HEAD, or branch creation fails -- graceful degradation, never a hard stop.
+
+Prediction: 197 tests (192 + 4 helper tests with real git in tmp repos + 1 end-to-end CliRunner test), mypy clean, existing run-loop tests unchanged in behavior.
+
+[!REVERSAL] First edit dropped the loop body's two opening lines (click.echo cycle header + pipeline_run call) during a replacement -- 8 pre-existing CLI tests failed with NameError. Caught by the suite immediately; restored. The tests did their job.
+
+[!REVERSAL] _commit_proposal staged finding.file and .acm in one git add; a repo without .acm/ makes git fail the whole add ("pathspec did not match"), so every commit silently no-op'd with the change left staged. The end-to-end test caught what the 4 helper tests could not (all their fixtures had .acm/). Fixed: add the finding file first, add .acm only when the directory exists. Also fixed the test mock itself, which created a differently-named file than the finding referenced -- the mock must apply the finding's change, as the real IMPLEMENT phase does.
+
+Outcome: 197/197, mypy clean. End-to-end test proves the actual claim: 2 proposals -> 2 commits on the review branch -> convergence -> HEAD back on main, main untouched, batch diff reviewable.
+
+**Reflection:**
+- Current model: the loop's autonomy was real but unreachable -- every structural guarantee existed, yet the default config made the human a blocking dependency after every cycle. The fix is not more autonomy, it is moving the existing human gate to the boundary where it was always conceptually placed: review the work, not each step. The destination's "operator reviews staged diffs" now describes what actually happens for the first time in a multi-cycle run.
+- Blind spot: REORIENT/GRADUATE/ESCALATE fire mid-loop and write .acm/orientation.md etc. -- those writes are NOT committed per cycle (only the proposal file + .acm at proposal time). A mid-loop REORIENT output stays uncommitted until the next proposal commit sweeps it in, or until the operator commits it post-run. Acceptable (nothing is lost; the batch diff includes it) but the commit-to-phase mapping is not 1:1.
+- Imagined-reader pushback: "auto-committing to a branch is still committing -- the operator gate is weaker than staged-and-waiting." The gate is identical in kind (no proposal reaches main without operator action) and stronger in practice (a staged dirty tree tempts hasty review under halt-pressure; a branch invites batch review at leisure). The evidence chain is preserved either way.
+
+**Across-trail reflection:**
+- Recurring finding-class: not fired -- new capability (first run-loop behavior change since the loop was wired 2026-06-19/20), not another destination-delivery or config-surfacing entry.
+- About to declare silence: not fired -- change made.
+- Contradicts prior [!REALIZATION]: not fired -- implements the May vision correction ("earned unsupervised operation as normal running state") one structural step closer, without removing the review gate.
+- Operator explicitly asked: FIRED -- operator directed this build after adjudicating the ergonomics finding.
+
+Orientation freshness: STALE -- this is a material capability change (run-loop no longer halts per-cycle by default) one day after the 2026-08-18 mini-orient; claim "machinery disuse is operational" now needs re-reading against "the loop can actually loop." Next mini-orient window starts from here.
+Destination need: not triggered -- the destination's authority model already describes this; the code now matches it.
+
+### Candidate Next Moves
+1. V2 condition #1 (live multi-cycle self-target run) -- the feature this iteration built is exactly what makes that run meaningful; harness is the only blocker.
+2. V2 condition #2 (external repo run) -- the batch-review UX is now the story an adopter gets on first contact; this run is what proves it on foreign soil.
+3. README quickstart update -- the README still describes "the loop pauses when a change is pending" as the operating model; now stale by one day.
+
+Cost: moderate -- ~20 tool ops (reads, 4 edits, 6 terminal runs incl. 2 failure diagnoses), 4 files changed (loop.py, cli.py, config.py, 2 test files), 2 [!REVERSAL]s, no subagent.

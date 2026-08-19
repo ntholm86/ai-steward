@@ -12,6 +12,13 @@ from pydantic import ValidationError
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import harness_session
 from ai_steward.pipeline import run as pipeline_run
+from ai_steward.pipeline.loop import (
+    _commit_proposal,
+    _current_branch,
+    _is_git_repo,
+    _start_review_branch,
+    _switch_back,
+)
 from ai_steward.pipeline.reorient import reorient as reorient_phase, write_orientation
 from ai_steward.pipeline.escalate import escalate as escalate_phase, write_report as write_escalate_report
 from ai_steward.pipeline.graduate import graduate as graduate_phase, write_proposal as write_graduate_proposal
@@ -134,6 +141,9 @@ reorient_interval: 5        # auto-REORIENT every N successful cycles (0 disable
 reorient_trail_budget_chars: 50000  # max chars from audit-trail.md for REORIENT context
 
 allow_dirty: false          # set true to run on repos with uncommitted changes
+review_branch: true         # run-loop: commit proposals to a per-run review branch
+                            # (ai-steward/review/<timestamp>) so cycles don't halt on a
+                            # dirty tree; review the batch, main stays untouched
 acm_scope_depth: 4          # ACM scope traversal depth (org/workspace/team/repo hierarchies)
 destination_budget_chars: 3000  # character budget for destination.md excerpts in SCAN context
 
@@ -303,12 +313,53 @@ def run_loop(repo: str) -> None:
     successful_cycles = 0
     total_cost_usd = 0.0
 
-    if not config.allow_dirty:
+    # Review-branch batching: proposals commit to a per-run branch so the tree
+    # returns to clean and the next cycle can start. The operator reviews the
+    # batch (one branch diff against base) and merges or discards; main is
+    # never touched by the loop. Skipped (old halting behavior kept) when the
+    # operator opted into allow_dirty, disabled review_branch, the tree already
+    # has pending work, HEAD is detached, or branch creation fails.
+    base_branch: str | None = None
+    review_branch: str | None = None
+    if config.review_branch and not config.allow_dirty and _is_git_repo(repo_path):
+        base_branch = _current_branch(repo_path)
+        if base_branch is not None:
+            review_branch = _start_review_branch(repo_path, base_branch)
+            if review_branch is not None:
+                click.echo(
+                    f"Review branch: {review_branch}\n"
+                    f"  Proposals commit there per cycle; {base_branch} stays untouched.\n"
+                    f"  Review when done: git -C {repo_path} diff {base_branch}...{review_branch}"
+                )
+            else:
+                click.echo(
+                    "Note: could not create a review branch -- running without "
+                    "batching; the loop halts when a proposal is pending.",
+                    err=True,
+                )
+    if review_branch is None and not config.allow_dirty:
         click.echo(
-            "Note: allow_dirty is false — each PROPOSED cycle stages changes in git.\n"
-            "      PRE-FLIGHT requires a clean tree, so the loop pauses when a change is pending.\n"
-            "      Commit or discard staged changes to continue, or set allow_dirty: true to skip this gate."
+            "Note: allow_dirty is false and no review branch is active — each PROPOSED\n"
+            "      cycle stages changes in git, and PRE-FLIGHT's clean-tree gate will\n"
+            "      halt the loop while a change is pending. Commit or discard staged\n"
+            "      changes to continue, or set allow_dirty: true to skip this gate."
         )
+
+    def _finish() -> None:
+        """Return to the base branch; print the review summary once."""
+        if review_branch is None or base_branch is None:
+            return
+        if _switch_back(repo_path, base_branch):
+            click.echo(
+                f"\nReview batch: git -C {repo_path} diff {base_branch}...{review_branch}\n"
+                f"  Merge to accept, or delete the branch to discard."
+            )
+        else:
+            click.echo(
+                f"Warning: could not switch back to {base_branch}; "
+                f"still on {review_branch}.",
+                err=True,
+            )
 
     for cycle in range(1, config.max_iterations + 1):
         click.echo(f"\nCycle {cycle}/{config.max_iterations}")
@@ -316,16 +367,30 @@ def run_loop(repo: str) -> None:
 
         if result.status == "preflight_failed":
             click.echo(f"PREFLIGHT FAILED: {result.preflight_failure}", err=True)
+            _finish()
             sys.exit(1)
         elif result.status == "proposed":
             assert result.finding is not None
             nothing_found_streak = 0
             failure_streak = 0
             successful_cycles += 1
-            click.echo(
-                f"  PROPOSED: {result.finding.description}\n"
-                f"  Staged for review."
-            )
+            if review_branch is not None:
+                if _commit_proposal(repo_path, result.finding, cycle):
+                    click.echo(
+                        f"  PROPOSED: {result.finding.description}\n"
+                        f"  Committed to {review_branch} (cycle {cycle})."
+                    )
+                else:
+                    click.echo(
+                        f"  PROPOSED: {result.finding.description}\n"
+                        "  WARNING: review-branch commit failed; change left staged.",
+                        err=True,
+                    )
+            else:
+                click.echo(
+                    f"  PROPOSED: {result.finding.description}\n"
+                    f"  Staged for review."
+                )
             # REORIENT trigger — fires when Nth successful cycle completes
             if (
                 config.reorient_interval > 0
@@ -367,6 +432,7 @@ def run_loop(repo: str) -> None:
                     )
                 else:
                     click.echo("Loop complete.")
+                _finish()
                 return
         elif result.status in ("verify_failed", "implement_failed"):
             nothing_found_streak = 0
@@ -393,6 +459,7 @@ def run_loop(repo: str) -> None:
                     )
                 else:
                     click.echo("Escalation limit reached. Check errors above.")
+                _finish()
                 return
 
         total_cost_usd += result.cycle_cost_usd
@@ -401,7 +468,9 @@ def run_loop(repo: str) -> None:
                 f"\nBudget limit reached: ${total_cost_usd:.4f} spent"
                 f" >= ${config.budget_usd:.2f} limit. Stopping."
             )
+            _finish()
             return
 
     click.echo(f"\nMax iterations ({config.max_iterations}) reached."
                f" Total cost: ${total_cost_usd:.4f}.")
+    _finish()

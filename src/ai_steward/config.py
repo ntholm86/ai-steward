@@ -122,6 +122,7 @@ class AiStewardConfig(BaseModel):
     ]
     sandbox: str = "docker"  # "docker" | "local"
     allow_dirty: bool = False  # skip the clean-tree gate (operator opt-in)
+    review_branch: bool = True  # run-loop: commit proposals to a per-run review branch so cycles don't halt on a dirty tree; operator reviews the batch, main untouched
     verify_command: str = "python -m pytest --tb=no -q"  # empty string disables the test gate
 
     @field_validator("lenses")

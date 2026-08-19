@@ -325,3 +325,97 @@ def test_cycle_cost_nonzero_for_proposed(tmp_path: Path, monkeypatch: pytest.Mon
     # cost = 2200 * 0.80/1e6 + 600 * 4.00/1e6 = 0.00176 + 0.0024 = 0.00416
     expected = 2200 * 0.80 / 1_000_000 + 600 * 4.00 / 1_000_000
     assert abs(result.cycle_cost_usd - expected) < 1e-9
+
+# ---------------------------------------------------------------------------
+# Review-branch batching helpers (tier-0, real git in tmp repos)
+# ---------------------------------------------------------------------------
+
+
+def _git(path: Path, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", *args], cwd=path, capture_output=True, text=True)
+
+
+def _git_repo_with_commit(path: Path) -> None:
+    _git_init(path)
+    (path / "seed.py").write_text("x = 1\n", encoding="utf-8")
+    _git(path, "add", "-A")
+    _git(path, "commit", "-m", "seed")
+
+
+def test_start_review_branch_creates_and_switches(tmp_path: Path) -> None:
+    from ai_steward.pipeline.loop import _current_branch, _start_review_branch
+
+    _git_repo_with_commit(tmp_path)
+    branch = _start_review_branch(tmp_path, "main")
+
+    assert branch is not None
+    assert branch.startswith("ai-steward/review/")
+    assert _current_branch(tmp_path) == branch
+    # Base branch untouched: same commit on both
+    assert _git(tmp_path, "rev-parse", "main").stdout == _git(tmp_path, "rev-parse", "HEAD").stdout
+
+
+def test_commit_proposal_commits_and_leaves_tree_clean(tmp_path: Path) -> None:
+    from ai_steward.pipeline.loop import _commit_proposal, _is_git_clean, _start_review_branch
+
+    _git_repo_with_commit(tmp_path)
+    _start_review_branch(tmp_path, "main")
+    # Simulate a proposal: modify the tracked file and write the trail entry
+    (tmp_path / "seed.py").write_text("x = 2\n", encoding="utf-8")
+    (tmp_path / ".acm").mkdir()
+    (tmp_path / ".acm" / "audit-trail.md").write_text("# trail\n", encoding="utf-8")
+    finding = Finding(
+        file="seed.py",
+        description="Bump x to 2",
+        proposed_change="x = 2",
+        rationale="test",
+        risk="low",
+        prediction="passes",
+        examination_summary="test",
+    )
+
+    assert _commit_proposal(tmp_path, finding, cycle=1) is True
+    assert _is_git_clean(tmp_path)
+    log = _git(tmp_path, "log", "-1", "--format=%B").stdout
+    assert "ai-steward cycle 1: Bump x to 2" in log
+    # Proposal file and trail both committed
+    committed = _git(tmp_path, "show", "--name-only", "--format=", "HEAD").stdout
+    assert "seed.py" in committed
+    assert ".acm/audit-trail.md" in committed
+
+
+def test_switch_back_returns_to_base_with_work_on_review_branch(tmp_path: Path) -> None:
+    from ai_steward.pipeline.loop import (
+        _commit_proposal,
+        _current_branch,
+        _start_review_branch,
+        _switch_back,
+    )
+
+    _git_repo_with_commit(tmp_path)
+    review = _start_review_branch(tmp_path, "main")
+    assert review is not None
+    (tmp_path / "seed.py").write_text("x = 2\n", encoding="utf-8")
+    (tmp_path / ".acm").mkdir()
+    (tmp_path / ".acm" / "audit-trail.md").write_text("# trail\n", encoding="utf-8")
+    finding = Finding(
+        file="seed.py", description="d", proposed_change="c",
+        rationale="r", risk="low", prediction="p", examination_summary="e",
+    )
+    _commit_proposal(tmp_path, finding, cycle=1)
+
+    assert _switch_back(tmp_path, "main") is True
+    assert _current_branch(tmp_path) == "main"
+    # main still has the seed content; the review branch carries the change
+    assert (tmp_path / "seed.py").read_text() == "x = 1\n"
+    diff = _git(tmp_path, "diff", f"main...{review}", "--", "seed.py").stdout
+    assert "+x = 2" in diff
+
+
+def test_current_branch_none_when_detached(tmp_path: Path) -> None:
+    from ai_steward.pipeline.loop import _current_branch
+
+    _git_repo_with_commit(tmp_path)
+    sha = _git(tmp_path, "rev-parse", "HEAD").stdout.strip()
+    _git(tmp_path, "checkout", sha)
+    assert _current_branch(tmp_path) is None

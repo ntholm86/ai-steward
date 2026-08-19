@@ -85,6 +85,115 @@ def _is_git_clean(repo: Path) -> bool:
     return result.returncode == 0 and result.stdout.strip() == ""
 
 
+# ---------------------------------------------------------------------------
+# Review-branch batching (tier-0)
+#
+# The loop's autonomy model: proposals are committed to a per-run review
+# branch so the tree returns to clean and the next cycle can start. The
+# operator reviews the whole batch (one branch diff) and merges or discards.
+# main is never touched by the loop itself. This replaces the old behavior
+# where a staged proposal left the tree dirty and PRE-FLIGHT halted the loop
+# after a single cycle.
+# ---------------------------------------------------------------------------
+
+_REVIEW_AUTHOR_ENV = {
+    "GIT_AUTHOR_NAME": "ai-steward",
+    "GIT_AUTHOR_EMAIL": "ai-steward@local",
+    "GIT_COMMITTER_NAME": "ai-steward",
+    "GIT_COMMITTER_EMAIL": "ai-steward@local",
+}
+
+
+def _current_branch(repo: Path) -> str | None:
+    """Current branch name, or None when HEAD is detached."""
+    result = subprocess.run(
+        ["git", "symbolic-ref", "--quiet", "--short", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
+
+
+def _start_review_branch(repo: Path, base_branch: str) -> str | None:
+    """Create and switch to a fresh review branch off the current HEAD.
+
+    Branch name is unique per run: ai-steward/review/YYYYMMDD-HHMMSS.
+    Returns the branch name, or None if creation/switch failed (callers
+    must treat None as: continue on the base branch, old behavior).
+    """
+    from datetime import datetime, timezone
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    branch = f"ai-steward/review/{stamp}"
+    result = subprocess.run(
+        ["git", "switch", "-c", branch],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    return branch
+
+
+def _commit_proposal(repo: Path, finding: "Finding", cycle: int) -> bool:
+    """Stage and commit the pending proposal on the current branch.
+
+    Commits the proposal's target file plus the .acm trail artifacts the
+    cycle produced, so branch diff = complete record of the loop's work.
+    The commit message links the finding to its trail evidence.
+    Returns True on success.
+    """
+    env = {**os.environ, **_REVIEW_AUTHOR_ENV}
+    # Stage the proposal's target file; stage .acm artifacts only when present
+    # (a repo without .acm must not fail the add — git errors on missing paths).
+    add = subprocess.run(
+        ["git", "add", "--", finding.file],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+    )
+    if add.returncode != 0:
+        return False
+    if (repo / ".acm").is_dir():
+        subprocess.run(
+            ["git", "add", "--", ".acm"],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+        )
+    message = (
+        f"ai-steward cycle {cycle}: {finding.description}\n\n"
+        f"File: {finding.file}\n"
+        f"Risk: {finding.risk}\n"
+        f"Prediction: {finding.prediction}\n\n"
+        "Evidence: .acm/audit-trail.md (this commit) + .acm/sessions/ "
+        "(hash-chained harness capture)."
+    )
+    commit = subprocess.run(
+        ["git", "commit", "-m", message],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    return commit.returncode == 0
+
+
+def _switch_back(repo: Path, branch: str) -> bool:
+    """Return to the base branch, leaving review commits on the review branch."""
+    result = subprocess.run(
+        ["git", "switch", branch],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
+
+
 # Test-running logic extracted to _utils.py (DRY principle)
 
 

@@ -259,3 +259,62 @@ def test_run_loop_stops_on_budget_limit(tmp_path: Path) -> None:
     # After 2 cycles: 0.03 + 0.03 = 0.06 >= 0.05 → stops
     assert result.exit_code == 0, result.output
     assert "Budget limit" in result.output
+
+def test_run_loop_batches_proposals_on_review_branch(tmp_path: Path) -> None:
+    """End-to-end with real git: 2 proposals, then convergence.
+
+    The loop must not halt on the clean-tree gate: proposals commit to a
+    review branch, the loop continues, and at exit HEAD is back on main
+    with both proposals reviewable as one branch diff.
+    """
+    import subprocess as sp
+
+    def git(*args: str) -> sp.CompletedProcess:
+        return sp.run(["git", *args], cwd=tmp_path, capture_output=True, text=True)
+
+    git("init", "-b", "main")
+    git("config", "user.email", "test@test.com")
+    git("config", "user.name", "Test")
+    (tmp_path / "seed.py").write_text("x = 1\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-m", "seed")
+    (tmp_path / ".ai-steward.yaml").write_text(_MINIMAL_CONFIG, encoding="utf-8")
+
+    proposed = LoopResult(
+        status="proposed", finding=_make_finding(), diff="d", acm_entry="e"
+    )
+    nothing = LoopResult(
+        status="nothing_found", finding=None, diff=None, acm_entry="SCAN: no finding"
+    )
+    calls = iter([proposed, proposed, nothing, nothing])
+
+    def fake_pipeline(*_a: object, **_k: object) -> LoopResult:
+        r = next(calls)
+        if r.status == "proposed":
+            # The real pipeline applies the change before run-loop sees the
+            # result; the mock must too, or there is nothing to commit.
+            assert r.finding is not None
+            target = tmp_path / r.finding.file
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                f"# proposed change {calls.__length_hint__()}\n", encoding="utf-8"
+            )
+        return r
+
+    runner = CliRunner()
+    with patch("ai_steward.cli.pipeline_run", side_effect=fake_pipeline), \
+         patch("ai_steward.cli.graduate_phase", return_value=("proposal", 10, 5)), \
+         patch("ai_steward.cli.write_graduate_proposal",
+               return_value=tmp_path / ".acm" / "graduate_proposal.md"):
+        result = runner.invoke(main, ["run-loop", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    assert "Convergence" in result.output
+    assert "Review batch" in result.output
+    # Back on main; the review branch holds exactly 2 proposal commits
+    assert git("symbolic-ref", "--short", "HEAD").stdout.strip() == "main"
+    branches = git("branch", "--list", "ai-steward/review/*").stdout
+    assert branches.strip(), "review branch should exist"
+    review = branches.strip().lstrip("* ").splitlines()[0].strip()
+    count = git("rev-list", "--count", f"main..{review}").stdout.strip()
+    assert count == "2"
