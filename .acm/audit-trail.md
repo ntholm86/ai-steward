@@ -6946,3 +6946,32 @@ Destination need: not triggered -- the destination's authority model already des
 3. README quickstart update -- the README still describes "the loop pauses when a change is pending" as the operating model; now stale by one day.
 
 Cost: moderate -- ~20 tool ops (reads, 4 edits, 6 terminal runs incl. 2 failure diagnoses), 4 files changed (loop.py, cli.py, config.py, 2 test files), 2 [!REVERSAL]s, no subagent.
+
+## 2026-08-19 -- self-config-field-descriptions
+
+Ask: operator selected the limits block in the self-targeting .ai-steward.yaml and asked for clear descriptions of each setting.
+
+[!DECISION] Rewrote the comments on max_iterations, budget_usd, max_tokens_scan, max_tokens_implement, allow_dirty. The old comments were sparse (one line each, two of them explaining only a past bump). The new ones state what the setting gates, when the loop stops, and why the current value: max_iterations names the three other stop conditions and the review-branch interaction (8 cycles can now run unattended); budget_usd names the measured ~$0.15-0.20/cycle basis so the $1.00 ceiling reads as ~5-7 cycles; allow_dirty now correctly describes post-review-branch behavior (later cycles stay clean because proposals commit) -- the old comment predated batching.
+
+Prediction: config still parses and loads with identical values; no code touched. Verified by loading AiStewardConfig from the edited file (8 / 1.0 / 4096 / 4096 / False, review_branch=True default).
+
+**Reflection:**
+- Current model: this config file is a first-contact surface for the adoption priority -- it is the one file an operator reads before the first self-target run. Comments that explain only history ("1024 was too small") teach nothing about behavior; comments that state the gate, the stop conditions, and the value basis turn the file into documentation.
+- Blind spot: the models block and scope block above carry their own stale framings (V1 comments, "tests and trail are off-limits for V1") -- left untouched as out of scope for the selected lines; the V1/V2 milestone framing was superseded as sequencing authority in the reconciled destination, so those comments now lag the mandate.
+- Imagined-reader pushback: "comments in a config file are not where behavioral documentation belongs." Partly fair -- but this file IS the operator-facing control surface; the alternative (README-only) forces a context switch at the exact moment of decision.
+
+**Across-trail reflection:**
+- Recurring finding-class: not fired -- config-comment accuracy is adjacent to, but distinct from, the README-staleness class named yesterday (candidate #3 from the review-branch entry, still open).
+- About to declare silence: not fired -- change made.
+- Contradicts prior [!REALIZATION]: not fired.
+- Operator explicitly asked: FIRED -- selected lines, explicit request.
+
+Orientation freshness: current -- documentation-only change, no capability or arc-claim impact.
+Destination need: not triggered.
+
+### Candidate Next Moves
+1. Refresh the stale V1-era comments in the models and scope blocks of this same file -- same class, same file, one more small pass.
+2. README quickstart update (carried from yesterday) -- the pause-on-pending operating model is still described there.
+3. V2 condition #1 (live multi-cycle run) -- harness-blocked; the config this run documents is the exact config that run would use.
+
+Cost: light -- 3 tool ops, 1 file changed, verified by config load, no subagent.
