@@ -111,3 +111,7 @@ mypy src/       # type-check
 ```
 
 CI runs both on push via `.github/workflows/ci.yml`.
+
+---
+
+Author: [Nils Wendelboe Holmager](https://nilsholmager.com/) · [Project context and connected work](https://nilsholmager.com/research/ai-steward/)
