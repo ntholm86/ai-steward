@@ -3,7 +3,7 @@
 When the loop records N consecutive failure cycles (VERIFY FAILED or IMPLEMENT FAILED),
 ESCALATE reads the destination and recent trail to classify the failure pattern:
 TOOLING_BROKEN, PIPELINE_BOTTLENECK, DESTINATION_UNREACHABLE, or CONTEXT_INSUFFICIENT.
-It writes .acm/escalate_report.md for operator review and the loop stops cleanly.
+It writes escalate_report.md (memory scope: .acm/ legacy, or the bound scope dir) for operator review and the loop stops cleanly.
 
 This is the robot's structural equivalent of recognising "I keep failing for the same
 reason — a human needs to make a decision I can't."
@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
+from ai_steward.memory import acm_dir, read_trail, trail_exists, trail_location
 from ai_steward.pipeline import _prompts
 from ai_steward.pipeline._utils import _load_destination
 
@@ -42,13 +43,12 @@ _FAILURE_TRAIL_BUDGET = 8000  # chars — smaller than GRADUATE; failure message
 def _load_failure_context(repo: Path, budget_chars: int = _FAILURE_TRAIL_BUDGET) -> str:
     """Load recent trail entries focused on the failure pattern.
 
-    Takes the tail of audit-trail.md — the failure streak is in recent history.
+    Takes the tail of the audit trail — the failure streak is in recent history.
     Smaller budget than GRADUATE: failure messages are dense, not long.
     """
-    trail_file = repo / ".acm" / "audit-trail.md"
-    if not trail_file.exists():
-        return "[No audit-trail.md found]"
-    content = trail_file.read_text(encoding="utf-8")
+    if not trail_exists(repo):
+        return f"[No audit-trail.md found (checked {trail_location(repo)})]"
+    content = read_trail(repo)
     if len(content) > budget_chars:
         return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
     return content
@@ -96,7 +96,7 @@ def escalate(
 
     Returns:
         (report_content, input_tokens, output_tokens)
-        report_content is the new content for .acm/escalate_report.md
+        report_content is the new content for escalate_report.md in the memory scope
     """
     logger.info("ESCALATE phase starting (trigger: %s)", trigger)
 
@@ -140,14 +140,14 @@ Classify the failure pattern and produce an escalation report for the operator.
 
 
 def write_report(repo: Path, content: str) -> Path:
-    """Write the escalation report to .acm/escalate_report.md.
+    """Write the escalation report to escalate_report.md in the memory scope.
 
     Overwrites any previous report — current assessment supersedes old ones.
-    History of failures lives in audit-trail.md (append-only).
+    History of failures lives in the audit trail (append-only).
     """
-    acm_dir = repo / ".acm"
-    acm_dir.mkdir(exist_ok=True)
-    report_path = acm_dir / "escalate_report.md"
+    memory_dir = acm_dir(repo)
+    memory_dir.mkdir(parents=True, exist_ok=True)
+    report_path = memory_dir / "escalate_report.md"
     report_path.write_text(content, encoding="utf-8")
     logger.info("Escalation report written to %s", report_path)
     return report_path

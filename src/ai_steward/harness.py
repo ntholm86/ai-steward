@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from ai_steward.config import HarnessConfig
+from ai_steward.memory import resolve_scope
 
 if TYPE_CHECKING:
     import anthropic
@@ -158,23 +159,27 @@ def harness_session(target_repo: Path, config: HarnessConfig):
     """Context manager that sets HARNESS_ROOT and HARNESS_SESSION_ID for one pipeline run.
 
     Sets two environment variables for the duration of the context:
-    - HARNESS_ROOT: directs the proxy to write session ledgers to <target_repo>/.acm/
+    - HARNESS_ROOT: directs the proxy to write session ledgers to the repository's memory
+      directory (<target_repo>/.acm/, or the bound scope dir in the shared memory repository)
     - HARNESS_SESSION_ID: a per-run ULID forwarded as X-Harness-Session on every API
       call.  The proxy groups all calls sharing this value into one session file.
       One harness_session() == one .jsonl == one pipeline iteration (verified live:
       SCAN seq=0, IMPLEMENT seq=1, REFLECT seq=2 in a single hash-chained file).
 
     Yields a dict with:
-      "session_paths": list[str]  — repo-relative paths of every .jsonl created
-                                    during the context (SCAN + IMPLEMENT + REFLECT).
+      "session_paths": list[str]  — paths of every .jsonl created during the context
+                                    (SCAN + IMPLEMENT + REFLECT): ``.acm/sessions/<name>``
+                                    for a legacy repo, absolute paths when bound.
       "run_id":        str         — the ULID generated for this run.
 
     Both variables are restored to their prior values on exit (including on exception).
     """
     root_key = "HARNESS_ROOT"
     sid_key = "HARNESS_SESSION_ID"
-    harness_root = target_repo / ".acm"
+    scope = resolve_scope(target_repo)
+    harness_root = scope.dir
     sessions_dir = harness_root / "sessions"
+    bound = scope.bound
 
     run_id = _generate_ulid()
 
@@ -208,4 +213,7 @@ def harness_session(target_repo: Path, config: HarnessConfig):
         # chronological order.
         if sessions_dir.is_dir():
             after = {p.name for p in sessions_dir.iterdir() if p.is_file() and p.suffix == ".jsonl"}
-            result["session_paths"] = [f".acm/sessions/{n}" for n in sorted(after - before)]
+            names = sorted(after - before)
+            result["session_paths"] = (
+                [str(sessions_dir / n) for n in names] if bound else [f".acm/sessions/{n}" for n in names]
+            )

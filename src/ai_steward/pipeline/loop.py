@@ -4,7 +4,8 @@ One cycle: PRE-FLIGHT → SCAN → IMPLEMENT → VERIFY → RECORD
 Stops before release: the staged change waits for operator review.
 
 Full phase specification, gate conditions, and data types are in:
-  .acm/audit-trail.md  (entry: 2026-06-19 — V1 pipeline design)
+  .acm/audit-trail.md  (entry: 2026-06-19 — V1 pipeline design; in the shared memory
+  repository when this repo is bound)
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from pathlib import Path
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import harness_session, is_reachable
+from ai_steward.memory import resolve_scope
 from ai_steward.pipeline._types import Finding, LoopResult
 from ai_steward.pipeline._utils import run_verify_command
 from ai_steward.pipeline.implement import implement
@@ -142,12 +144,16 @@ def _start_review_branch(repo: Path, base_branch: str) -> str | None:
 def _commit_proposal(repo: Path, finding: "Finding", cycle: int) -> bool:
     """Stage and commit the pending proposal on the current branch.
 
-    Commits the proposal's target file plus the .acm trail artifacts the
-    cycle produced, so branch diff = complete record of the loop's work.
+    Commits the proposal's target file plus, for a repo that is not bound to
+    a shared memory, the in-repo .acm trail artifacts the cycle produced, so
+    branch diff = complete record of the loop's work. For a bound repo the
+    trail lives in the memory repository, which is never touched here: its
+    files stay uncommitted in the memory working tree.
     The commit message links the finding to its trail evidence.
     Returns True on success.
     """
     env = {**os.environ, **_REVIEW_AUTHOR_ENV}
+    scope = resolve_scope(repo)
     # Stage the proposal's target file; stage .acm artifacts only when present
     # (a repo without .acm must not fail the add — git errors on missing paths).
     add = subprocess.run(
@@ -158,20 +164,29 @@ def _commit_proposal(repo: Path, finding: "Finding", cycle: int) -> bool:
     )
     if add.returncode != 0:
         return False
-    if (repo / ".acm").is_dir():
+    if not scope.bound and (repo / ".acm").is_dir():
         subprocess.run(
             ["git", "add", "--", ".acm"],
             cwd=repo,
             capture_output=True,
             text=True,
         )
+    if scope.bound:
+        evidence = (
+            f"Evidence: {scope.dir} in the shared memory repository "
+            "(uncommitted there; records/ entry + sessions/, hash-chained harness capture)."
+        )
+    else:
+        evidence = (
+            "Evidence: .acm/audit-trail.md (this commit) + .acm/sessions/ "
+            "(hash-chained harness capture)."
+        )
     message = (
         f"ai-steward cycle {cycle}: {finding.description}\n\n"
         f"File: {finding.file}\n"
         f"Risk: {finding.risk}\n"
         f"Prediction: {finding.prediction}\n\n"
-        "Evidence: .acm/audit-trail.md (this commit) + .acm/sessions/ "
-        "(hash-chained harness capture)."
+        f"{evidence}"
     )
     commit = subprocess.run(
         ["git", "commit", "-m", message],

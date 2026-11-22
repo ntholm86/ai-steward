@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
+from ai_steward.memory import acm_dir, resolve_scope
 from ai_steward.pipeline import _prompts
 from ai_steward.pipeline._types import Finding
 from ai_steward.pipeline._utils import _truncate_destination
@@ -156,35 +157,27 @@ def _load_scope_context(
     scopes, half for repo scope.
 
     Returns None if no destination.md exists at any scope.
-    """
-    # Collect all applicable destinations, outermost first
-    parents: list[tuple[str, str]] = []  # (label, text)
-    current = repo.parent
-    repo_root = Path(repo.anchor)
-    for _ in range(scope_depth):
-        if current == repo_root:
-            break
-        dest = current / ".acm" / "destination.md"
-        if dest.is_file():
-            try:
-                text = dest.read_text(encoding="utf-8", errors="ignore")
-                # Label by relative relationship to repo
-                try:
-                    rel = current.relative_to(repo.parent)
-                    label = str(rel) if str(rel) != "." else "workspace"
-                except ValueError:
-                    label = current.name or "parent"
-                parents.append((label, text))
-            except OSError:
-                pass
-        # Stop at operator-declared scope ceiling (.acm-root marker)
-        if (current / ".acm-root").exists():
-            break
-        current = current.parent
 
-    # Repo-level destination
-    repo_dest = repo / ".acm" / "destination.md"
+    A bound repository (shared ACM memory) does not walk parent directories:
+    its chain is the memory root's destination.md (higher scope) followed by
+    the repository scope's destination.md.
+    """
+    scope = resolve_scope(repo)
+    parents: list[tuple[str, str]] = []  # (label, text), outermost first when reversed
     repo_text: str | None = None
+
+    if scope.bound:
+        if scope.memory_root is not None:
+            memory_dest = scope.memory_root / "destination.md"
+            if memory_dest.is_file():
+                try:
+                    parents.append(("memory", memory_dest.read_text(encoding="utf-8", errors="ignore")))
+                except OSError:
+                    pass
+    else:
+        parents = _collect_parent_destinations(repo, scope_depth)
+
+    repo_dest = scope.dir / "destination.md"
     if repo_dest.is_file():
         try:
             repo_text = repo_dest.read_text(encoding="utf-8", errors="ignore")
@@ -211,6 +204,34 @@ def _load_scope_context(
         sections.append(f"### Repo-scope mandate:\n\n{truncated}")
 
     return "\n\n---\n\n".join(sections)
+
+
+def _collect_parent_destinations(repo: Path, scope_depth: int) -> list[tuple[str, str]]:
+    """Legacy mode: .acm/destination.md of each parent directory, nearest first."""
+    parents: list[tuple[str, str]] = []  # (label, text)
+    current = repo.parent
+    repo_root = Path(repo.anchor)
+    for _ in range(scope_depth):
+        if current == repo_root:
+            break
+        dest = current / ".acm" / "destination.md"
+        if dest.is_file():
+            try:
+                text = dest.read_text(encoding="utf-8", errors="ignore")
+                # Label by relative relationship to repo
+                try:
+                    rel = current.relative_to(repo.parent)
+                    label = str(rel) if str(rel) != "." else "workspace"
+                except ValueError:
+                    label = current.name or "parent"
+                parents.append((label, text))
+            except OSError:
+                pass
+        # Stop at operator-declared scope ceiling (.acm-root marker)
+        if (current / ".acm-root").exists():
+            break
+        current = current.parent
+    return parents
 
 
 def _load_orient_context(
@@ -247,8 +268,8 @@ def _load_orient_context(
     """
     _RULES_MARKER = "## Active operational rules"
     sections: list[str] = []
-
-    orientation = repo / ".acm" / "learning.md"
+    memory_dir = acm_dir(repo)
+    orientation = memory_dir / "learning.md"
     if orientation.is_file():
         try:
             text = orientation.read_text(encoding="utf-8", errors="ignore")
@@ -269,7 +290,7 @@ def _load_orient_context(
         except OSError:
             pass
 
-    learning = repo / ".acm" / "generated" / "trail-markers.md"
+    learning = memory_dir / "generated" / "trail-markers.md"
     if learning.is_file():
         try:
             text = learning.read_text(encoding="utf-8", errors="ignore")

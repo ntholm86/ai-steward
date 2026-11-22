@@ -1,6 +1,7 @@
 """RECORD phase — tier 0, no LLM call.
 
 Appends an audit trail entry to <target_repo>/.acm/audit-trail.md
+(legacy), or creates a new records/ file in the bound memory scope,
 and stages the changed file (git add) for operator review.
 
 Called after VERIFY has confirmed the change is safe to stage.
@@ -13,11 +14,13 @@ full spec and rationale.
 from __future__ import annotations
 
 import logging
+import re
 import subprocess
 from datetime import date
 from pathlib import Path
 
 from ai_steward.config import AiStewardConfig
+from ai_steward.memory import write_trail_entry
 from ai_steward.pipeline._types import Finding
 
 logger = logging.getLogger(__name__)
@@ -91,7 +94,7 @@ def record(
     """
     cycle_cost_usd = _estimate_cycle_cost(config, finding)
     entry = _build_entry(finding, diff, harness_session_paths, cycle_cost_usd=cycle_cost_usd)
-    _append_to_trail(repo, entry)
+    _append_to_trail(repo, entry, _trail_slug(finding))
     _stage_file(repo, finding.file)
     return entry
 
@@ -163,12 +166,14 @@ def _build_entry(
     )
 
 
-def _append_to_trail(repo: Path, entry: str) -> None:
-    trail_dir = repo / ".acm"
-    trail_dir.mkdir(exist_ok=True)
-    trail_file = trail_dir / "audit-trail.md"
-    with trail_file.open("a", encoding="utf-8", newline="\n") as fh:
-        fh.write(entry)
+def _trail_slug(finding: Finding) -> str:
+    """Slug for a bound-mode record file name: ``ai-steward-`` + the finding description."""
+    description = re.sub(r"[^a-z0-9]+", "-", finding.description.lower()).strip("-")[:40].strip("-")
+    return f"ai-steward-{description}" if description else "ai-steward"
+
+
+def _append_to_trail(repo: Path, entry: str, slug: str = "ai-steward") -> None:
+    write_trail_entry(repo, entry, slug)
 
 
 def _stage_file(repo: Path, rel_path: str) -> None:

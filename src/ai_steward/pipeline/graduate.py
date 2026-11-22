@@ -3,7 +3,7 @@
 When the loop converges (SCAN returns NOTHING FOUND for N consecutive cycles),
 GRADUATE reads the destination, orientation, and recent trail to classify the
 silence: ACHIEVED, STALE, STUCK, or PREMATURE. It then produces a proposal
-written to .acm/graduate_proposal.md for operator review.
+written to graduate_proposal.md (memory scope: .acm/ legacy, or the bound scope dir) for operator review.
 
 This is the robot's structural equivalent of the human noticing "this goal is
 done, time to move on" or "the approach is exhausted."
@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
+from ai_steward.memory import acm_dir, read_trail, trail_exists, trail_location
 from ai_steward.pipeline import _prompts
 from ai_steward.pipeline._utils import _load_current_orientation, _load_destination, _load_learning
 
@@ -39,15 +40,14 @@ _RECENT_TRAIL_BUDGET = 15000  # chars of recent trail entries delivered to GRADU
 
 
 def _load_recent_trail(repo: Path, budget_chars: int = _RECENT_TRAIL_BUDGET) -> str:
-    """Load the most recent entries from audit-trail.md.
+    """Load the most recent entries of the audit trail.
 
-    Takes the tail of the file — the most recent entries are most relevant
+    Takes the tail of the trail — the most recent entries are most relevant
     for understanding the convergence pattern.
     """
-    trail_file = repo / ".acm" / "audit-trail.md"
-    if not trail_file.exists():
-        return "[No audit-trail.md found]"
-    content = trail_file.read_text(encoding="utf-8")
+    if not trail_exists(repo):
+        return f"[No audit-trail.md found (checked {trail_location(repo)})]"
+    content = read_trail(repo)
     if len(content) > budget_chars:
         return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
     return content
@@ -93,7 +93,7 @@ def graduate(
 
     Returns:
         (proposal_content, input_tokens, output_tokens)
-        proposal_content is the new content for .acm/graduate_proposal.md
+        proposal_content is the new content for graduate_proposal.md in the memory scope
     """
     logger.info("GRADUATE phase starting (trigger: %s)", trigger)
 
@@ -159,14 +159,14 @@ Target name: {repo.name}
 
 
 def write_proposal(repo: Path, content: str) -> Path:
-    """Write graduate proposal to .acm/graduate_proposal.md.
+    """Write graduate proposal to graduate_proposal.md in the memory scope.
 
     Overwrites any previous proposal — the current proposal is always the
-    most recent convergence assessment. History lives in audit-trail.md.
+    most recent convergence assessment. History lives in the audit trail.
     """
-    acm_dir = repo / ".acm"
-    acm_dir.mkdir(parents=True, exist_ok=True)
-    proposal_path = acm_dir / "graduate_proposal.md"
+    memory_dir = acm_dir(repo)
+    memory_dir.mkdir(parents=True, exist_ok=True)
+    proposal_path = memory_dir / "graduate_proposal.md"
     proposal_path.write_text(content + "\n", encoding="utf-8")
     logger.info("GRADUATE proposal written to %s", proposal_path)
     return proposal_path

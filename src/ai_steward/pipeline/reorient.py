@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
+from ai_steward.memory import acm_dir, read_trail, trail_exists, trail_location
 from ai_steward.pipeline import _prompts
 from ai_steward.pipeline._utils import _load_current_orientation, _load_destination, _load_learning
 
@@ -34,11 +35,10 @@ logger = logging.getLogger(__name__)
 
 
 def _load_audit_trail(repo: Path, budget_chars: int = 50000) -> str:
-    """Load full audit-trail.md, truncated to budget if necessary."""
-    trail_file = repo / ".acm" / "audit-trail.md"
-    if not trail_file.exists():
-        return "[No audit-trail.md found]"
-    content = trail_file.read_text(encoding="utf-8")
+    """Load the full audit trail (audit-trail.md and bound records/), truncated to budget if necessary."""
+    if not trail_exists(repo):
+        return f"[No audit-trail.md found (checked {trail_location(repo)})]"
+    content = read_trail(repo)
     if len(content) > budget_chars:
         # Take the most recent entries (end of file)
         return f"[truncated to last {budget_chars} chars]\n\n" + content[-budget_chars:]
@@ -89,7 +89,7 @@ def reorient(
 
     Returns:
         (orientation_content, input_tokens, output_tokens)
-        orientation_content is the new content for .acm/learning.md
+        orientation_content is the new content for learning.md in the memory scope
     """
     logger.info("REORIENT phase starting (trigger: %s)", trigger)
 
@@ -162,13 +162,13 @@ Target name: {repo.name}
 def write_orientation(repo: Path, content: str) -> Path:
     """Write the new learning.md content to disk.
 
-    Creates .acm/ directory if it doesn't exist.
-    Returns the path to the written file.
+    Creates the memory directory (bound scope dir, or legacy .acm/) if it
+    doesn't exist. Returns the path to the written file.
     """
-    acm_dir = repo / ".acm"
-    acm_dir.mkdir(exist_ok=True)
+    memory_dir = acm_dir(repo)
+    memory_dir.mkdir(parents=True, exist_ok=True)
 
-    orientation_file = acm_dir / "learning.md"
+    orientation_file = memory_dir / "learning.md"
     orientation_file.write_text(content, encoding="utf-8")
 
     logger.info("Wrote %s (%d chars)", orientation_file, len(content))

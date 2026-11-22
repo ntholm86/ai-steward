@@ -12,6 +12,13 @@ from pydantic import ValidationError
 
 from ai_steward.config import AiStewardConfig
 from ai_steward.harness import harness_session, is_reachable
+from ai_steward.memory import (
+    MemoryResolutionError,
+    MemoryScope,
+    resolve_scope,
+    trail_exists,
+    trail_location,
+)
 from ai_steward.pipeline import run as pipeline_run
 from ai_steward.pipeline._utils import run_verify_command
 from ai_steward.pipeline.loop import (
@@ -33,11 +40,21 @@ def main() -> None:
     """ai-steward: autonomous software evolution."""
 
 
+def _scope_or_exit(repo_path: Path) -> MemoryScope:
+    """Resolve the repo's memory scope; an ambiguous binding aborts the command."""
+    try:
+        return resolve_scope(repo_path)
+    except MemoryResolutionError as exc:
+        click.echo(f"Memory resolution failed: {exc}", err=True)
+        sys.exit(1)
+
+
 @main.command()
 @click.argument("repo", type=click.Path(exists=True))
 def run(repo: str) -> None:
     """Run one evolution cycle against REPO."""
     repo_path = Path(repo).resolve()
+    _scope_or_exit(repo_path)
     config_file = repo_path / ".ai-steward.yaml"
 
     if not config_file.exists():
@@ -234,10 +251,14 @@ def doctor(repo: str) -> None:
             checks.append(("config valid", False, f"fix .ai-steward.yaml: {exc}"))
 
     # --- Silent gates: failures the pipeline never reports loudly ---
-    destination = repo_path / ".acm" / "destination.md"
+    scope = _scope_or_exit(repo_path)
+    destination = scope.dir / "destination.md"
+    destination_label = (
+        f"destination written ({destination})" if scope.bound else "destination written (.acm/destination.md)"
+    )
     if not destination.exists():
         checks.append((
-            "destination written (.acm/destination.md)",
+            destination_label,
             False,
             f"run: ai-steward init {repo_path}, then edit it — it guides every cycle",
         ))
@@ -248,7 +269,7 @@ def doctor(repo: str) -> None:
             or "<!-- Describe what a good improvement looks like. -->" in text
         )
         checks.append((
-            "destination written (.acm/destination.md)",
+            destination_label,
             not template_left,
             "the destination is still the untouched template — write what you "
             "want the codebase to become; SCAN reasons from this text",
@@ -293,11 +314,17 @@ def doctor(repo: str) -> None:
 @main.command()
 @click.argument("repo", type=click.Path(), default=".")
 def init(repo: str) -> None:
-    """Scaffold .ai-steward.yaml and .acm/destination.md in REPO."""
+    """Scaffold .ai-steward.yaml and destination.md in REPO.
+
+    destination.md goes to .acm/ in REPO, or to the repository's scope in the
+    shared memory repository when REPO is bound to one.
+    """
     repo_path = Path(repo).resolve()
+    scope = _scope_or_exit(repo_path)
     config_file = repo_path / ".ai-steward.yaml"
-    trail_dir = repo_path / ".acm"
+    trail_dir = scope.dir
     destination_file = trail_dir / "destination.md"
+    destination_name = str(destination_file) if scope.bound else ".acm/destination.md"
 
     if config_file.exists():
         click.echo(
@@ -320,12 +347,12 @@ def init(repo: str) -> None:
     click.echo(f"Initialized ai-steward in {repo_path}")
     click.echo(f"  Created  .ai-steward.yaml      (model configuration)")
     if destination_created:
-        click.echo(f"  Created  .acm/destination.md (edit this — it guides every cycle)")
+        click.echo(f"  Created  {destination_name} (edit this — it guides every cycle)")
     else:
-        click.echo(f"  Skipped  .acm/destination.md (already exists)")
+        click.echo(f"  Skipped  {destination_name} (already exists)")
     click.echo("")
     click.echo("Next steps:")
-    click.echo("  1. Edit .acm/destination.md — describe what you want the codebase to become")
+    click.echo(f"  1. Edit {destination_name} — describe what you want the codebase to become")
     click.echo("  2. Set ANTHROPIC_API_KEY")
     click.echo("  3. Start llm-harness-proxy on localhost:8474")
     click.echo(f"  4. Check readiness: ai-steward doctor {repo_path}")
@@ -337,8 +364,9 @@ def init(repo: str) -> None:
 def reorient(repo: str) -> None:
     """Run arc-level trail reading and rewrite learning.md.
 
-    REORIENT reads the full audit-trail.md, forms arc-claims about the target,
-    and rewrites .acm/learning.md. This gives the pipeline fresh orientation
+    REORIENT reads the full audit trail, forms arc-claims about the target,
+    and rewrites learning.md in the repository's memory (.acm/ or its bound
+    scope). This gives the pipeline fresh orientation
     for subsequent SCAN calls.
 
     Triggers automatically during multi-cycle runs after N successful cycles,
@@ -363,11 +391,11 @@ def reorient(repo: str) -> None:
         click.echo(f"Invalid .ai-steward.yaml: {exc}", err=True)
         sys.exit(1)
 
-    # Check if audit-trail.md exists
-    trail_file = repo_path / ".acm" / "audit-trail.md"
-    if not trail_file.exists():
+    # Check if the audit trail exists
+    _scope_or_exit(repo_path)
+    if not trail_exists(repo_path):
         click.echo(
-            f"No .acm/audit-trail.md found in {repo_path}\n"
+            f"No audit trail found in {repo_path} (checked {trail_location(repo_path)})\n"
             "Run at least one improvement cycle first.",
             err=True,
         )
@@ -395,6 +423,7 @@ def run_loop(repo: str) -> None:
     consecutive NOTHING FOUND (convergence signal).
     """
     repo_path = Path(repo).resolve()
+    _scope_or_exit(repo_path)
     config_file = repo_path / ".ai-steward.yaml"
 
     if not config_file.exists():
@@ -501,8 +530,7 @@ def run_loop(repo: str) -> None:
                 config.reorient_interval > 0
                 and successful_cycles % config.reorient_interval == 0
             ):
-                trail_file = repo_path / ".acm" / "audit-trail.md"
-                if trail_file.exists():
+                if trail_exists(repo_path):
                     click.echo(
                         f"\nREORIENT: {successful_cycles} successful cycles"
                         " — re-reading trail..."
@@ -522,8 +550,7 @@ def run_loop(repo: str) -> None:
                     "\nConvergence: 2 consecutive NOTHING FOUND."
                 )
                 # GRADUATE phase — classify the silence and propose next destination
-                trail_file = repo_path / ".acm" / "audit-trail.md"
-                if trail_file.exists():
+                if trail_exists(repo_path):
                     click.echo("GRADUATE: classifying silence — reading destination and trail...")
                     with harness_session(repo_path, config.harness):
                         proposal, g_in_tok, g_out_tok = graduate_phase(
@@ -544,8 +571,7 @@ def run_loop(repo: str) -> None:
             failure_streak += 1
             click.echo(f"  {result.status.upper()}: {result.acm_entry} (failure streak: {failure_streak})")
             if config.escalate_streak > 0 and failure_streak >= config.escalate_streak:
-                trail_file = repo_path / ".acm" / "audit-trail.md"
-                if trail_file.exists():
+                if trail_exists(repo_path):
                     click.echo(
                         f"\nESCALATE: {failure_streak} consecutive failures"
                         " — classifying failure pattern..."

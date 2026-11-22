@@ -10,6 +10,8 @@ import shlex
 import subprocess
 from pathlib import Path
 
+from ai_steward.memory import acm_dir, resolve_scope
+
 _BOUNDED_DESTINATION_START = "<!-- current-destination: complete -->"
 _BOUNDED_DESTINATION_END = "<!-- destination-history -->"
 
@@ -64,18 +66,40 @@ def _load_destination(repo: Path, budget_chars: int = 3000) -> str:
 
     Bounded-marker files deliver the current mandate; unmarked files keep the
     historical tail + section-boundary behavior.
+
+    A bound repository whose memory root also holds a destination.md gets both:
+    the memory-wide mandate first (it outranks the repository destination),
+    then the repository destination, each with half the budget.
     """
+    scope = resolve_scope(repo)
+    repo_text: str | None = None
     for name in ("destination.md", "vision.md"):
-        dest_file = repo / ".acm" / name
+        dest_file = scope.dir / name
         if dest_file.exists():
-            content = dest_file.read_text(encoding="utf-8")
-            return _truncate_destination(content, budget_chars)
-    return "[No destination.md found]"
+            repo_text = dest_file.read_text(encoding="utf-8")
+            break
+
+    memory_text: str | None = None
+    if scope.bound and scope.memory_root is not None:
+        memory_file = scope.memory_root / "destination.md"
+        if memory_file.is_file():
+            memory_text = memory_file.read_text(encoding="utf-8")
+
+    if memory_text is None:
+        if repo_text is None:
+            return "[No destination.md found]"
+        return _truncate_destination(repo_text, budget_chars)
+
+    half = budget_chars // 2
+    sections = [f"### Higher-scope mandate (memory):\n\n{_truncate_destination(memory_text, half)}"]
+    if repo_text is not None:
+        sections.append(f"### Repo-scope mandate:\n\n{_truncate_destination(repo_text, half)}")
+    return "\n\n---\n\n".join(sections)
 
 
 def _load_current_orientation(repo: Path) -> str:
     """Load the current learning.md (the synthesis REORIENT writes) if it exists."""
-    orientation_file = repo / ".acm" / "learning.md"
+    orientation_file = acm_dir(repo) / "learning.md"
     if not orientation_file.exists():
         return "[No learning.md found]"
     return orientation_file.read_text(encoding="utf-8")
@@ -89,7 +113,7 @@ def _load_learning(repo: Path, budget_chars: int = 20000) -> str:
     the raw trail gives the model both the extracted conclusions and their
     original context. Budget takes the tail (newest markers last).
     """
-    learning_file = repo / ".acm" / "generated" / "trail-markers.md"
+    learning_file = acm_dir(repo) / "generated" / "trail-markers.md"
     if not learning_file.exists():
         return "[No generated/trail-markers.md found — run record.py markers --write to generate it]"
     content = learning_file.read_text(encoding="utf-8")
