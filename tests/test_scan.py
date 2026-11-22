@@ -565,16 +565,16 @@ def test_collect_files_default_scope_excludes_binary_files(tmp_path: Path) -> No
 
 
 # ---------------------------------------------------------------------------
-# ORIENT — orientation.md and learning.md injection
+# ORIENT — learning.md and learning.md injection
 # ---------------------------------------------------------------------------
 
 
 def test_scan_includes_orientation_in_context(tmp_path: Path) -> None:
-    """orientation.md content appears in user_content when the file exists."""
+    """learning.md content appears in user_content when the file exists."""
     (tmp_path / "utils.py").write_text("x = 1\n")
     (tmp_path / ".acm").mkdir()
-    (tmp_path / ".acm" / "orientation.md").write_text(
-        "# orientation.md\n\nClaim: the loop is working.", encoding="utf-8"
+    (tmp_path / ".acm" / "learning.md").write_text(
+        "# learning.md\n\nClaim: the loop is working.", encoding="utf-8"
     )
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
@@ -587,11 +587,11 @@ def test_scan_includes_orientation_in_context(tmp_path: Path) -> None:
 
 
 def test_scan_includes_learning_in_context(tmp_path: Path) -> None:
-    """learning.md tail content appears in user_content when the file exists."""
+    """trail-markers.md tail content appears in user_content when the file exists."""
     (tmp_path / "utils.py").write_text("x = 1\n")
-    (tmp_path / ".acm").mkdir()
-    (tmp_path / ".acm" / "learning.md").write_text(
-        "# Learning\n\n## 2026-06-21\n\n**[!REALIZATION]** The loop converges.", encoding="utf-8"
+    (tmp_path / ".acm" / "generated").mkdir(parents=True)
+    (tmp_path / ".acm" / "generated" / "trail-markers.md").write_text(
+        "# Trail markers\n\n## 2026-06-21\n\n**[!REALIZATION]** The loop converges.", encoding="utf-8"
     )
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
@@ -604,7 +604,7 @@ def test_scan_includes_learning_in_context(tmp_path: Path) -> None:
 
 
 def test_scan_skips_missing_orient_files(tmp_path: Path) -> None:
-    """SCAN succeeds normally when orientation.md and learning.md are absent."""
+    """SCAN succeeds normally when learning.md and learning.md are absent."""
     (tmp_path / "utils.py").write_text("x = 1\n")
     config = _make_config(tmp_path)
     client = _mock_client({
@@ -626,7 +626,7 @@ def test_scan_skips_missing_orient_files(tmp_path: Path) -> None:
 def test_scan_delivers_operational_rules_beyond_head_window(tmp_path: Path) -> None:
     """Operational rules reach the model even when they fall well past the head window.
 
-    This is the regression test for the 1000-char window bug: orientation.md in
+    This is the regression test for the 1000-char window bug: learning.md in
     production has its '## Active operational rules' section at char 5681. The
     prior head-only extraction silently delivered zero operational rules to SCAN.
     """
@@ -640,7 +640,7 @@ def test_scan_delivers_operational_rules_beyond_head_window(tmp_path: Path) -> N
         f"- V1 stops before release. Inviolable.\n"
         f"- Harness proxy outside autonomous scope.\n"
     )
-    (tmp_path / ".acm" / "orientation.md").write_text(orientation, encoding="utf-8")
+    (tmp_path / ".acm" / "learning.md").write_text(orientation, encoding="utf-8")
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
 
@@ -660,7 +660,7 @@ def test_scan_head_budget_is_two_thousand_chars(tmp_path: Path) -> None:
     filler = "A" * 1100
     marker_text = "CLAIM_BEYOND_OLD_LIMIT"
     orientation = filler + marker_text
-    (tmp_path / ".acm" / "orientation.md").write_text(orientation, encoding="utf-8")
+    (tmp_path / ".acm" / "learning.md").write_text(orientation, encoding="utf-8")
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
 
@@ -728,11 +728,11 @@ def test_load_scope_context_budget_chars_controls_truncation(tmp_path: Path) -> 
 
 
 def test_load_orient_context_head_budget_chars_controls_truncation(tmp_path: Path) -> None:
-    """orient_head_budget_chars limits how much of orientation.md's head reaches SCAN."""
+    """orient_head_budget_chars limits how much of learning.md's head reaches SCAN."""
     (tmp_path / ".acm").mkdir()
     marker = "CLAIM_MARKER"
     orientation = ("A" * 500) + marker
-    (tmp_path / ".acm" / "orientation.md").write_text(orientation, encoding="utf-8")
+    (tmp_path / ".acm" / "learning.md").write_text(orientation, encoding="utf-8")
 
     # head_budget_chars=100 — the file has no operational rules section, so the
     # entire content is the head; a 100-char budget must truncate before the marker.
@@ -760,7 +760,7 @@ def test_load_orient_context_rules_budget_chars_controls_truncation(tmp_path: Pa
         + ("x" * 200)
         + marker
     )
-    (tmp_path / ".acm" / "orientation.md").write_text(orientation, encoding="utf-8")
+    (tmp_path / ".acm" / "learning.md").write_text(orientation, encoding="utf-8")
 
     # rules_budget_chars=50 truncates the rules section well before the marker.
     result_tight = _load_orient_context(tmp_path, rules_budget_chars=50)

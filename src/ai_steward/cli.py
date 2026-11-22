@@ -127,8 +127,8 @@ escalate_streak: 3          # auto-ESCALATE after N consecutive failures (0 disa
 input_cost_per_million_tokens: 0.80
 output_cost_per_million_tokens: 4.00
 
-learning_budget_chars: 5000        # chars of learning.md delivered to SCAN (tail-first; 500 was ~1 marker)
-orient_head_budget_chars: 2000     # chars of orientation.md arc-claims head delivered to SCAN
+learning_budget_chars: 5000        # chars of generated/trail-markers.md delivered to SCAN (tail-first; 500 was ~1 marker)
+orient_head_budget_chars: 2000     # chars of learning.md arc-claims head delivered to SCAN
 orient_rules_budget_chars: 3000    # chars of the "Active operational rules" section delivered to SCAN
 
 lenses:
@@ -335,10 +335,10 @@ def init(repo: str) -> None:
 @main.command()
 @click.argument("repo", type=click.Path(exists=True))
 def reorient(repo: str) -> None:
-    """Run arc-level trail reading and rewrite orientation.md.
+    """Run arc-level trail reading and rewrite learning.md.
 
     REORIENT reads the full audit-trail.md, forms arc-claims about the target,
-    and rewrites .acm/orientation.md. This gives the pipeline fresh orientation
+    and rewrites .acm/learning.md. This gives the pipeline fresh orientation
     for subsequent SCAN calls.
 
     Triggers automatically during multi-cycle runs after N successful cycles,

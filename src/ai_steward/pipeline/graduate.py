@@ -112,7 +112,7 @@ def graduate(
 
 ---
 
-## Current orientation.md
+## Current learning.md
 
 {orientation}
 

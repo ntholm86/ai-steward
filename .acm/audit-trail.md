@@ -7006,3 +7006,19 @@ Destination need: not triggered -- the destination already prioritizes adoption 
 3. V2 condition #1 (live multi-cycle self-target run) -- doctor reduces setup diagnosis, but the harness remains the operational blocker.
 
 Cost: moderate -- ~14 tool ops, 2 files changed (cli.py, test_cli.py), 1 focused refinement after tests, 201 tests, mypy clean, no subagent.
+
+## 2026-11-22 -- names-follow-the-suite
+
+- target: ai-steward (SCAN, GRADUATE and REORIENT file paths, prompts, tests, its own .acm/)
+- operator: Nils Wendelboe Holmager
+- agent: Claude (Sonnet 5.5; the session began on Claude Opus 5.5); host: Copilot SDK in VS Code
+- skill: Improve
+- outcome: ai-steward reads and writes `.acm/learning.md` (was `orientation.md`) and reads `.acm/generated/trail-markers.md` (was the generated `learning.md`); its own `.acm/` migrated; REORIENT, `orientation.yaml` and the config keys are unchanged
+
+The author asked for the rename to reach this repository after the cross-repository integrity check found that running Learn here would overwrite the generated `learning.md` that SCAN read as its marker surface.
+
+[!DECISION] Paths and prompt text only; function names (`_load_current_orientation`, `_load_learning`, `write_orientation`), the REORIENT phase name, prompt headings and the two budget keys stay, so no configuration file breaks. The old generated `history.md` and `learning.md` were removed (regenerable); `orientation.md` became `learning.md`; `.acm/generated/` is ignored.
+
+Prediction: 196 tests pass and the same 5 fail as before (`Path.full_match` needs Python 3.13; the machine has 3.12). Result: 196 passed, 5 failed (the same five).
+
+**Across-trail trigger evaluation:** recurring finding-class not fired; about to declare silence not fired; contradicts prior [!REALIZATION] not fired; operator explicitly asked for arc-level reflection not fired.

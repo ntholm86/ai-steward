@@ -219,24 +219,24 @@ def _load_orient_context(
     head_budget_chars: int = 2000,
     rules_budget_chars: int = 3000,
 ) -> str | None:
-    """Load repo-scoped ORIENT context: orientation.md and learning.md.
+    """Load repo-scoped ORIENT context: learning.md and generated/trail-markers.md.
 
-    orientation.md is extracted in two guaranteed parts:
+    learning.md is extracted in two guaranteed parts:
 
     1. Arc-claims head — up to head_budget_chars from the top of the file
-       (default 2000). Claims are listed first in orientation.md, so the
+       (default 2000). Claims are listed first in learning.md, so the
        head captures current arc-state.
 
     2. Operational rules — the full "## Active operational rules" section,
        extracted by header name and always appended as a separate subsection,
        capped at rules_budget_chars (default 3000). Rules live at the END of
-       orientation.md.  In the current file they begin at char 5681.  The
+       learning.md.  In the current file they begin at char 5681.  The
        previous 1000-char head window delivered NONE of them — the model was
        operating without its operational constraints in every SCAN call.
        Explicit header-targeted extraction makes delivery invariant to file
        length.
 
-    learning.md carries chronological [!REALIZATION]/[!REVERSAL] markers;
+    generated/trail-markers.md carries chronological [!REALIZATION]/[!REVERSAL] markers;
     the tail is most relevant (most recent markers last). Budget controlled
     by learning_budget_chars (default 5000 — covers ~30 recent markers).
 
@@ -248,7 +248,7 @@ def _load_orient_context(
     _RULES_MARKER = "## Active operational rules"
     sections: list[str] = []
 
-    orientation = repo / ".acm" / "orientation.md"
+    orientation = repo / ".acm" / "learning.md"
     if orientation.is_file():
         try:
             text = orientation.read_text(encoding="utf-8", errors="ignore")
@@ -269,7 +269,7 @@ def _load_orient_context(
         except OSError:
             pass
 
-    learning = repo / ".acm" / "learning.md"
+    learning = repo / ".acm" / "generated" / "trail-markers.md"
     if learning.is_file():
         try:
             text = learning.read_text(encoding="utf-8", errors="ignore")

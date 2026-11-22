@@ -1,7 +1,7 @@
 """REORIENT phase — arc-level reading of the improvement trail.
 
-Reads the full audit-trail.md, forms arc-claims, and rewrites orientation.md.
-This is the robot's equivalent of the human-driven Orient skill.
+Reads the full audit-trail.md, forms arc-claims, and rewrites learning.md.
+This is the robot's equivalent of the human-driven Learn skill.
 
 Token tier: 2 (needs large context for full trail reading).
 All calls route through llm-harness-proxy. Never call the Anthropic API directly.
@@ -46,7 +46,7 @@ def _load_audit_trail(repo: Path, budget_chars: int = 50000) -> str:
 
 
 def _extract_orientation_content(response_text: str) -> str:
-    """Extract the orientation.md content from the model's response.
+    """Extract the learning.md content from the model's response.
 
     The model is instructed to return only markdown in a code fence.
     Extract it; fall back to raw response if no fence found.
@@ -89,7 +89,7 @@ def reorient(
 
     Returns:
         (orientation_content, input_tokens, output_tokens)
-        orientation_content is the new content for .acm/orientation.md
+        orientation_content is the new content for .acm/learning.md
     """
     logger.info("REORIENT phase starting (trigger: %s)", trigger)
 
@@ -109,7 +109,7 @@ def reorient(
 
 ---
 
-## Current orientation.md
+## Current learning.md
 
 {current_orientation}
 
@@ -160,7 +160,7 @@ Target name: {repo.name}
 
 
 def write_orientation(repo: Path, content: str) -> Path:
-    """Write the new orientation.md content to disk.
+    """Write the new learning.md content to disk.
 
     Creates .acm/ directory if it doesn't exist.
     Returns the path to the written file.
@@ -168,7 +168,7 @@ def write_orientation(repo: Path, content: str) -> Path:
     acm_dir = repo / ".acm"
     acm_dir.mkdir(exist_ok=True)
 
-    orientation_file = acm_dir / "orientation.md"
+    orientation_file = acm_dir / "learning.md"
     orientation_file.write_text(content, encoding="utf-8")
 
     logger.info("Wrote %s (%d chars)", orientation_file, len(content))

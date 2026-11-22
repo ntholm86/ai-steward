@@ -1,4 +1,4 @@
-﻿# Destination — AI Steward
+# Destination — AI Steward
 
 *Operator-held destination. Append or layer new insights; never destructively overwrite.*
 
@@ -1774,3 +1774,5 @@ Two constraints hold simultaneously and with equal structural weight:
 Before assigning token budget to any read in any phase, the test is: *does this information change what this phase does?* If no, the read earns no budget, regardless of architectural symmetry.
 
 Memory symmetry is not about coverage. It is about cognitive yield per token.
+
+**2026-11-22, file names follow the skills suite (the author's approval).** The skill Orient is now Learn, so this scope's `orientation.md` is `learning.md`; the machine-made marker extract (formerly `learning.md`) is `generated/trail-markers.md` and is not committed; `history.md` was retired because nothing read it (the history-gap analysis above is kept as written). ai-steward reads and writes the new names. Its own REORIENT phase, its `orientation.yaml` and its configuration keys (`orient_head_budget_chars`, `learning_budget_chars`) keep their names: they are this tool's vocabulary, not the suite's files.

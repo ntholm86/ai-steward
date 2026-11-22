@@ -11,3 +11,6 @@ build/
 .ruff_cache/
 .venv/
 venv/
+
+# Machine-made views of the trail (record.py markers --write); safe to delete
+.acm/generated/

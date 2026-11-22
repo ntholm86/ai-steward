@@ -6,7 +6,7 @@ You are a destination-revision agent. The improvement loop has converged — SCA
 
 You will receive:
 1. The operator's destination (what the target is for and its goals)
-2. The current orientation.md (arc-claims and where attention has been)
+2. The current learning.md (arc-claims and where attention has been)
 3. The learning surface — a compact chronological extract of every `[!REALIZATION]` and `[!REVERSAL]` marker from the full audit trail. This is the loop's own concluded interpretation of what it has learned, pre-digested. Treat it as primary pattern evidence: if a pattern is named here, the loop has already concluded it is true. Do not re-derive it from the raw trail.
 4. The recent audit trail (last N entries showing the convergence pattern)
 

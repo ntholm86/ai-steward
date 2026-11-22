@@ -92,14 +92,14 @@ class TestLoadCurrentOrientation:
     def test_loads_orientation(self, tmp_path: Path) -> None:
         acm = tmp_path / ".acm"
         acm.mkdir()
-        (acm / "orientation.md").write_text("# orientation\n\n1. Claim.", encoding="utf-8")
+        (acm / "learning.md").write_text("# orientation\n\n1. Claim.", encoding="utf-8")
 
         result = _load_current_orientation(tmp_path)
         assert "Claim." in result
 
     def test_returns_placeholder_when_missing(self, tmp_path: Path) -> None:
         result = _load_current_orientation(tmp_path)
-        assert "No orientation.md found" in result
+        assert "No learning.md found" in result
 
 
 class TestLoadRecentTrail:
