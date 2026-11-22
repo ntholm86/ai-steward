@@ -24,7 +24,7 @@ from ai_steward.memory import (
     write_trail_entry,
 )
 from ai_steward.pipeline import Finding
-from ai_steward.pipeline._utils import _load_destination
+from ai_steward.pipeline._utils import _load_mission
 from ai_steward.pipeline.loop import _commit_proposal
 from ai_steward.pipeline.record import _build_entry, _trail_slug, record
 from ai_steward.pipeline.scan import _load_scope_context
@@ -268,18 +268,18 @@ def test_trail_slug_is_bounded_and_clean() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Destination chain
+# Mission chain
 # ---------------------------------------------------------------------------
 
 
-def test_bound_destination_chain_is_memory_then_scope_without_parents(
+def test_bound_mission_chain_is_memory_then_scope_without_parents(
     bound: tuple[Path, Path, Path], tmp_path: Path
 ) -> None:
     repo, mem, scope_dir = bound
-    (mem / "destination.md").write_text("MEMORY MANDATE", encoding="utf-8")
-    (scope_dir / "destination.md").write_text("REPO MANDATE", encoding="utf-8")
+    (mem / "mission.md").write_text("MEMORY MANDATE", encoding="utf-8")
+    (scope_dir / "mission.md").write_text("REPO MANDATE", encoding="utf-8")
     (tmp_path / ".acm").mkdir()
-    (tmp_path / ".acm" / "destination.md").write_text("PARENT DIR MANDATE", encoding="utf-8")
+    (tmp_path / ".acm" / "mission.md").write_text("PARENT DIR MANDATE", encoding="utf-8")
 
     context = _load_scope_context(repo)
 
@@ -289,14 +289,14 @@ def test_bound_destination_chain_is_memory_then_scope_without_parents(
     assert "Repo-scope mandate" in context
     assert "PARENT DIR MANDATE" not in context
 
-    loaded = _load_destination(repo)
+    loaded = _load_mission(repo)
     assert loaded.index("MEMORY MANDATE") < loaded.index("REPO MANDATE")
 
 
-def test_bound_destination_scope_only(bound: tuple[Path, Path, Path]) -> None:
+def test_bound_mission_scope_only(bound: tuple[Path, Path, Path]) -> None:
     repo, _, scope_dir = bound
-    (scope_dir / "destination.md").write_text("REPO MANDATE", encoding="utf-8")
-    assert _load_destination(repo) == "REPO MANDATE"
+    (scope_dir / "mission.md").write_text("REPO MANDATE", encoding="utf-8")
+    assert _load_mission(repo) == "REPO MANDATE"
     context = _load_scope_context(repo)
     assert context is not None and "REPO MANDATE" in context and "Higher-scope" not in context
 
@@ -366,10 +366,10 @@ def test_commit_proposal_legacy_still_stages_acm(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_init_scaffolds_destination_into_scope_when_bound(bound: tuple[Path, Path, Path]) -> None:
+def test_init_scaffolds_mission_into_scope_when_bound(bound: tuple[Path, Path, Path]) -> None:
     repo, _, scope_dir = bound
     result = CliRunner().invoke(main, ["init", str(repo)])
     assert result.exit_code == 0, result.output
-    assert (scope_dir / "destination.md").is_file()
+    assert (scope_dir / "mission.md").is_file()
     assert not (repo / ".acm").exists()
-    assert str(scope_dir / "destination.md") in result.output
+    assert str(scope_dir / "mission.md") in result.output

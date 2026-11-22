@@ -1,8 +1,8 @@
 """ESCALATE phase — failure pattern classification and operator escalation.
 
 When the loop records N consecutive failure cycles (VERIFY FAILED or IMPLEMENT FAILED),
-ESCALATE reads the destination and recent trail to classify the failure pattern:
-TOOLING_BROKEN, PIPELINE_BOTTLENECK, DESTINATION_UNREACHABLE, or CONTEXT_INSUFFICIENT.
+ESCALATE reads the mission and recent trail to classify the failure pattern:
+TOOLING_BROKEN, PIPELINE_BOTTLENECK, MISSION_UNREACHABLE, or CONTEXT_INSUFFICIENT.
 It writes escalate_report.md (memory scope: .acm/ legacy, or the bound scope dir) for operator review and the loop stops cleanly.
 
 This is the robot's structural equivalent of recognising "I keep failing for the same
@@ -30,7 +30,7 @@ from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
 from ai_steward.memory import acm_dir, read_trail, trail_exists, trail_location
 from ai_steward.pipeline import _prompts
-from ai_steward.pipeline._utils import _load_destination
+from ai_steward.pipeline._utils import _load_mission
 
 if TYPE_CHECKING:
     import anthropic
@@ -103,13 +103,13 @@ def escalate(
     if client is None:
         client = anthropic_client(config.harness)
 
-    destination = _load_destination(repo, config.destination_budget_chars)
+    mission = _load_mission(repo, config.mission_budget_chars)
     failure_context = _load_failure_context(repo)
     today = date.today().isoformat()
 
-    user_content = f"""## Destination (operator-held)
+    user_content = f"""## Mission (operator-held)
 
-{destination}
+{mission}
 
 ## Recent trail (last {_FAILURE_TRAIL_BUDGET} chars — look for the failure pattern)
 

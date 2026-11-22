@@ -48,7 +48,7 @@ class ModelAssignment(BaseModel):
     correct backend based on the endpoint path chosen by the execution layer.
 
     V1 (single-model): assign the same model to all phases. This is valid and expected.
-    The token-efficiency constraint (destination 2026-06-19) means V1 uses only tier 0/1
+    The token-efficiency constraint (mission 2026-06-19) means V1 uses only tier 0/1
     reasoning; a single cheap model (e.g. claude-haiku-4-5) across all phases is correct.
 
         analyze: "claude-haiku-4-5"
@@ -113,7 +113,7 @@ class AiStewardConfig(BaseModel):
     orient_head_budget_chars: int = 2000  # character budget for learning.md arc-claims head in SCAN context
     orient_rules_budget_chars: int = 3000  # character budget for the "Active operational rules" section in SCAN context
     acm_scope_depth: int = 4  # how many parent .acm/ directories to consult (org/workspace/team hierarchies)
-    destination_budget_chars: int = 3000  # total character budget for destination.md excerpts in SCAN context
+    mission_budget_chars: int = 3000  # total character budget for mission.md excerpts in SCAN context
     binary_heuristic_bytes: int = 8192  # first N bytes inspected for NUL byte (binary file detection)
     default_skip_dirs: list[str] = [  # directories skipped when scope.allowed is empty
         ".acm", ".git", ".harness",

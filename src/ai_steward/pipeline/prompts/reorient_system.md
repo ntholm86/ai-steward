@@ -5,7 +5,7 @@ You are an arc-reading agent. Your job is to read the full improvement trail and
 ## Input
 
 You will receive:
-1. The operator's destination (what the target is for)
+1. The operator's mission (what the target is for)
 2. The current learning.md (current arc-orientation)
 3. The learning surface (pre-extracted `[!REALIZATION]` and `[!REVERSAL]` markers from the full trail — the pre-digested pattern surface)
 4. The full audit-trail.md (all entries from the beginning)

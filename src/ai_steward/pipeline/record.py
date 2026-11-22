@@ -122,7 +122,7 @@ def _build_entry(
       are already the canonical improve-skill entry format. No restructuring
       is needed.
 
-    See ``.acm/destination.md`` (Canonical trail entry format) for the
+    See ``.acm/mission.md`` (Canonical trail entry format) for the
     authoritative spec.
     """
     today = date.today().isoformat()
@@ -143,7 +143,7 @@ def _build_entry(
             finding.examination_summary + "\n\n"
             if finding.examination_summary
             else (
-                f"- *Operator\u2019s Intent:* Operator destination (`.acm/destination.md`) "
+                f"- *Operator\u2019s Intent:* Operator mission (`.acm/mission.md`) "
                 f"loaded \u2014 improvement selected against stated direction.\n"
                 f"- *Code examination:* Repository files within scope scanned for structural improvements.\n\n"
             )

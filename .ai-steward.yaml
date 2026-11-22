@@ -1,7 +1,7 @@
 ﻿# AI Steward V1 — self-targeting configuration
 #
 # This config is used when ai-steward runs against its own repository.
-# Self-targeting is the V1 milestone (destination 2026-06-20).
+# Self-targeting is the V1 milestone (mission 2026-06-20).
 #
 # repo: comes from the CLI argument, not this file.
 

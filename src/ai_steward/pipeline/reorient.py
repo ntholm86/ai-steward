@@ -26,7 +26,7 @@ from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
 from ai_steward.memory import acm_dir, read_trail, trail_exists, trail_location
 from ai_steward.pipeline import _prompts
-from ai_steward.pipeline._utils import _load_current_orientation, _load_destination, _load_learning
+from ai_steward.pipeline._utils import _load_current_orientation, _load_mission, _load_learning
 
 if TYPE_CHECKING:
     import anthropic
@@ -97,15 +97,15 @@ def reorient(
         client = anthropic_client(config.harness)
 
     # Build context
-    destination = _load_destination(repo, config.destination_budget_chars)
+    mission = _load_mission(repo, config.mission_budget_chars)
     audit_trail = _load_audit_trail(repo, config.reorient_trail_budget_chars)
     current_orientation = _load_current_orientation(repo)
     learning = _load_learning(repo)
     today = date.today().isoformat()
 
-    user_content = f"""## Destination (operator-held)
+    user_content = f"""## Mission (operator-held)
 
-{destination}
+{mission}
 
 ---
 

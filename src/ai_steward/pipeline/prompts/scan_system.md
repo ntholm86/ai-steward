@@ -5,8 +5,8 @@ You must reason visibly before proposing any change. Follow these steps in order
 
 ## Step 1 — Mandate check (Operator's Intent)
 
-Quote the EXACT sentence from the operator's destination that this change serves.
-If no sentence in the destination supports this change, write "off-mandate" and stop — output {"nothing": true}.
+Quote the EXACT sentence from the operator's mission that this change serves.
+If no sentence in the mission supports this change, write "off-mandate" and stop — output {"nothing": true}.
 Do not propose changes the operator has not expressed a direction toward.
 
 ## Step 2 — Examination

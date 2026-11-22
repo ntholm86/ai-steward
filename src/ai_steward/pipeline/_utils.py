@@ -12,32 +12,32 @@ from pathlib import Path
 
 from ai_steward.memory import acm_dir, resolve_scope
 
-_BOUNDED_DESTINATION_START = "<!-- current-destination: complete -->"
-_BOUNDED_DESTINATION_END = "<!-- destination-history -->"
+_BOUNDED_MISSION_START = "<!-- current-mission: complete -->"
+_BOUNDED_MISSION_END = "<!-- mission-history -->"
 
 
-def _extract_bounded_destination(text: str) -> str | None:
-    """Extract the bounded current mandate from a destination.md, if marked.
+def _extract_bounded_mission(text: str) -> str | None:
+    """Extract the bounded current mandate from a mission.md, if marked.
 
-    When a destination contains the exact markers
-    <!-- current-destination: complete --> and <!-- destination-history -->
+    When a mission contains the exact markers
+    <!-- current-mission: complete --> and <!-- mission-history -->
     in that order, the content between them is the operator-confirmed current
     mandate (the skills-suite bounded-read convention). That bounded section
     is small and authoritative; the dated history below the end marker is
     provenance, not active instruction -- tail-truncation into it would
     deliver superseded sections and miss the mandate entirely.
     """
-    start = text.find(_BOUNDED_DESTINATION_START)
+    start = text.find(_BOUNDED_MISSION_START)
     if start < 0:
         return None
-    end = text.find(_BOUNDED_DESTINATION_END, start)
+    end = text.find(_BOUNDED_MISSION_END, start)
     if end < 0:
         return None
-    return text[start + len(_BOUNDED_DESTINATION_START) : end].strip()
+    return text[start + len(_BOUNDED_MISSION_START) : end].strip()
 
 
-def _truncate_destination(text: str, char_limit: int) -> str:
-    """Truncate a destination.md to char_limit, starting at the nearest section
+def _truncate_mission(text: str, char_limit: int) -> str:
+    """Truncate a mission.md to char_limit, starting at the nearest section
     heading boundary so the receiving phase gets a complete, labelled section
     rather than a mid-sentence fragment.
 
@@ -45,12 +45,12 @@ def _truncate_destination(text: str, char_limit: int) -> str:
     returned whole when it fits the budget, else head-truncated to it -- the
     mandate is the content phases must see; the history tail is not.
     """
-    bounded = _extract_bounded_destination(text)
+    bounded = _extract_bounded_mission(text)
     if bounded is not None:
         if len(bounded) <= char_limit:
             return bounded
         return (
-            "[... bounded current destination truncated to budget ...]\n\n"
+            "[... bounded current mission truncated to budget ...]\n\n"
             + bounded[:char_limit]
         )
     if len(text) <= char_limit:
@@ -58,22 +58,22 @@ def _truncate_destination(text: str, char_limit: int) -> str:
     cutoff = len(text) - char_limit
     match = re.search(r"^## \d{4}-\d{2}-\d{2}", text[cutoff:], re.MULTILINE)
     tail = text[cutoff + match.start() :] if match else text[-char_limit:]
-    return "[... destination.md truncated for token budget ...]\n\n" + tail
+    return "[... mission.md truncated for token budget ...]\n\n" + tail
 
 
-def _load_destination(repo: Path, budget_chars: int = 3000) -> str:
-    """Load destination.md (or legacy vision.md), truncated to budget.
+def _load_mission(repo: Path, budget_chars: int = 3000) -> str:
+    """Load mission.md (or legacy vision.md), truncated to budget.
 
     Bounded-marker files deliver the current mandate; unmarked files keep the
     historical tail + section-boundary behavior.
 
-    A bound repository whose memory root also holds a destination.md gets both:
-    the memory-wide mandate first (it outranks the repository destination),
-    then the repository destination, each with half the budget.
+    A bound repository whose memory root also holds a mission.md gets both:
+    the memory-wide mandate first (it outranks the repository mission),
+    then the repository mission, each with half the budget.
     """
     scope = resolve_scope(repo)
     repo_text: str | None = None
-    for name in ("destination.md", "vision.md"):
+    for name in ("mission.md", "vision.md"):
         dest_file = scope.dir / name
         if dest_file.exists():
             repo_text = dest_file.read_text(encoding="utf-8")
@@ -81,19 +81,19 @@ def _load_destination(repo: Path, budget_chars: int = 3000) -> str:
 
     memory_text: str | None = None
     if scope.bound and scope.memory_root is not None:
-        memory_file = scope.memory_root / "destination.md"
+        memory_file = scope.memory_root / "mission.md"
         if memory_file.is_file():
             memory_text = memory_file.read_text(encoding="utf-8")
 
     if memory_text is None:
         if repo_text is None:
-            return "[No destination.md found]"
-        return _truncate_destination(repo_text, budget_chars)
+            return "[No mission.md found]"
+        return _truncate_mission(repo_text, budget_chars)
 
     half = budget_chars // 2
-    sections = [f"### Higher-scope mandate (memory):\n\n{_truncate_destination(memory_text, half)}"]
+    sections = [f"### Higher-scope mandate (memory):\n\n{_truncate_mission(memory_text, half)}"]
     if repo_text is not None:
-        sections.append(f"### Repo-scope mandate:\n\n{_truncate_destination(repo_text, half)}")
+        sections.append(f"### Repo-scope mandate:\n\n{_truncate_mission(repo_text, half)}")
     return "\n\n---\n\n".join(sections)
 
 

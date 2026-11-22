@@ -291,12 +291,12 @@ def test_collect_files_blocked_deep_pattern_excludes_nested_files(tmp_path: Path
 # ---------------------------------------------------------------------------
 
 
-def test_scan_includes_destination_when_present(tmp_path: Path) -> None:
-    """SCAN prompt must include destination content when .acm/destination.md exists."""
+def test_scan_includes_mission_when_present(tmp_path: Path) -> None:
+    """SCAN prompt must include mission content when .acm/mission.md exists."""
     (tmp_path / "utils.py").write_text("import os\nx = 1\n")
     (tmp_path / ".acm").mkdir()
-    (tmp_path / ".acm" / "destination.md").write_text(
-        "# Destination\nBuild a fast reliable pipeline.", encoding="utf-8"
+    (tmp_path / ".acm" / "mission.md").write_text(
+        "# Mission\nBuild a fast reliable pipeline.", encoding="utf-8"
     )
     config = _make_config(tmp_path)
     client = _mock_client({
@@ -315,8 +315,8 @@ def test_scan_includes_destination_when_present(tmp_path: Path) -> None:
     assert "Build a fast reliable pipeline." in user_content
 
 
-def test_scan_works_without_destination(tmp_path: Path) -> None:
-    """SCAN falls back gracefully when no destination.md exists."""
+def test_scan_works_without_mission(tmp_path: Path) -> None:
+    """SCAN falls back gracefully when no mission.md exists."""
     (tmp_path / "utils.py").write_text("import os\nx = 1\n")
     config = _make_config(tmp_path)
     client = _mock_client({
@@ -335,15 +335,15 @@ def test_scan_works_without_destination(tmp_path: Path) -> None:
     assert "Operator's Intent" not in user_content
 
 
-def test_scan_truncates_long_destination(tmp_path: Path) -> None:
-    """Destination takes the tail when over budget — most recent content is preserved."""
+def test_scan_truncates_long_mission(tmp_path: Path) -> None:
+    """Mission takes the tail when over budget — most recent content is preserved."""
     (tmp_path / "utils.py").write_text("x = 1\n")
     (tmp_path / ".acm").mkdir()
     # Old content at start, new content at end — truncation must preserve the end.
     old_content = "OLD: " + "A" * 2000
     new_content = "NEW: latest operator decision"
     long_text = old_content + "B" * 1000 + new_content
-    (tmp_path / ".acm" / "destination.md").write_bytes(long_text.encode("utf-8"))
+    (tmp_path / ".acm" / "mission.md").write_bytes(long_text.encode("utf-8"))
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
 
@@ -357,14 +357,14 @@ def test_scan_truncates_long_destination(tmp_path: Path) -> None:
 
 
 def test_scan_truncation_starts_at_section_boundary(tmp_path: Path) -> None:
-    """When destination has dated sections, truncation starts at the nearest heading."""
+    """When mission has dated sections, truncation starts at the nearest heading."""
     (tmp_path / "utils.py").write_text("x = 1\n")
     (tmp_path / ".acm").mkdir()
     # Old section must be long enough that total > 3000 and cutoff lands before new heading.
     old_section = "## 2026-05-14 — Old section\n\n" + "A" * 3500 + "\n\n"
     new_section = "## 2026-06-20 — New section\n\nLatest operator decision.\n"
     long_text = old_section + new_section
-    (tmp_path / ".acm" / "destination.md").write_bytes(long_text.encode("utf-8"))
+    (tmp_path / ".acm" / "mission.md").write_bytes(long_text.encode("utf-8"))
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
 
@@ -378,20 +378,20 @@ def test_scan_truncation_starts_at_section_boundary(tmp_path: Path) -> None:
     assert "## 2026-05-14 — Old section" not in user_content
 
 
-def test_scan_bounded_destination_markers_deliver_mandate_not_history(tmp_path: Path) -> None:
-    """A destination with bounded markers delivers the current mandate, not the history tail."""
+def test_scan_bounded_mission_markers_deliver_mandate_not_history(tmp_path: Path) -> None:
+    """A mission with bounded markers delivers the current mandate, not the history tail."""
     (tmp_path / "utils.py").write_text("x = 1\n")
     (tmp_path / ".acm").mkdir()
     # Bounded mandate first, then a large dated history that tail-truncation
     # would otherwise surface. Total size far exceeds the 3000-char budget.
     mandate = (
-        "<!-- current-destination: complete -->\n\n"
-        "## Current destination (reconciled 2026-08-18)\n\n"
+        "<!-- current-mission: complete -->\n\n"
+        "## Current mission (reconciled 2026-08-18)\n\n"
         "MANDATE: the current operator direction lives here.\n\n"
-        "<!-- destination-history -->\n"
+        "<!-- mission-history -->\n"
     )
     history = "## 2026-06-22 — Superseded section\n\n" + "H" * 8000
-    (tmp_path / ".acm" / "destination.md").write_bytes((mandate + history).encode("utf-8"))
+    (tmp_path / ".acm" / "mission.md").write_bytes((mandate + history).encode("utf-8"))
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
 
@@ -403,26 +403,26 @@ def test_scan_bounded_destination_markers_deliver_mandate_not_history(tmp_path: 
     assert "Superseded section" not in user_content
 
 
-def test_scan_bounded_destination_over_budget_is_head_truncated(tmp_path: Path) -> None:
+def test_scan_bounded_mission_over_budget_is_head_truncated(tmp_path: Path) -> None:
     """An oversized bounded mandate is head-truncated, not replaced by history."""
     (tmp_path / "utils.py").write_text("x = 1\n")
     (tmp_path / ".acm").mkdir()
     mandate = (
-        "<!-- current-destination: complete -->\n\n"
-        "## Current destination\n\n"
+        "<!-- current-mission: complete -->\n\n"
+        "## Current mission\n\n"
         "MANDATE HEAD: leading direction.\n"
         + "M" * 6000
-        + "\n<!-- destination-history -->\n"
+        + "\n<!-- mission-history -->\n"
     )
     history = "## 2026-06-22 — Superseded\n\n" + "H" * 1000
-    (tmp_path / ".acm" / "destination.md").write_bytes((mandate + history).encode("utf-8"))
+    (tmp_path / ".acm" / "mission.md").write_bytes((mandate + history).encode("utf-8"))
     config = _make_config(tmp_path)
     client = _mock_client({"nothing": True})
 
     scan(tmp_path, config, client=client)
 
     user_content = client.messages.create.call_args[1]["messages"][0]["content"]
-    assert "bounded current destination truncated to budget" in user_content
+    assert "bounded current mission truncated to budget" in user_content
     assert "MANDATE HEAD: leading direction." in user_content
     assert "Superseded" not in user_content
 
@@ -432,16 +432,16 @@ def test_scan_bounded_destination_over_budget_is_head_truncated(tmp_path: Path) 
 # ---------------------------------------------------------------------------
 
 
-def test_scan_includes_parent_scope_destination(tmp_path: Path) -> None:
-    """Parent .acm/destination.md is included in the SCAN prompt as higher-scope mandate."""
+def test_scan_includes_parent_scope_mission(tmp_path: Path) -> None:
+    """Parent .acm/mission.md is included in the SCAN prompt as higher-scope mandate."""
     repo = tmp_path / "myrepo"
     repo.mkdir()
     (repo / "utils.py").write_text("x = 1\n")
     (repo / ".acm").mkdir()
-    (repo / ".acm" / "destination.md").write_text("# Repo dest\nRepo goal.", encoding="utf-8")
+    (repo / ".acm" / "mission.md").write_text("# Repo dest\nRepo goal.", encoding="utf-8")
     # Parent scope (workspace level)
     (tmp_path / ".acm").mkdir()
-    (tmp_path / ".acm" / "destination.md").write_text(
+    (tmp_path / ".acm" / "mission.md").write_text(
         "# Workspace dest\nWorkspace goal.", encoding="utf-8"
     )
     config = _make_config(repo)
@@ -462,7 +462,7 @@ def test_scan_includes_parent_scope_destination(tmp_path: Path) -> None:
 
 
 def test_scan_stops_at_acm_root_marker(tmp_path: Path) -> None:
-    """Traversal stops at .acm-root marker; destination above it is NOT included."""
+    """Traversal stops at .acm-root marker; mission above it is NOT included."""
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     repo = workspace / "myrepo"
@@ -470,16 +470,16 @@ def test_scan_stops_at_acm_root_marker(tmp_path: Path) -> None:
     (repo / "utils.py").write_text("x = 1\n")
     # Repo scope
     (repo / ".acm").mkdir()
-    (repo / ".acm" / "destination.md").write_text("# Repo\nRepo goal.", encoding="utf-8")
+    (repo / ".acm" / "mission.md").write_text("# Repo\nRepo goal.", encoding="utf-8")
     # Workspace scope with .acm-root marker → ceiling here
     (workspace / ".acm").mkdir()
-    (workspace / ".acm" / "destination.md").write_text(
+    (workspace / ".acm" / "mission.md").write_text(
         "# Workspace\nWorkspace goal.", encoding="utf-8"
     )
     (workspace / ".acm-root").write_text("")  # ceiling marker
     # Above the ceiling — must NOT be read
     (tmp_path / ".acm").mkdir()
-    (tmp_path / ".acm" / "destination.md").write_text(
+    (tmp_path / ".acm" / "mission.md").write_text(
         "# Org\nOrg goal MUST NOT APPEAR.", encoding="utf-8"
     )
     config = _make_config(repo)
@@ -682,11 +682,11 @@ def test_load_scope_context_scope_depth_limits_traversal(tmp_path: Path) -> None
     repo.mkdir(parents=True)
 
     (tmp_path / ".acm").mkdir()
-    (tmp_path / ".acm" / "destination.md").write_text(
+    (tmp_path / ".acm" / "mission.md").write_text(
         "# Grandparent\nGrandparent goal.", encoding="utf-8"
     )
     (workspace / ".acm").mkdir()
-    (workspace / ".acm" / "destination.md").write_text(
+    (workspace / ".acm" / "mission.md").write_text(
         "# Workspace\nWorkspace goal.", encoding="utf-8"
     )
 
@@ -704,22 +704,22 @@ def test_load_scope_context_scope_depth_limits_traversal(tmp_path: Path) -> None
 
 
 def test_load_scope_context_budget_chars_controls_truncation(tmp_path: Path) -> None:
-    """destination_budget_chars limits how much destination text reaches SCAN."""
+    """mission_budget_chars limits how much mission text reaches SCAN."""
     repo = tmp_path
     (repo / ".acm").mkdir()
-    # Destination large enough to exceed a small budget (half goes to repo scope)
+    # Mission large enough to exceed a small budget (half goes to repo scope)
     long_dest = "## 2026-01-01\n\n" + "A" * 2000
-    (repo / ".acm" / "destination.md").write_text(long_dest, encoding="utf-8")
+    (repo / ".acm" / "mission.md").write_text(long_dest, encoding="utf-8")
 
     # budget_chars=200 → repo gets 100 chars; 2015-char dest must be truncated
     result_tight = _load_scope_context(repo, budget_chars=200)
     assert result_tight is not None
-    assert "[... destination.md truncated" in result_tight
+    assert "[... mission.md truncated" in result_tight
 
     # budget_chars=10000 → repo gets 5000 chars; 2015-char dest fits without truncation
     result_wide = _load_scope_context(repo, budget_chars=10000)
     assert result_wide is not None
-    assert "[... destination.md truncated" not in result_wide
+    assert "[... mission.md truncated" not in result_wide
 
 
 # ---------------------------------------------------------------------------

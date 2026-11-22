@@ -149,7 +149,7 @@ orient_head_budget_chars: 2000     # chars of learning.md arc-claims head delive
 orient_rules_budget_chars: 3000    # chars of the "Active operational rules" section delivered to SCAN
 
 lenses:
-  - mandate       # Operator's Intent check (destination.md)
+  - mandate       # Operator's Intent check (mission.md)
   - examination   # Code structure and improvement opportunities
   # Example for security audit: add 'security' to focus on attack surface
   # Example for performance: use ['overburden'] to focus on hot paths only
@@ -165,7 +165,7 @@ review_branch: true         # run-loop: commit proposals to a per-run review bra
                             # (ai-steward/review/<timestamp>) so cycles don't halt on a
                             # dirty tree; review the batch, main stays untouched
 acm_scope_depth: 4          # ACM scope traversal depth (org/workspace/team/repo hierarchies)
-destination_budget_chars: 3000  # character budget for destination.md excerpts in SCAN context
+mission_budget_chars: 3000  # character budget for mission.md excerpts in SCAN context
 
 # Input filtering — controls which files enter the SCAN context window.
 # binary_heuristic_bytes: first N bytes read to detect binary files (NUL-byte heuristic).
@@ -186,8 +186,8 @@ default_skip_dirs:
 sandbox: "docker"           # execution sandbox: "docker" | "local"
 """
 
-_DESTINATION_TEMPLATE = """\
-# Destination — {repo_name}
+_MISSION_TEMPLATE = """\
+# Mission — {repo_name}
 
 *Write what you want this codebase to become and why.
 The agent reads this before every improvement cycle.*
@@ -252,26 +252,26 @@ def doctor(repo: str) -> None:
 
     # --- Silent gates: failures the pipeline never reports loudly ---
     scope = _scope_or_exit(repo_path)
-    destination = scope.dir / "destination.md"
-    destination_label = (
-        f"destination written ({destination})" if scope.bound else "destination written (.acm/destination.md)"
+    mission = scope.dir / "mission.md"
+    mission_label = (
+        f"mission written ({mission})" if scope.bound else "mission written (.acm/mission.md)"
     )
-    if not destination.exists():
+    if not mission.exists():
         checks.append((
-            destination_label,
+            mission_label,
             False,
             f"run: ai-steward init {repo_path}, then edit it — it guides every cycle",
         ))
     else:
-        text = destination.read_text(encoding="utf-8", errors="ignore")
+        text = mission.read_text(encoding="utf-8", errors="ignore")
         template_left = (
             "<!-- Describe the purpose of this codebase in 1-3 sentences. -->" in text
             or "<!-- Describe what a good improvement looks like. -->" in text
         )
         checks.append((
-            destination_label,
+            mission_label,
             not template_left,
-            "the destination is still the untouched template — write what you "
+            "the mission is still the untouched template — write what you "
             "want the codebase to become; SCAN reasons from this text",
         ))
 
@@ -314,17 +314,17 @@ def doctor(repo: str) -> None:
 @main.command()
 @click.argument("repo", type=click.Path(), default=".")
 def init(repo: str) -> None:
-    """Scaffold .ai-steward.yaml and destination.md in REPO.
+    """Scaffold .ai-steward.yaml and mission.md in REPO.
 
-    destination.md goes to .acm/ in REPO, or to the repository's scope in the
+    mission.md goes to .acm/ in REPO, or to the repository's scope in the
     shared memory repository when REPO is bound to one.
     """
     repo_path = Path(repo).resolve()
     scope = _scope_or_exit(repo_path)
     config_file = repo_path / ".ai-steward.yaml"
     trail_dir = scope.dir
-    destination_file = trail_dir / "destination.md"
-    destination_name = str(destination_file) if scope.bound else ".acm/destination.md"
+    mission_file = trail_dir / "mission.md"
+    mission_name = str(mission_file) if scope.bound else ".acm/mission.md"
 
     if config_file.exists():
         click.echo(
@@ -337,22 +337,22 @@ def init(repo: str) -> None:
     config_file.write_text(_CONFIG_TEMPLATE, encoding="utf-8")
 
     trail_dir.mkdir(parents=True, exist_ok=True)
-    destination_created = not destination_file.exists()
-    if destination_created:
-        destination_file.write_text(
-            _DESTINATION_TEMPLATE.format(repo_name=repo_path.name),
+    mission_created = not mission_file.exists()
+    if mission_created:
+        mission_file.write_text(
+            _MISSION_TEMPLATE.format(repo_name=repo_path.name),
             encoding="utf-8",
         )
 
     click.echo(f"Initialized ai-steward in {repo_path}")
     click.echo(f"  Created  .ai-steward.yaml      (model configuration)")
-    if destination_created:
-        click.echo(f"  Created  {destination_name} (edit this — it guides every cycle)")
+    if mission_created:
+        click.echo(f"  Created  {mission_name} (edit this — it guides every cycle)")
     else:
-        click.echo(f"  Skipped  {destination_name} (already exists)")
+        click.echo(f"  Skipped  {mission_name} (already exists)")
     click.echo("")
     click.echo("Next steps:")
-    click.echo(f"  1. Edit {destination_name} — describe what you want the codebase to become")
+    click.echo(f"  1. Edit {mission_name} — describe what you want the codebase to become")
     click.echo("  2. Set ANTHROPIC_API_KEY")
     click.echo("  3. Start llm-harness-proxy on localhost:8474")
     click.echo(f"  4. Check readiness: ai-steward doctor {repo_path}")
@@ -549,9 +549,9 @@ def run_loop(repo: str) -> None:
                 click.echo(
                     "\nConvergence: 2 consecutive NOTHING FOUND."
                 )
-                # GRADUATE phase — classify the silence and propose next destination
+                # GRADUATE phase — classify the silence and propose next mission
                 if trail_exists(repo_path):
-                    click.echo("GRADUATE: classifying silence — reading destination and trail...")
+                    click.echo("GRADUATE: classifying silence — reading mission and trail...")
                     with harness_session(repo_path, config.harness):
                         proposal, g_in_tok, g_out_tok = graduate_phase(
                             repo_path, config, trigger=f"nothing_found_streak_{nothing_found_streak}"
@@ -560,7 +560,7 @@ def run_loop(repo: str) -> None:
                     click.echo(
                         f"GRADUATE complete ({g_in_tok} in / {g_out_tok} out)\n"
                         f"  Proposal: {proposal_path}\n"
-                        f"  Review the proposal and decide: update destination, change scope, or continue."
+                        f"  Review the proposal and decide: update mission, change scope, or continue."
                     )
                 else:
                     click.echo("Loop complete.")
@@ -586,7 +586,7 @@ def run_loop(repo: str) -> None:
                     click.echo(
                         f"ESCALATE complete ({e_in_tok} in / {e_out_tok} out)\n"
                         f"  Report: {report_path}\n"
-                        f"  Review the report and decide: fix tooling, adjust config, or update destination."
+                        f"  Review the report and decide: fix tooling, adjust config, or update mission."
                     )
                 else:
                     click.echo("Escalation limit reached. Check errors above.")

@@ -2,16 +2,16 @@
 
 An autonomous code improvement loop with structural accountability.
 
-**Purpose 1 — Proof:** A reference implementation of [Principles of Earned Autonomy](https://github.com/ntholm86/manifesto). Demonstrates that autonomous delegation can be structurally trustworthy — not through promises, but through Observable Autonomy (harness-captured LLM evidence), Operator's Intent (operator-written destination), and Convergence Is Silence (stop when done, not when tired).
+**Purpose 1 — Proof:** A reference implementation of [Principles of Earned Autonomy](https://github.com/ntholm86/manifesto). Demonstrates that autonomous delegation can be structurally trustworthy — not through promises, but through Observable Autonomy (harness-captured LLM evidence), Operator's Intent (operator-written mission), and Convergence Is Silence (stop when done, not when tired).
 
-**Purpose 2 — Tool:** Genuinely useful. Write a destination → run the loop → review the staged diff → commit or discard. Works on any codebase. Cost is measured, not claimed (~$0.15–0.20/cycle on claude-sonnet-4-5; haiku is the V2 cost target).
+**Purpose 2 — Tool:** Genuinely useful. Write a mission → run the loop → review the staged diff → commit or discard. Works on any codebase. Cost is measured, not claimed (~$0.15–0.20/cycle on claude-sonnet-4-5; haiku is the V2 cost target).
 
 ## How it works
 
 ```
 ┌──────────────────────────────────┐
 │  OPERATOR                        │
-│  Memory: destination.md        │  ← Operator's Intent: what + why
+│  Memory: mission.md        │  ← Operator's Intent: what + why
 │  Reviews staged diffs            │
 │  Commits or discards             │
 └──────────────┬───────────────────┘
@@ -48,7 +48,7 @@ The agent cannot claim it did something it did not do.
 
 `.acm/` in the diagram above stands for the repository's memory directory:
 
-- **Bound repository:** when the repository is bound to a scope in a shared memory repository, memory is found there. Memory repositories are listed in the registry `~/.acm/memories` (or the file named by `ACM_MEMORIES_FILE`), one absolute path per line, each containing an `.acm-root` file. A repository is bound when exactly one `<memory>/repositories/<id>/repository.json` lists one of its root commits in `root_commits`. Zero matches means unbound; several matches abort with an error — the scope is never guessed. In bound mode the trail is the optional legacy `audit-trail.md` plus `records/` (one create-only file per cycle), `destination.md` may be preceded by a memory-wide `destination.md`, and no parent directories are searched. ai-steward only writes files into the memory working tree; it never commits to the memory repository.
+- **Bound repository:** when the repository is bound to a scope in a shared memory repository, memory is found there. Memory repositories are listed in the registry `~/.acm/memories` (or the file named by `ACM_MEMORIES_FILE`), one absolute path per line, each containing an `.acm-root` file. A repository is bound when exactly one `<memory>/repositories/<id>/repository.json` lists one of its root commits in `root_commits`. Zero matches means unbound; several matches abort with an error — the scope is never guessed. In bound mode the trail is the optional legacy `audit-trail.md` plus `records/` (one create-only file per cycle), `mission.md` may be preceded by a memory-wide `mission.md`, and no parent directories are searched. ai-steward only writes files into the memory working tree; it never commits to the memory repository.
 - **Unbound repository (legacy):** memory is the in-repo `.acm/` folder, exactly as before, and `run-loop` commits it with each review-branch commit.
 
 ## Quickstart
@@ -70,10 +70,10 @@ models:
   judge: claude-haiku-4-5
 ```
 
-And `destination.md` in the repository's memory (`.acm/destination.md` for a legacy repo, or the bound scope of the shared memory repository; `ai-steward init` creates it in the right place) — write what you want the codebase to become and why:
+And `mission.md` in the repository's memory (`.acm/mission.md` for a legacy repo, or the bound scope of the shared memory repository; `ai-steward init` creates it in the right place) — write what you want the codebase to become and why:
 
 ```markdown
-# Destination — my-project
+# Mission — my-project
 
 What this is for and what a good improvement looks like.
 The agent reads this before every SCAN. Be honest about trade-offs.
@@ -92,7 +92,7 @@ The loop proposes one change, applies it, verifies tests pass, and stages the di
 - Self-targeting proven: ai-steward runs against its own repository; convergence confirmed by consecutive NOTHING FOUND cycles
 - Meta-cognitive layer implemented and auto-triggered: REORIENT, GRADUATE, ESCALATE
 - Observable Autonomy structural: harness sessions co-located with the trail in the repository's memory (`.acm/` or its bound scope)
-- Operator's Intent structural: SCAN reads the memory's `destination.md` before every proposal
+- Operator's Intent structural: SCAN reads the memory's `mission.md` before every proposal
 - 187 tests, mypy-clean, CI on GitHub Actions
 - Cost baseline: ~$0.15–0.20/cycle (SCAN + IMPLEMENT + REFLECT, claude-sonnet-4-5)
 
