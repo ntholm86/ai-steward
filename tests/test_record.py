@@ -120,7 +120,7 @@ def test_record_entry_omits_reflection_section_when_empty(tmp_path: Path) -> Non
 
 
 def test_record_entry_lists_all_harness_session_paths(tmp_path: Path) -> None:
-    paths = [".acm/sessions/01ARZ.jsonl", ".acm/sessions/01BXZ.jsonl", ".acm/sessions/01CXZ.jsonl"]
+    paths = [".acm/evidence/01ARZ.jsonl", ".acm/evidence/01BXZ.jsonl", ".acm/evidence/01CXZ.jsonl"]
     entry = record(tmp_path, _make_config(tmp_path), _make_finding(), diff="",
                    harness_session_paths=paths)
 

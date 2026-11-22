@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# ULID generation (SPEC §4.2: sid MUST be a 26-char Crockford base-32 ULID)
+# ULID generation (a ULID satisfies the proxy's session-id validation)
 # ---------------------------------------------------------------------------
 
 _CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
@@ -92,32 +92,20 @@ def anthropic_base_url(config: HarnessConfig) -> str:
     return config.endpoint
 
 
-def anthropic_client(
-    config: HarnessConfig,
-    harness_root: "Path | None" = None,
-) -> "anthropic.Anthropic":
+def anthropic_client(config: HarnessConfig) -> "anthropic.Anthropic":
     """Anthropic SDK client pre-configured for the harness proxy.
 
     INVARIANT: This function MUST only be called inside a harness_session()
     context. Calling it outside raises RuntimeError immediately.
 
-    This is not a convention — it is a hard structural boundary. Every LLM
-    API call made by ai-steward must be harness-captured, without exception.
-    The harness_session() context sets HARNESS_SESSION_ID, which serves as
-    both the session-grouping token and the proof that the caller is operating
-    inside the Observable Autonomy boundary.
-
-    X-Harness-Root is always sent. harness_session() sets HARNESS_ROOT in
-    the environment; this function reads it as the default when harness_root
-    is not supplied explicitly. A call site can never accidentally omit the
-    header — the context manager's guarantee is structural, not a convention.
-
-    harness_root (optional): override the root for this specific call. Rarely
-    needed; the env var set by harness_session() is correct in all normal cases.
+    The harness_session() context sets HARNESS_SESSION_ID, which is sent as
+    X-Harness-Session so that all calls of one run share one ledger file. The
+    capture location is the proxy's own configuration (HARNESS_ROOT at proxy
+    start); the client does not choose it.
 
     Usage (always inside harness_session()):
         with harness_session(repo, config.harness):
-            client = anthropic_client(config.harness)   # X-Harness-Root from env
+            client = anthropic_client(config.harness)
             message = client.messages.create(...)
     """
     import anthropic as _anthropic
@@ -131,21 +119,10 @@ def anthropic_client(
             "Wrap this call inside 'with harness_session(repo, config.harness):'."
         )
 
-    # X-Harness-Root: explicit parameter wins; env var (set by harness_session)
-    # is the automatic fallback. Since harness_session() always sets HARNESS_ROOT
-    # before yielding, the header is guaranteed on every call with no action
-    # required from the caller.
-    effective_root: str | None = (
-        str(harness_root) if harness_root is not None else os.environ.get("HARNESS_ROOT")
-    )
-
     default_headers: dict[str, str] = {"Accept-Encoding": "identity"}
-    if effective_root is not None:
-        default_headers["X-Harness-Root"] = effective_root
     if run_id:
-        # X-Harness-Session groups all calls sharing this run_id into one
-        # session file (SPEC §4.2 sid). Proxy implements this — verified live:
-        # one harness_session() produces one .jsonl with 3 hash-chained entries.
+        # Groups all calls sharing this run_id into one ledger file. The proxy
+        # accepts only [A-Za-z0-9_-]{1,64}; a ULID qualifies.
         default_headers["X-Harness-Session"] = run_id
 
     return _anthropic.Anthropic(
@@ -156,64 +133,50 @@ def anthropic_client(
 
 @contextmanager
 def harness_session(target_repo: Path, config: HarnessConfig):
-    """Context manager that sets HARNESS_ROOT and HARNESS_SESSION_ID for one pipeline run.
+    """Context manager that sets HARNESS_SESSION_ID for one pipeline run.
 
-    Sets two environment variables for the duration of the context:
-    - HARNESS_ROOT: directs the proxy to write session ledgers to the repository's memory
-      directory (<target_repo>/.acm/, or the bound scope dir in the shared memory repository)
-    - HARNESS_SESSION_ID: a per-run ULID forwarded as X-Harness-Session on every API
-      call.  The proxy groups all calls sharing this value into one session file.
-      One harness_session() == one .jsonl == one pipeline iteration (verified live:
-      SCAN seq=0, IMPLEMENT seq=1, REFLECT seq=2 in a single hash-chained file).
+    HARNESS_SESSION_ID is a per-run ULID forwarded as X-Harness-Session on every API
+    call.  The proxy groups all calls sharing this value into one ledger file
+    ``<evidence>/<sid>.jsonl``, where ``<evidence>`` is the ``evidence/`` folder of the
+    repository's memory scope. The proxy must have been started with HARNESS_ROOT set
+    to that folder; the client does not tell it where to write.
 
     Yields a dict with:
-      "session_paths": list[str]  — paths of every .jsonl created during the context
-                                    (SCAN + IMPLEMENT + REFLECT): ``.acm/sessions/<name>``
-                                    for a legacy repo, absolute paths when bound.
+      "session_paths": list[str]  — paths of every .jsonl created in the evidence folder
+                                    during the context: ``.acm/evidence/<name>`` for a
+                                    legacy repo, absolute paths when bound.
       "run_id":        str         — the ULID generated for this run.
 
-    Both variables are restored to their prior values on exit (including on exception).
+    The variable is restored to its prior value on exit (including on exception).
     """
-    root_key = "HARNESS_ROOT"
     sid_key = "HARNESS_SESSION_ID"
     scope = resolve_scope(target_repo)
-    harness_root = scope.dir
-    sessions_dir = harness_root / "sessions"
+    evidence_dir = scope.dir / "evidence"
     bound = scope.bound
 
     run_id = _generate_ulid()
 
-    # Snapshot existing sessions before any calls — used to identify
-    # which sessions were created during this run.
-    # Sessions are .jsonl files per SPEC §8.1: <root>/sessions/<sid>.jsonl
+    # Snapshot existing ledger files so the ones created during this run can be reported.
     before = (
-        {p.name for p in sessions_dir.iterdir() if p.is_file() and p.suffix == ".jsonl"}
-        if sessions_dir.is_dir()
+        {p.name for p in evidence_dir.iterdir() if p.is_file() and p.suffix == ".jsonl"}
+        if evidence_dir.is_dir()
         else set()
     )
 
     result: dict[str, list[str] | str] = {"session_paths": [], "run_id": run_id}
-    prev_root = os.environ.get(root_key)
     prev_sid = os.environ.get(sid_key)
-    os.environ[root_key] = str(harness_root)
     os.environ[sid_key] = run_id
     try:
         yield result
     finally:
-        if prev_root is None:
-            os.environ.pop(root_key, None)
-        else:
-            os.environ[root_key] = prev_root
         if prev_sid is None:
             os.environ.pop(sid_key, None)
         else:
             os.environ[sid_key] = prev_sid
-        # Collect ALL new session files created during this run (SCAN + IMPLEMENT +
-        # REFLECT).  ULID names are lexicographically time-ordered — sorted() gives
-        # chronological order.
-        if sessions_dir.is_dir():
-            after = {p.name for p in sessions_dir.iterdir() if p.is_file() and p.suffix == ".jsonl"}
+        # ULID names are lexicographically time-ordered — sorted() gives chronological order.
+        if evidence_dir.is_dir():
+            after = {p.name for p in evidence_dir.iterdir() if p.is_file() and p.suffix == ".jsonl"}
             names = sorted(after - before)
             result["session_paths"] = (
-                [str(sessions_dir / n) for n in names] if bound else [f".acm/sessions/{n}" for n in names]
+                [str(evidence_dir / n) for n in names] if bound else [f".acm/evidence/{n}" for n in names]
             )

@@ -306,17 +306,16 @@ def test_bound_destination_scope_only(bound: tuple[Path, Path, Path]) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_harness_session_root_and_session_paths_when_bound(bound: tuple[Path, Path, Path]) -> None:
+def test_harness_session_paths_are_absolute_in_evidence_when_bound(
+    bound: tuple[Path, Path, Path],
+) -> None:
     repo, _, scope_dir = bound
-    os.environ.pop("HARNESS_ROOT", None)
     session_id = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
     with harness_session(repo, HarnessConfig()) as result:
-        assert os.environ["HARNESS_ROOT"] == str(scope_dir)
-        sessions = scope_dir / "sessions"
-        sessions.mkdir()
-        (sessions / f"{session_id}.jsonl").write_bytes(b'{"v":1}\n')
-    assert result["session_paths"] == [str(sessions / f"{session_id}.jsonl")]
-    assert "HARNESS_ROOT" not in os.environ
+        evidence = scope_dir / "evidence"
+        evidence.mkdir()
+        (evidence / f"{session_id}.jsonl").write_bytes(b'{"v":1}\n')
+    assert result["session_paths"] == [str(evidence / f"{session_id}.jsonl")]
 
 
 def test_commit_proposal_does_not_touch_memory_when_bound(
@@ -332,8 +331,8 @@ def test_commit_proposal_does_not_touch_memory_when_bound(
     (repo / "seed.py").write_text("x = 2\n", encoding="utf-8")
     (scope_dir / "records").mkdir()
     (scope_dir / "records" / "20260101T000000Z-ai-steward-x.md").write_text("## r\n", encoding="utf-8")
-    (scope_dir / "sessions").mkdir()
-    (scope_dir / "sessions" / "01ARZ.jsonl").write_text("{}\n", encoding="utf-8")
+    (scope_dir / "evidence").mkdir()
+    (scope_dir / "evidence" / "01ARZ.jsonl").write_text("{}\n", encoding="utf-8")
 
     assert _commit_proposal(repo, _finding(), cycle=1) is True
 

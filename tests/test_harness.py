@@ -58,14 +58,6 @@ def test_anthropic_client_does_not_raise_inside_harness_session(tmp_path: Path) 
             pass  # ImportError, network error, etc — not a boundary violation
 
 
-def test_harness_session_sets_harness_root(tmp_path: Path) -> None:
-    config = HarnessConfig()
-    os.environ.pop("HARNESS_ROOT", None)
-    with harness_session(tmp_path, config):
-        assert os.environ["HARNESS_ROOT"] == str(tmp_path / ".acm")
-    assert "HARNESS_ROOT" not in os.environ
-
-
 def test_harness_session_sets_harness_session_id(tmp_path: Path) -> None:
     config = HarnessConfig()
     os.environ.pop("HARNESS_SESSION_ID", None)
@@ -75,15 +67,6 @@ def test_harness_session_sets_harness_session_id(tmp_path: Path) -> None:
         assert len(sid) == 26, "run_id must be a 26-char ULID"
         assert sid == result["run_id"], "env var and result run_id must match"
     assert "HARNESS_SESSION_ID" not in os.environ
-
-
-def test_harness_session_restores_previous_value(tmp_path: Path) -> None:
-    config = HarnessConfig()
-    os.environ["HARNESS_ROOT"] = "/previous/value"
-    with harness_session(tmp_path, config):
-        assert os.environ["HARNESS_ROOT"] == str(tmp_path / ".acm")
-    assert os.environ["HARNESS_ROOT"] == "/previous/value"
-    del os.environ["HARNESS_ROOT"]
 
 
 def test_harness_session_restores_session_id_on_exit(tmp_path: Path) -> None:
@@ -97,11 +80,11 @@ def test_harness_session_restores_session_id_on_exit(tmp_path: Path) -> None:
 
 def test_harness_session_restores_on_exception(tmp_path: Path) -> None:
     config = HarnessConfig()
-    os.environ.pop("HARNESS_ROOT", None)
+    os.environ.pop("HARNESS_SESSION_ID", None)
     with pytest.raises(RuntimeError):
         with harness_session(tmp_path, config):
             raise RuntimeError("pipeline failed")
-    assert "HARNESS_ROOT" not in os.environ
+    assert "HARNESS_SESSION_ID" not in os.environ
 
 
 # ---------------------------------------------------------------------------
@@ -114,10 +97,10 @@ def test_harness_session_discovers_new_session(tmp_path: Path) -> None:
     config = HarnessConfig()
     session_id = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
     with harness_session(tmp_path, config) as result:
-        sessions_dir = tmp_path / ".acm" / "sessions"
-        sessions_dir.mkdir(parents=True)
-        (sessions_dir / f"{session_id}.jsonl").write_bytes(b'{"v":1}\n')
-    assert result["session_paths"] == [f".acm/sessions/{session_id}.jsonl"]
+        evidence_dir = tmp_path / ".acm" / "evidence"
+        evidence_dir.mkdir(parents=True)
+        (evidence_dir / f"{session_id}.jsonl").write_bytes(b'{"v":1}\n')
+    assert result["session_paths"] == [f".acm/evidence/{session_id}.jsonl"]
 
 
 def test_harness_session_captures_all_when_multiple_created(tmp_path: Path) -> None:
@@ -126,13 +109,13 @@ def test_harness_session_captures_all_when_multiple_created(tmp_path: Path) -> N
     earlier = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
     later   = "01BX5ZZKBKACTAV9WEVGEMMVS0"
     with harness_session(tmp_path, config) as result:
-        sessions = tmp_path / ".acm" / "sessions"
-        sessions.mkdir(parents=True)
-        (sessions / f"{earlier}.jsonl").write_bytes(b'{"v":1}\n')
-        (sessions / f"{later}.jsonl").write_bytes(b'{"v":1}\n')
+        evidence = tmp_path / ".acm" / "evidence"
+        evidence.mkdir(parents=True)
+        (evidence / f"{earlier}.jsonl").write_bytes(b'{"v":1}\n')
+        (evidence / f"{later}.jsonl").write_bytes(b'{"v":1}\n')
     assert result["session_paths"] == [
-        f".acm/sessions/{earlier}.jsonl",
-        f".acm/sessions/{later}.jsonl",
+        f".acm/evidence/{earlier}.jsonl",
+        f".acm/evidence/{later}.jsonl",
     ]
 
 
@@ -148,14 +131,10 @@ def test_harness_session_returns_empty_list_when_no_session_created(tmp_path: Pa
 # X-Harness-Session grouping — one iteration = one file
 #
 # The proxy routes all calls that share an X-Harness-Session header value to
-# the same <sid>.jsonl file.  ai-steward's side of the contract: every
+# the same <evidence>/<sid>.jsonl file.  ai-steward's side of the contract: every
 # anthropic_client() call within one harness_session() context must send the
-# context's run_id as X-Harness-Session.  When the proxy honours this header,
-# one harness_session() == one session file == one pipeline iteration.
-#
-# The proxy groups all calls sharing the same X-Harness-Session into one file.
-# Verified live: one harness_session() produces one .jsonl with SCAN (seq=0),
-# IMPLEMENT (seq=1), REFLECT (seq=2) — hash-chained, one sid, one filename.
+# context's run_id as X-Harness-Session.  The capture location itself is the
+# proxy's configuration; the client sends no root or upstream header.
 # ---------------------------------------------------------------------------
 
 
@@ -166,44 +145,12 @@ def test_anthropic_client_sends_run_id_as_x_harness_session(tmp_path: Path) -> N
         mock_cls.return_value = MagicMock()
         with harness_session(tmp_path, config) as ctx:
             run_id = ctx["run_id"]
-            anthropic_client(config, harness_root=tmp_path / ".acm")
+            anthropic_client(config)
 
     http_client = mock_cls.call_args.kwargs["http_client"]
     assert http_client.headers.get("x-harness-session") == run_id
-
-
-def test_anthropic_client_sends_x_harness_root_from_env_without_explicit_param(
-    tmp_path: Path,
-) -> None:
-    """X-Harness-Root is sent automatically from the HARNESS_ROOT env var.
-
-    A call to anthropic_client(config) with no harness_root argument must still
-    send X-Harness-Root — making it impossible to accidentally omit the header.
-    harness_session() sets HARNESS_ROOT unconditionally; this test confirms the
-    client picks it up without any explicit parameter at the call site.
-    """
-    config = HarnessConfig()
-    with patch("anthropic.Anthropic") as mock_cls:
-        mock_cls.return_value = MagicMock()
-        with harness_session(tmp_path, config):
-            expected_root = os.environ["HARNESS_ROOT"]
-            anthropic_client(config)  # no harness_root argument
-
-    http_client = mock_cls.call_args.kwargs["http_client"]
-    assert http_client.headers.get("x-harness-root") == expected_root
-
-
-def test_anthropic_client_explicit_harness_root_overrides_env(tmp_path: Path) -> None:
-    """Explicit harness_root= wins over the env var (override still works)."""
-    config = HarnessConfig()
-    override = tmp_path / "custom" / "root"
-    with patch("anthropic.Anthropic") as mock_cls:
-        mock_cls.return_value = MagicMock()
-        with harness_session(tmp_path, config):
-            anthropic_client(config, harness_root=override)
-
-    http_client = mock_cls.call_args.kwargs["http_client"]
-    assert http_client.headers.get("x-harness-root") == str(override)
+    assert http_client.headers.get("x-harness-root") is None
+    assert http_client.headers.get("x-harness-upstream") is None
 
 
 def test_all_lm_calls_in_one_iteration_share_x_harness_session(tmp_path: Path) -> None:
@@ -218,9 +165,9 @@ def test_all_lm_calls_in_one_iteration_share_x_harness_session(tmp_path: Path) -
         mock_cls.return_value = MagicMock()
         with harness_session(tmp_path, config) as ctx:
             run_id = ctx["run_id"]
-            anthropic_client(config, harness_root=tmp_path / ".acm")  # SCAN
-            anthropic_client(config, harness_root=tmp_path / ".acm")  # IMPLEMENT
-            anthropic_client(config, harness_root=tmp_path / ".acm")  # REFLECT
+            anthropic_client(config)  # SCAN
+            anthropic_client(config)  # IMPLEMENT
+            anthropic_client(config)  # REFLECT
 
     assert mock_cls.call_count == 3
     session_ids = [
@@ -237,19 +184,19 @@ def test_one_session_file_per_iteration_when_proxy_groups_by_run_id(tmp_path: Pa
     """When the proxy honours X-Harness-Session, one harness_session() = one .jsonl file.
 
     The proxy writes all calls sharing the same X-Harness-Session to
-    <run_id>.jsonl.  harness_session() must report exactly one session_path
-    for the iteration, not one per LLM call.
+    <evidence>/<run_id>.jsonl.  harness_session() must report exactly one
+    session_path for the iteration, not one per LLM call.
 
     All entries in that file share the same sid (SPEC §8.2: one file per session).
     """
     config = HarnessConfig()
     with harness_session(tmp_path, config) as ctx:
         run_id = ctx["run_id"]
-        sessions_dir = tmp_path / ".acm" / "sessions"
-        sessions_dir.mkdir(parents=True)
+        evidence_dir = tmp_path / ".acm" / "evidence"
+        evidence_dir.mkdir(parents=True)
         # Simulate proxy grouping all 3 calls (SCAN+IMPLEMENT+REFLECT) into one file.
         entries = [{"sid": run_id, "seq": i, "v": 1} for i in range(3)]
-        (sessions_dir / f"{run_id}.jsonl").write_text(
+        (evidence_dir / f"{run_id}.jsonl").write_text(
             "\n".join(json.dumps(e) for e in entries) + "\n",
             encoding="utf-8",
         )
@@ -258,10 +205,10 @@ def test_one_session_file_per_iteration_when_proxy_groups_by_run_id(tmp_path: Pa
         f"One iteration must produce exactly one session file. "
         f"Got {len(ctx['session_paths'])}: {ctx['session_paths']!r}"
     )
-    assert ctx["session_paths"][0] == f".acm/sessions/{run_id}.jsonl"
+    assert ctx["session_paths"][0] == f".acm/evidence/{run_id}.jsonl"
 
     # All entries in the file share the same sid — SPEC §8.2 conformance.
-    lines = (tmp_path / ".acm" / "sessions" / f"{run_id}.jsonl").read_text("utf-8").splitlines()
+    lines = (tmp_path / ".acm" / "evidence" / f"{run_id}.jsonl").read_text("utf-8").splitlines()
     unique_sids = {json.loads(l)["sid"] for l in lines if l.strip()}
     assert unique_sids == {run_id}, (
         f"Session file must contain only entries with sid={run_id!r}. Found: {unique_sids!r}"

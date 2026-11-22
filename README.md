@@ -33,14 +33,14 @@ An autonomous code improvement loop with structural accountability.
 ┌──────────────────────────────────┐
 │  HARNESS (localhost:8474)        │
 │  Intercepts all LLM API calls    │
-│  Writes sessions/*.jsonl       │  ← BEFORE response is processed
+│  Writes evidence/*.jsonl         │  ← BEFORE response is processed
 │  Hash-chained, tamper-evident    │  ← agent cannot fabricate evidence
 └──────────────────────────────────┘
 ```
 
 Every cycle produces two records in the target repo's memory directory (see [Where memory lives](#where-memory-lives)):
 - `audit-trail.md` — the agent's reasoning (what it proposed and why)
-- `sessions/<ulid>.jsonl` — the harness-captured LLM evidence (independent, unmodifiable)
+- `evidence/<ulid>.jsonl` — the harness-captured LLM evidence (independent, unmodifiable)
 
 The agent cannot claim it did something it did not do.
 
@@ -53,7 +53,7 @@ The agent cannot claim it did something it did not do.
 
 ## Quickstart
 
-**Prerequisites:** Python 3.12+, [llm-harness-proxy](https://github.com/ntholm86/llm-harness-proxy) running on `localhost:8474`, `ANTHROPIC_API_KEY` set.
+**Prerequisites:** Python 3.12+, [llm-harness-proxy](https://github.com/ntholm86/llm-harness-proxy) running on `localhost:8474`, `ANTHROPIC_API_KEY` set. Start the proxy with `HARNESS_ROOT` set to the memory scope's `evidence/` folder (`.acm/evidence` for a legacy repo); the proxy alone decides where evidence is written, ai-steward only sends a session id.
 
 ```bash
 pip install -e ".[dev]"
@@ -105,7 +105,7 @@ The harness proxy writes the session ledger **before** the LLM response is proce
 ```
 .acm/                     ← legacy in-repo memory (bound repos: <memory>/repositories/<id>/)
   audit-trail.md          ← agent's claim about what happened (bound: records/<timestamp>-<slug>.md)
-  sessions/
+  evidence/
     01KV....jsonl         ← independent proof of what the LLM was asked and answered
 ```
 

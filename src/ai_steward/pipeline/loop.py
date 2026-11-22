@@ -174,11 +174,11 @@ def _commit_proposal(repo: Path, finding: "Finding", cycle: int) -> bool:
     if scope.bound:
         evidence = (
             f"Evidence: {scope.dir} in the shared memory repository "
-            "(uncommitted there; records/ entry + sessions/, hash-chained harness capture)."
+            "(uncommitted there; records/ entry + evidence/, hash-chained harness capture)."
         )
     else:
         evidence = (
-            "Evidence: .acm/audit-trail.md (this commit) + .acm/sessions/ "
+            "Evidence: .acm/audit-trail.md (this commit) + .acm/evidence/ "
             "(hash-chained harness capture)."
         )
     message = (
