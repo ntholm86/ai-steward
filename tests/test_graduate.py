@@ -47,7 +47,7 @@ def _mock_client(proposal_text: str) -> MagicMock:
 # ---------------------------------------------------------------------------
 
 
-class TestLoadMission:
+class TestLoadGoal:
     def test_loads_goal_md(self, tmp_path: Path) -> None:
         acm = tmp_path / ".acm"
         acm.mkdir()
