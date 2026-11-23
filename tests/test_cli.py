@@ -11,17 +11,17 @@ from ai_steward.cli import main
 from ai_steward.pipeline._types import Finding, LoopResult
 
 
-def test_init_creates_config_and_mission(tmp_path: Path) -> None:
+def test_init_creates_config_and_goal(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["init", str(tmp_path)])
 
     assert result.exit_code == 0, result.output
     config = tmp_path / ".ai-steward.yaml"
-    mission = tmp_path / ".acm" / "mission.md"
+    goal = tmp_path / ".acm" / "goal.md"
     assert config.exists()
-    assert mission.exists()
+    assert goal.exists()
     assert "claude-haiku-4-5" in config.read_text()
-    assert tmp_path.name in mission.read_text()
+    assert tmp_path.name in goal.read_text()
     assert "Next steps:" in result.output
 
 
@@ -53,18 +53,18 @@ def test_init_aborts_if_config_already_exists(tmp_path: Path) -> None:
     assert "already exists" in result.output
 
 
-def test_init_skips_mission_if_already_exists(tmp_path: Path) -> None:
+def test_init_skips_goal_if_already_exists(tmp_path: Path) -> None:
     trail_dir = tmp_path / ".acm"
     trail_dir.mkdir()
-    existing = "# My existing mission\n"
-    (trail_dir / "mission.md").write_text(existing, encoding="utf-8")
+    existing = "# My existing goal\n"
+    (trail_dir / "goal.md").write_text(existing, encoding="utf-8")
 
     runner = CliRunner()
     result = runner.invoke(main, ["init", str(tmp_path)])
 
     assert result.exit_code == 0
-    assert "Skipped  .acm/mission.md" in result.output
-    assert (trail_dir / "mission.md").read_text() == existing
+    assert "Skipped  .acm/goal.md" in result.output
+    assert (trail_dir / "goal.md").read_text() == existing
 
 
 # ---------------------------------------------------------------------------
@@ -334,14 +334,14 @@ def test_doctor_reports_all_failures_with_remediation(tmp_path: Path) -> None:
     assert "git repository" in result.output
     assert "config present" in result.output
     assert "ai-steward init" in result.output
-    assert "mission written" in result.output
+    assert "goal written" in result.output
     assert "check(s) failing" in result.output
 
 
-def test_doctor_detects_untouched_template_mission(tmp_path: Path) -> None:
-    """The silent setup failure: template markers still in mission.md."""
+def test_doctor_detects_untouched_template_goal(tmp_path: Path) -> None:
+    """The silent setup failure: template markers still in goal.md."""
     runner = CliRunner()
-    runner.invoke(main, ["init", str(tmp_path)])  # creates config + template mission
+    runner.invoke(main, ["init", str(tmp_path)])  # creates config + template goal
     with patch("ai_steward.cli.is_reachable", return_value=False), \
          patch("ai_steward.cli.run_verify_command", return_value=(True, 0)):
         result = runner.invoke(main, ["doctor", str(tmp_path)])
@@ -366,9 +366,9 @@ def test_doctor_passes_when_ready(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 
     runner = CliRunner()
     runner.invoke(main, ["init", str(tmp_path)])
-    # Operator writes a real mission (removes the template markers)
-    (tmp_path / ".acm" / "mission.md").write_text(
-        "# Mission\n\nImprove type safety across the codebase.\n", encoding="utf-8"
+    # Operator writes a real goal (removes the template markers)
+    (tmp_path / ".acm" / "goal.md").write_text(
+        "# Goal\n\nImprove type safety across the codebase.\n", encoding="utf-8"
     )
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
     with patch("ai_steward.cli.is_reachable", return_value=True), \

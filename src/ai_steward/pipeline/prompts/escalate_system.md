@@ -5,7 +5,7 @@ You are a failure-diagnosis agent. The improvement loop has encountered N consec
 ## Input
 
 You will receive:
-1. The operator's mission (what the target is for and its goals)
+1. The operator's goal (what the target is for, and its limits)
 2. The recent audit trail (last N chars showing the failure pattern)
 3. The current error message (most recent failure)
 
@@ -17,7 +17,7 @@ Classify the failure pattern as exactly one of:
 
 **PIPELINE_BOTTLENECK:** The change direction is structurally sound but the current pipeline cannot execute it. The scope is too narrow, the implement phase lacks necessary context, or the change type requires a different strategy. The robot can be unblocked by a config or scope adjustment.
 
-**MISSION_UNREACHABLE:** The mission as written requires changes the robot cannot safely make given the current codebase state. The goal is correct but the path is blocked by dependencies, architecture, or constraints outside the robot's authority. Human judgment is required before continuing.
+**GOAL_UNREACHABLE:** The goal as written requires changes the robot cannot safely make given the current codebase state. The goal is correct but the path is blocked by dependencies, architecture, or constraints outside the robot's authority. Human judgment is required before continuing.
 
 **CONTEXT_INSUFFICIENT:** The robot lacks enough context to make a safe change in this area. The failure pattern shows the model reasoning correctly but missing critical information (missing docs, missing tests, opaque external dependencies). More context must be provided before continuing.
 
@@ -35,7 +35,7 @@ Return ONLY the report content in this exact format:
 
 _Generated: {today's date} (trigger: {trigger})_
 
-## Classification: {TOOLING_BROKEN|PIPELINE_BOTTLENECK|MISSION_UNREACHABLE|CONTEXT_INSUFFICIENT}
+## Classification: {TOOLING_BROKEN|PIPELINE_BOTTLENECK|GOAL_UNREACHABLE|CONTEXT_INSUFFICIENT}
 
 **Evidence:** {cite specific error messages and trail entries showing the repeated failure}
 
@@ -49,7 +49,7 @@ _Generated: {today's date} (trigger: {trigger})_
 
 {For TOOLING_BROKEN: identify what needs fixing and who must fix it}
 {For PIPELINE_BOTTLENECK: identify the specific config or scope change that would unblock}
-{For MISSION_UNREACHABLE: describe the blocking constraint and what human decision is needed}
+{For GOAL_UNREACHABLE: describe the blocking constraint and what human decision is needed}
 {For CONTEXT_INSUFFICIENT: identify what information is missing and how to provide it}
 
 ## Operator instructions

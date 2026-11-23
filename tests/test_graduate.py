@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from ai_steward.config import AiStewardConfig, HarnessConfig, ModelAssignment, ScopeConfig
-from ai_steward.pipeline._utils import _load_current_orientation, _load_mission
+from ai_steward.pipeline._utils import _load_current_orientation, _load_goal
 from ai_steward.pipeline.graduate import (
     _extract_proposal_content,
     _load_recent_trail,
@@ -48,42 +48,42 @@ def _mock_client(proposal_text: str) -> MagicMock:
 
 
 class TestLoadMission:
-    def test_loads_mission_md(self, tmp_path: Path) -> None:
+    def test_loads_goal_md(self, tmp_path: Path) -> None:
         acm = tmp_path / ".acm"
         acm.mkdir()
-        (acm / "mission.md").write_text("# Mission\n\nGoal: improve.", encoding="utf-8")
+        (acm / "goal.md").write_text("# Goal\n\nGoal: improve.", encoding="utf-8")
 
-        result = _load_mission(tmp_path)
+        result = _load_goal(tmp_path)
         assert "Goal: improve" in result
 
     def test_returns_placeholder_when_missing(self, tmp_path: Path) -> None:
-        result = _load_mission(tmp_path)
-        assert "No mission.md found" in result
+        result = _load_goal(tmp_path)
+        assert "No goal.md found" in result
 
     def test_truncates_from_tail(self, tmp_path: Path) -> None:
         acm = tmp_path / ".acm"
         acm.mkdir()
         old = "OLD content\n" * 10
         new = "NEW content\n"
-        (acm / "mission.md").write_text(old + new, encoding="utf-8")
+        (acm / "goal.md").write_text(old + new, encoding="utf-8")
 
-        result = _load_mission(tmp_path, budget_chars=20)
+        result = _load_goal(tmp_path, budget_chars=20)
         assert "NEW content" in result
         assert "OLD content" not in result
 
     def test_bounded_markers_deliver_mandate_not_history(self, tmp_path: Path) -> None:
-        """Marked missions deliver the bounded mandate even when history dominates the tail."""
+        """Marked goals deliver the bounded mandate even when history dominates the tail."""
         acm = tmp_path / ".acm"
         acm.mkdir()
         mandate = (
-            "<!-- current-mission: complete -->\n\n"
-            "## Current mission\n\nMANDATE: current direction.\n\n"
-            "<!-- mission-history -->\n"
+            "<!-- current-goal: complete -->\n\n"
+            "## Current goal\n\nMANDATE: current direction.\n\n"
+            "<!-- goal-history -->\n"
         )
         history = "## 2026-06-22 — Superseded\n\n" + "H" * 3000
-        (acm / "mission.md").write_text(mandate + history, encoding="utf-8")
+        (acm / "goal.md").write_text(mandate + history, encoding="utf-8")
 
-        result = _load_mission(tmp_path)
+        result = _load_goal(tmp_path)
         assert "MANDATE: current direction." in result
         assert "Superseded" not in result
 
@@ -156,10 +156,10 @@ class TestExtractProposalContent:
 
 
 class TestGraduate:
-    def test_calls_model_with_mission_and_trail(self, tmp_path: Path) -> None:
+    def test_calls_model_with_goal_and_trail(self, tmp_path: Path) -> None:
         acm = tmp_path / ".acm"
         acm.mkdir()
-        (acm / "mission.md").write_text("# Dest\n\nGoal.", encoding="utf-8")
+        (acm / "goal.md").write_text("# Dest\n\nGoal.", encoding="utf-8")
         (acm / "audit-trail.md").write_text("## Entry\n\nNOTHING FOUND.", encoding="utf-8")
 
         config = _make_config(tmp_path)

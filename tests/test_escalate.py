@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from ai_steward.config import AiStewardConfig, HarnessConfig, ModelAssignment, ScopeConfig
-from ai_steward.pipeline._utils import _load_mission
+from ai_steward.pipeline._utils import _load_goal
 from ai_steward.pipeline.escalate import (
     _extract_report_content,
     _load_failure_context,
@@ -48,26 +48,26 @@ def _mock_client(report_text: str) -> MagicMock:
 
 
 class TestLoadMission:
-    def test_loads_mission_md(self, tmp_path: Path) -> None:
+    def test_loads_goal_md(self, tmp_path: Path) -> None:
         acm = tmp_path / ".acm"
         acm.mkdir()
-        (acm / "mission.md").write_text("# Mission\n\nGoal: improve.", encoding="utf-8")
+        (acm / "goal.md").write_text("# Goal\n\nGoal: improve.", encoding="utf-8")
 
-        result = _load_mission(tmp_path)
+        result = _load_goal(tmp_path)
         assert "Goal: improve" in result
 
     def test_returns_placeholder_when_missing(self, tmp_path: Path) -> None:
-        result = _load_mission(tmp_path)
-        assert "No mission.md found" in result
+        result = _load_goal(tmp_path)
+        assert "No goal.md found" in result
 
     def test_truncates_from_tail(self, tmp_path: Path) -> None:
         acm = tmp_path / ".acm"
         acm.mkdir()
         old = "OLD content\n" * 10
         new = "NEW content\n"
-        (acm / "mission.md").write_text(old + new, encoding="utf-8")
+        (acm / "goal.md").write_text(old + new, encoding="utf-8")
 
-        result = _load_mission(tmp_path, budget_chars=20)
+        result = _load_goal(tmp_path, budget_chars=20)
         assert "NEW content" in result
         assert "OLD content" not in result
 

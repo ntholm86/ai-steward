@@ -149,7 +149,7 @@ orient_head_budget_chars: 2000     # chars of learning.md arc-claims head delive
 orient_rules_budget_chars: 3000    # chars of the "Active operational rules" section delivered to SCAN
 
 lenses:
-  - mandate       # Operator's Intent check (mission.md)
+  - mandate       # Operator's Intent check (goal.md)
   - examination   # Code structure and improvement opportunities
   # Example for security audit: add 'security' to focus on attack surface
   # Example for performance: use ['overburden'] to focus on hot paths only
@@ -165,7 +165,7 @@ review_branch: true         # run-loop: commit proposals to a per-run review bra
                             # (ai-steward/review/<timestamp>) so cycles don't halt on a
                             # dirty tree; review the batch, main stays untouched
 acm_scope_depth: 4          # ACM scope traversal depth (org/workspace/team/repo hierarchies)
-mission_budget_chars: 3000  # character budget for mission.md excerpts in SCAN context
+goal_budget_chars: 3000  # character budget for goal.md excerpts in SCAN context
 
 # Input filtering — controls which files enter the SCAN context window.
 # binary_heuristic_bytes: first N bytes read to detect binary files (NUL-byte heuristic).
@@ -186,8 +186,8 @@ default_skip_dirs:
 sandbox: "docker"           # execution sandbox: "docker" | "local"
 """
 
-_MISSION_TEMPLATE = """\
-# Mission — {repo_name}
+_GOAL_TEMPLATE = """\
+# Goal — {repo_name}
 
 *Write what you want this codebase to become and why.
 The agent reads this before every improvement cycle.*
@@ -252,26 +252,26 @@ def doctor(repo: str) -> None:
 
     # --- Silent gates: failures the pipeline never reports loudly ---
     scope = _scope_or_exit(repo_path)
-    mission = scope.dir / "mission.md"
-    mission_label = (
-        f"mission written ({mission})" if scope.bound else "mission written (.acm/mission.md)"
+    goal = scope.dir / "goal.md"
+    goal_label = (
+        f"goal written ({goal})" if scope.bound else "goal written (.acm/goal.md)"
     )
-    if not mission.exists():
+    if not goal.exists():
         checks.append((
-            mission_label,
+            goal_label,
             False,
             f"run: ai-steward init {repo_path}, then edit it — it guides every cycle",
         ))
     else:
-        text = mission.read_text(encoding="utf-8", errors="ignore")
+        text = goal.read_text(encoding="utf-8", errors="ignore")
         template_left = (
             "<!-- Describe the purpose of this codebase in 1-3 sentences. -->" in text
             or "<!-- Describe what a good improvement looks like. -->" in text
         )
         checks.append((
-            mission_label,
+            goal_label,
             not template_left,
-            "the mission is still the untouched template — write what you "
+            "the goal is still the untouched template — write what you "
             "want the codebase to become; SCAN reasons from this text",
         ))
 
@@ -314,17 +314,17 @@ def doctor(repo: str) -> None:
 @main.command()
 @click.argument("repo", type=click.Path(), default=".")
 def init(repo: str) -> None:
-    """Scaffold .ai-steward.yaml and mission.md in REPO.
+    """Scaffold .ai-steward.yaml and goal.md in REPO.
 
-    mission.md goes to .acm/ in REPO, or to the repository's scope in the
+    goal.md goes to .acm/ in REPO, or to the repository's scope in the
     shared memory repository when REPO is bound to one.
     """
     repo_path = Path(repo).resolve()
     scope = _scope_or_exit(repo_path)
     config_file = repo_path / ".ai-steward.yaml"
     trail_dir = scope.dir
-    mission_file = trail_dir / "mission.md"
-    mission_name = str(mission_file) if scope.bound else ".acm/mission.md"
+    goal_file = trail_dir / "goal.md"
+    goal_name = str(goal_file) if scope.bound else ".acm/goal.md"
 
     if config_file.exists():
         click.echo(
@@ -337,22 +337,22 @@ def init(repo: str) -> None:
     config_file.write_text(_CONFIG_TEMPLATE, encoding="utf-8")
 
     trail_dir.mkdir(parents=True, exist_ok=True)
-    mission_created = not mission_file.exists()
-    if mission_created:
-        mission_file.write_text(
-            _MISSION_TEMPLATE.format(repo_name=repo_path.name),
+    goal_created = not goal_file.exists()
+    if goal_created:
+        goal_file.write_text(
+            _GOAL_TEMPLATE.format(repo_name=repo_path.name),
             encoding="utf-8",
         )
 
     click.echo(f"Initialized ai-steward in {repo_path}")
     click.echo(f"  Created  .ai-steward.yaml      (model configuration)")
-    if mission_created:
-        click.echo(f"  Created  {mission_name} (edit this — it guides every cycle)")
+    if goal_created:
+        click.echo(f"  Created  {goal_name} (edit this — it guides every cycle)")
     else:
-        click.echo(f"  Skipped  {mission_name} (already exists)")
+        click.echo(f"  Skipped  {goal_name} (already exists)")
     click.echo("")
     click.echo("Next steps:")
-    click.echo(f"  1. Edit {mission_name} — describe what you want the codebase to become")
+    click.echo(f"  1. Edit {goal_name} — describe what you want the codebase to become")
     click.echo("  2. Set ANTHROPIC_API_KEY")
     click.echo("  3. Start llm-harness-proxy on localhost:8474")
     click.echo(f"  4. Check readiness: ai-steward doctor {repo_path}")
@@ -549,9 +549,9 @@ def run_loop(repo: str) -> None:
                 click.echo(
                     "\nConvergence: 2 consecutive NOTHING FOUND."
                 )
-                # GRADUATE phase — classify the silence and propose next mission
+                # GRADUATE phase — classify the silence and propose next goal
                 if trail_exists(repo_path):
-                    click.echo("GRADUATE: classifying silence — reading mission and trail...")
+                    click.echo("GRADUATE: classifying silence — reading goal and trail...")
                     with harness_session(repo_path, config.harness):
                         proposal, g_in_tok, g_out_tok = graduate_phase(
                             repo_path, config, trigger=f"nothing_found_streak_{nothing_found_streak}"
@@ -560,7 +560,7 @@ def run_loop(repo: str) -> None:
                     click.echo(
                         f"GRADUATE complete ({g_in_tok} in / {g_out_tok} out)\n"
                         f"  Proposal: {proposal_path}\n"
-                        f"  Review the proposal and decide: update mission, change scope, or continue."
+                        f"  Review the proposal and decide: update goal, change scope, or continue."
                     )
                 else:
                     click.echo("Loop complete.")
@@ -586,7 +586,7 @@ def run_loop(repo: str) -> None:
                     click.echo(
                         f"ESCALATE complete ({e_in_tok} in / {e_out_tok} out)\n"
                         f"  Report: {report_path}\n"
-                        f"  Review the report and decide: fix tooling, adjust config, or update mission."
+                        f"  Review the report and decide: fix tooling, adjust config, or update goal."
                     )
                 else:
                     click.echo("Escalation limit reached. Check errors above.")

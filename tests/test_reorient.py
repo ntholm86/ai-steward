@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from ai_steward.config import AiStewardConfig, HarnessConfig, ModelAssignment, ScopeConfig
-from ai_steward.pipeline._utils import _load_current_orientation, _load_mission, _load_learning
+from ai_steward.pipeline._utils import _load_current_orientation, _load_goal, _load_learning
 from ai_steward.pipeline.reorient import (
     _extract_orientation_content,
     _load_audit_trail,
@@ -46,13 +46,13 @@ def _mock_client(response_text: str) -> MagicMock:
 
 
 class TestLoadMission:
-    def test_loads_mission_md(self, tmp_path: Path) -> None:
+    def test_loads_goal_md(self, tmp_path: Path) -> None:
         acm_dir = tmp_path / ".acm"
         acm_dir.mkdir()
-        dest = acm_dir / "mission.md"
-        dest.write_text("# Mission\n\nThis is the goal.", encoding="utf-8")
+        dest = acm_dir / "goal.md"
+        dest.write_text("# Goal\n\nThis is the goal.", encoding="utf-8")
 
-        result = _load_mission(tmp_path, budget_chars=1000)
+        result = _load_goal(tmp_path, budget_chars=1000)
         assert "This is the goal" in result
 
     def test_falls_back_to_vision_md(self, tmp_path: Path) -> None:
@@ -61,22 +61,22 @@ class TestLoadMission:
         vision = acm_dir / "vision.md"
         vision.write_text("# Vision\n\nLegacy content.", encoding="utf-8")
 
-        result = _load_mission(tmp_path, budget_chars=1000)
+        result = _load_goal(tmp_path, budget_chars=1000)
         assert "Legacy content" in result
 
     def test_truncates_large_files(self, tmp_path: Path) -> None:
         acm_dir = tmp_path / ".acm"
         acm_dir.mkdir()
-        dest = acm_dir / "mission.md"
+        dest = acm_dir / "goal.md"
         dest.write_text("A" * 5000, encoding="utf-8")
 
-        result = _load_mission(tmp_path, budget_chars=1000)
+        result = _load_goal(tmp_path, budget_chars=1000)
         assert "truncated" in result
         assert len(result) < 1100  # budget + prefix
 
     def test_returns_placeholder_when_missing(self, tmp_path: Path) -> None:
-        result = _load_mission(tmp_path, budget_chars=1000)
-        assert "No mission.md found" in result
+        result = _load_goal(tmp_path, budget_chars=1000)
+        assert "No goal.md found" in result
 
 
 class TestLoadAuditTrail:
@@ -220,7 +220,7 @@ class TestReorient:
         # Set up files
         acm_dir = tmp_path / ".acm"
         acm_dir.mkdir()
-        (acm_dir / "mission.md").write_text("# Goal\nBe awesome.", encoding="utf-8")
+        (acm_dir / "goal.md").write_text("# Goal\nBe awesome.", encoding="utf-8")
         (acm_dir / "audit-trail.md").write_text("# Trail\n## Entry 1", encoding="utf-8")
 
         mock = _mock_client("```markdown\n# learning.md — test\n\nNew claims.\n```")

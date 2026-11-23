@@ -24,7 +24,7 @@ from ai_steward.harness import anthropic_client
 from ai_steward.memory import acm_dir, resolve_scope
 from ai_steward.pipeline import _prompts
 from ai_steward.pipeline._types import Finding
-from ai_steward.pipeline._utils import _truncate_mission
+from ai_steward.pipeline._utils import _truncate_goal
 
 if TYPE_CHECKING:
     import anthropic
@@ -143,24 +143,24 @@ def _load_scope_context(
     """Load Operator's Intent from all applicable ACM scopes (ACM §4).
 
     Traverses parent directories from repo upward, collecting every
-    .acm/mission.md found. Stop conditions (ACM §4.2):
+    .acm/goal.md found. Stop conditions (ACM §4.2):
       1. Filesystem root reached (hard stop, always applies)
       2. .acm-root marker file found in a directory: read that directory's
-         .acm/mission.md if present, then stop (operator-declared ceiling)
+         .acm/goal.md if present, then stop (operator-declared ceiling)
       3. Implementation ceiling: scope_depth levels (operator-configurable via
          acm_scope_depth in .ai-steward.yaml; default 4 = session→repo→workspace→org)
 
     Higher scopes are listed first and take precedence.
 
-    Total budget: budget_chars chars (operator-configurable via mission_budget_chars
+    Total budget: budget_chars chars (operator-configurable via goal_budget_chars
     in .ai-steward.yaml; default 3000 ≈ 750 tokens). Split evenly: half for higher
     scopes, half for repo scope.
 
-    Returns None if no mission.md exists at any scope.
+    Returns None if no goal.md exists at any scope.
 
     A bound repository (shared ACM memory) does not walk parent directories:
-    its chain is the memory root's mission.md (higher scope) followed by
-    the repository scope's mission.md.
+    its chain is the memory root's goal.md (higher scope) followed by
+    the repository scope's goal.md.
     """
     scope = resolve_scope(repo)
     parents: list[tuple[str, str]] = []  # (label, text), outermost first when reversed
@@ -168,16 +168,16 @@ def _load_scope_context(
 
     if scope.bound:
         if scope.memory_root is not None:
-            memory_dest = scope.memory_root / "mission.md"
+            memory_dest = scope.memory_root / "goal.md"
             if memory_dest.is_file():
                 try:
                     parents.append(("memory", memory_dest.read_text(encoding="utf-8", errors="ignore")))
                 except OSError:
                     pass
     else:
-        parents = _collect_parent_missions(repo, scope_depth)
+        parents = _collect_parent_goals(repo, scope_depth)
 
-    repo_dest = scope.dir / "mission.md"
+    repo_dest = scope.dir / "goal.md"
     if repo_dest.is_file():
         try:
             repo_text = repo_dest.read_text(encoding="utf-8", errors="ignore")
@@ -195,26 +195,26 @@ def _load_scope_context(
         per_scope = max(300, half // len(parents))
         # Reverse so outermost (highest authority) is first
         for label, text in reversed(parents):
-            truncated = _truncate_mission(text, per_scope)
+            truncated = _truncate_goal(text, per_scope)
             sections.append(f"### Higher-scope mandate ({label}):\n\n{truncated}")
 
     # Repo scope: up to half the total budget
     if repo_text is not None:
-        truncated = _truncate_mission(repo_text, half)
+        truncated = _truncate_goal(repo_text, half)
         sections.append(f"### Repo-scope mandate:\n\n{truncated}")
 
     return "\n\n---\n\n".join(sections)
 
 
-def _collect_parent_missions(repo: Path, scope_depth: int) -> list[tuple[str, str]]:
-    """Legacy mode: .acm/mission.md of each parent directory, nearest first."""
+def _collect_parent_goals(repo: Path, scope_depth: int) -> list[tuple[str, str]]:
+    """Legacy mode: .acm/goal.md of each parent directory, nearest first."""
     parents: list[tuple[str, str]] = []  # (label, text)
     current = repo.parent
     repo_root = Path(repo.anchor)
     for _ in range(scope_depth):
         if current == repo_root:
             break
-        dest = current / ".acm" / "mission.md"
+        dest = current / ".acm" / "goal.md"
         if dest.is_file():
             try:
                 text = dest.read_text(encoding="utf-8", errors="ignore")
@@ -393,10 +393,10 @@ def scan(
         f"=== {rel} ===\n{content}" for rel, content in files.items()
     )
 
-    mission = _load_scope_context(
+    goal = _load_scope_context(
         repo,
         scope_depth=config.acm_scope_depth,
-        budget_chars=config.mission_budget_chars,
+        budget_chars=config.goal_budget_chars,
     )
     orient = _load_orient_context(
         repo,
@@ -406,16 +406,16 @@ def scan(
     )
 
     parts: list[str] = []
-    if mission:
+    if goal:
         parts.append(
-            f"Operator's Intent (operator mission — higher scope governs):\n\n{mission}"
+            f"Operator's Intent (operator goal — higher scope governs):\n\n{goal}"
         )
     if orient:
         parts.append(orient)
     parts.append(
         f"Repository files:\n\n{file_list}\n\n"
-        + ("Identify one improvement that advances the stated mission."
-           if mission else "Identify one improvement.")
+        + ("Identify one improvement that advances the stated goal."
+           if goal else "Identify one improvement.")
     )
     user_content = "\n\n---\n\n".join(parts)
 

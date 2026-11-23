@@ -1,14 +1,14 @@
-"""GRADUATE phase — silence classification and mission revision.
+"""GRADUATE phase — silence classification and goal revision.
 
 When the loop converges (SCAN returns NOTHING FOUND for N consecutive cycles),
-GRADUATE reads the mission, orientation, and recent trail to classify the
+GRADUATE reads the goal, orientation, and recent trail to classify the
 silence: ACHIEVED, STALE, STUCK, or PREMATURE. It then produces a proposal
 written to graduate_proposal.md (memory scope: .acm/ legacy, or the bound scope dir) for operator review.
 
 This is the robot's structural equivalent of the human noticing "this goal is
 done, time to move on" or "the approach is exhausted."
 
-Token tier: 2 (needs mission + orientation + recent trail context).
+Token tier: 2 (needs goal + orientation + recent trail context).
 All calls route through llm-harness-proxy. Never call the Anthropic API directly.
 
 Triggers:
@@ -29,7 +29,7 @@ from ai_steward.config import AiStewardConfig
 from ai_steward.harness import anthropic_client
 from ai_steward.memory import acm_dir, read_trail, trail_exists, trail_location
 from ai_steward.pipeline import _prompts
-from ai_steward.pipeline._utils import _load_current_orientation, _load_mission, _load_learning
+from ai_steward.pipeline._utils import _load_current_orientation, _load_goal, _load_learning
 
 if TYPE_CHECKING:
     import anthropic
@@ -83,7 +83,7 @@ def graduate(
     trigger: str = "convergence",
     client: "anthropic.Anthropic | None" = None,
 ) -> tuple[str, int, int]:
-    """Run the GRADUATE phase — classify convergence and propose next mission.
+    """Run the GRADUATE phase — classify convergence and propose next goal.
 
     Args:
         repo: Repository root.
@@ -100,15 +100,15 @@ def graduate(
     if client is None:
         client = anthropic_client(config.harness)
 
-    mission = _load_mission(repo, config.mission_budget_chars)
+    goal = _load_goal(repo, config.goal_budget_chars)
     orientation = _load_current_orientation(repo)
     learning = _load_learning(repo)
     recent_trail = _load_recent_trail(repo)
     today = date.today().isoformat()
 
-    user_content = f"""## Mission (operator-held)
+    user_content = f"""## Goal (operator-held)
 
-{mission}
+{goal}
 
 ---
 
