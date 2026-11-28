@@ -2,9 +2,9 @@
 
 An autonomous code improvement loop with structural accountability.
 
-**Purpose 1 — Proof:** A reference implementation of [Principles of Earned Autonomy](https://github.com/ntholm86/manifesto). Demonstrates that autonomous delegation can be structurally trustworthy — not through promises, but through Observable Autonomy (harness-captured LLM evidence), Operator's Intent (operator-written goal), and Convergence Is Silence (stop when done, not when tired).
+**Purpose 1 - Proof:** A reference implementation of [Principles of Earned Autonomy (PEA)](https://github.com/ntholm86/principles-of-earned-autonomy). It demonstrates that autonomous delegation can be structurally trustworthy through Observable Autonomy, captured by [Agent Evidence Proxy (AEP)](https://github.com/ntholm86/agent-evidence-proxy); Operator's Intent, held in the goal; and Convergence Is Silence, which stops when work is done.
 
-**Purpose 2 — Tool:** Genuinely useful. Write a goal → run the loop → review the staged diff → commit or discard. Works on any codebase. Cost is measured, not claimed (~$0.15–0.20/cycle on claude-sonnet-4-5; haiku is the V2 cost target).
+**Purpose 2 - Tool:** Write a goal, run the loop, review the staged diff, then commit or discard. It works on any codebase. Cost is measured, not claimed (~$0.15 to $0.20 per cycle on claude-sonnet-4-5; Haiku is the V2 cost target).
 
 ## How it works
 
