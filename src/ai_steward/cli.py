@@ -285,7 +285,7 @@ def doctor(repo: str) -> None:
         checks.append((
             f"harness reachable ({config.harness.endpoint})",
             is_reachable(config.harness),
-            "start llm-harness-proxy, or update harness.endpoint in .ai-steward.yaml",
+            "start agent-evidence-proxy, or update harness.endpoint in .ai-steward.yaml",
         ))
         if config.verify_command:
             passed, count = run_verify_command(config.verify_command, repo_path)
@@ -354,7 +354,7 @@ def init(repo: str) -> None:
     click.echo("Next steps:")
     click.echo(f"  1. Edit {goal_name} — describe what you want the codebase to become")
     click.echo("  2. Set ANTHROPIC_API_KEY")
-    click.echo("  3. Start llm-harness-proxy on localhost:8474")
+    click.echo("  3. Start agent-evidence-proxy on localhost:8474")
     click.echo(f"  4. Check readiness: ai-steward doctor {repo_path}")
     click.echo(f"  5. Run: ai-steward run {repo_path}")
 

@@ -9,7 +9,7 @@ This is the robot's structural equivalent of the human noticing "this goal is
 done, time to move on" or "the approach is exhausted."
 
 Token tier: 2 (needs goal + orientation + recent trail context).
-All calls route through llm-harness-proxy. Never call the Anthropic API directly.
+All calls route through agent-evidence-proxy. Never call the Anthropic API directly.
 
 Triggers:
 - Convergence signal in run-loop (2 consecutive NOTHING FOUND)

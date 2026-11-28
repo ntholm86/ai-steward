@@ -1,4 +1,4 @@
-﻿"""llm-harness-proxy integration for ai-steward.
+﻿"""agent-evidence-proxy integration for ai-steward.
 
 All LLM calls MUST route through the harness proxy. If the proxy is
 unreachable, PRE-FLIGHT fails and no LLM call is made. This is the

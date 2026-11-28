@@ -2,7 +2,7 @@
 
 Every design decision lives here in code:
 - Which model family handles which pipeline phase (model-family independence principle)
-- llm-harness-proxy integration contract (all LLM calls route through the proxy)
+- agent-evidence-proxy integration contract (all LLM calls route through the proxy)
 - Scope enforcement (allowed/blocked file globs)
 - Safety budget (iteration cap and cost cap)
 """
@@ -31,7 +31,7 @@ _KNOWN_REFLECT_LENSES: frozenset[str] = frozenset({
 
 
 class HarnessConfig(BaseModel):
-    """Connection config for llm-harness-proxy (port 8474 by default)."""
+    """Connection config for agent-evidence-proxy (port 8474 by default)."""
 
     endpoint: str = "http://localhost:8474"
 
@@ -44,7 +44,7 @@ class HarnessConfig(BaseModel):
 class ModelAssignment(BaseModel):
     """Which model/provider handles which pipeline phase.
 
-    Specify as provider-native model identifiers — llm-harness-proxy routes them to the
+    Specify as provider-native model identifiers — agent-evidence-proxy routes them to the
     correct backend based on the endpoint path chosen by the execution layer.
 
     V1 (single-model): assign the same model to all phases. This is valid and expected.

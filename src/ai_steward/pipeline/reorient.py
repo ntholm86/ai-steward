@@ -4,7 +4,7 @@ Reads the full audit-trail.md, forms arc-claims, and rewrites learning.md.
 This is the robot's equivalent of the human-driven Learn skill.
 
 Token tier: 2 (needs large context for full trail reading).
-All calls route through llm-harness-proxy. Never call the Anthropic API directly.
+All calls route through agent-evidence-proxy. Never call the Anthropic API directly.
 
 Triggers:
 - After N successful cycles (configurable: reorient_interval)

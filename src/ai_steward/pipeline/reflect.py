@@ -4,7 +4,7 @@ Synthesizes the VERIFY outcome against the SCAN prediction, producing
 a structured reflection section for the audit trail entry.
 
 Token tier: 1 (cheap model — same as SCAN by default).
-All calls route through llm-harness-proxy. Never call the Anthropic API directly.
+All calls route through agent-evidence-proxy. Never call the Anthropic API directly.
 
 The reflection covers three things:
 1. Whether the prediction held (based on verify result and diff)

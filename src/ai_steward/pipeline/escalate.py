@@ -10,7 +10,7 @@ reason — a human needs to make a decision I can't."
 
 Token tier: 1 (focused failure context, no orientation needed — recent trail has the
 evidence; orientation adds no cognitive yield for concrete failure diagnosis).
-All calls route through llm-harness-proxy. Never call the Anthropic API directly.
+All calls route through agent-evidence-proxy. Never call the Anthropic API directly.
 
 Triggers:
 - Failure streak in run-loop (N consecutive VERIFY FAILED or IMPLEMENT FAILED)

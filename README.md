@@ -53,7 +53,7 @@ The agent cannot claim it did something it did not do.
 
 ## Quickstart
 
-**Prerequisites:** Python 3.12+, [llm-harness-proxy](https://github.com/ntholm86/llm-harness-proxy) running on `localhost:8474`, `ANTHROPIC_API_KEY` set. Start the proxy with `HARNESS_ROOT` set to the memory scope's `evidence/` folder (`.acm/evidence` for a legacy repo); the proxy alone decides where evidence is written, ai-steward only sends a session id.
+**Prerequisites:** Python 3.12+, [agent-evidence-proxy](https://github.com/ntholm86/agent-evidence-proxy) running on `localhost:8474`, `ANTHROPIC_API_KEY` set. Start the proxy with `HARNESS_ROOT` set to the memory scope's `evidence/` folder (`.acm/evidence` for a legacy repo); the proxy alone decides where evidence is written, ai-steward only sends a session id.
 
 ```bash
 pip install -e ".[dev]"

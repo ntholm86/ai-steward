@@ -1,4 +1,4 @@
-﻿"""Tests for llm-harness-proxy integration.
+﻿"""Tests for agent-evidence-proxy integration.
 
 All tests run without a live harness proxy — testing the integration
 contract, not the proxy itself.
